@@ -5,9 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{{ app.name }}{% endblock %}</title>
     {% include 'components/favicon.twig' %}
-    <script>
-        try{if(sessionStorage.getItem('fs-nav'))document.documentElement.classList.add('fs-nav-loading')}catch(e){}
-    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -16,6 +13,7 @@
     {% block head %}{% endblock %}
 </head>
 <body class="min-h-full font-sans antialiased">
+    <script>try{if(sessionStorage.getItem('fs-nav')){var _p=document.createElement('style');_p.textContent='#page-progress{width:72%!important;opacity:1!important}';document.head.appendChild(_p);}}catch(e){}</script>
     <div id="page-progress" class="page-progress" aria-hidden="true"></div>
     <div class="app-bg"></div>
 
@@ -28,6 +26,7 @@
         <div class="auth-card page-content w-full max-w-md">
             {% block content %}{% endblock %}
         </div>
+        {% include 'components/ui/page-nav-boot.twig' %}
 
         <p class="mt-6 text-center text-xs text-navy-500 sm:mt-8">&copy; {{ "now"|date("Y") }} {{ app.name }}</p>
     </div>

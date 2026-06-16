@@ -1,0 +1,28 @@
+<script>
+(function () {
+    var progressBar = document.getElementById('page-progress');
+    var skeleton = document.getElementById('page-skeleton');
+
+    try {
+        sessionStorage.removeItem('fs-nav');
+    } catch (_error) {}
+
+    document.documentElement.classList.remove('fs-nav-loading');
+
+    if (skeleton) {
+        skeleton.hidden = true;
+        skeleton.setAttribute('aria-hidden', 'true');
+    }
+
+    document.querySelectorAll('.page-content').forEach(function (el) {
+        el.classList.add('is-ready');
+    });
+
+    if (progressBar) {
+        progressBar.classList.add('is-active', 'is-complete');
+        window.setTimeout(function () {
+            progressBar.classList.remove('is-active', 'is-complete');
+        }, 140);
+    }
+})();
+</script>

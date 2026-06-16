@@ -15,10 +15,10 @@
 
     {% include 'components/participants/bulk-format.twig' %}
 
-    <form method="post" action="/sessions/{{ session.id }}/participants/bulk" enctype="multipart/form-data" class="card space-y-5">
+    <form method="post" action="/sessions/{{ session.id }}/participants/bulk" enctype="multipart/form-data" class="card bulk-form-card space-y-6">
         {% include 'components/participants/bulk-fields.twig' %}
 
-        <div class="bulk-options space-y-3 rounded-xl border border-navy-100 bg-navy-50/60 p-4">
+        <div class="bulk-options">
             {% if currentUser.canDelete %}
                 <label class="bulk-checkbox">
                     <input type="checkbox" name="replace_existing" value="1" {% if old.replace_existing is defined %}checked{% endif %}>

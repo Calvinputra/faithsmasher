@@ -6,9 +6,6 @@
     <title>{% block title %}{{ app.name }}{% endblock %}</title>
     <meta name="description" content="{% block description %}Badminton tournament bracket & score management{% endblock %}">
     {% include 'components/favicon.twig' %}
-    <script>
-        try{if(sessionStorage.getItem('fs-nav'))document.documentElement.classList.add('fs-nav-loading')}catch(e){}
-    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -17,6 +14,7 @@
     {% block head %}{% endblock %}
 </head>
 <body class="min-h-full font-sans antialiased">
+    <script>try{if(sessionStorage.getItem('fs-nav')){var _p=document.createElement('style');_p.textContent='#page-progress{width:72%!important;opacity:1!important}';document.head.appendChild(_p);}}catch(e){}</script>
     <div id="page-progress" class="page-progress" aria-hidden="true"></div>
     <div class="app-bg"></div>
 
@@ -43,6 +41,7 @@
     <main class="page-content">
         {% block content %}{% endblock %}
     </main>
+    {% include 'components/ui/page-nav-boot.twig' %}
 
     <footer class="site-footer">
         <div class="site-container py-10 text-center text-sm text-navy-500">

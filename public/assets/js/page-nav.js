@@ -3,8 +3,6 @@
     const prefetched = new Set();
 
     const progressBar = document.getElementById('page-progress');
-    const skeleton = document.getElementById('page-skeleton');
-    const pageContent = document.querySelector('.page-content');
 
     function isInternalLink(anchor) {
         if (!(anchor instanceof HTMLAnchorElement)) {
@@ -37,25 +35,20 @@
             /* ignore */
         }
 
-        document.documentElement.classList.add('fs-nav-loading');
+        progressBar?.classList.remove('is-complete');
         progressBar?.classList.add('is-active');
-
-        if (skeleton) {
-            skeleton.hidden = false;
-            skeleton.setAttribute('aria-hidden', 'false');
-        }
     }
 
     function finishNavigation() {
-        document.documentElement.classList.remove('fs-nav-loading');
-        progressBar?.classList.remove('is-active');
+        progressBar?.classList.add('is-complete');
 
-        if (skeleton) {
-            skeleton.hidden = true;
-            skeleton.setAttribute('aria-hidden', 'true');
-        }
+        window.setTimeout(() => {
+            progressBar?.classList.remove('is-active', 'is-complete');
+        }, 140);
 
-        pageContent?.classList.add('is-ready');
+        document.querySelectorAll('.page-content').forEach((el) => {
+            el.classList.add('is-ready');
+        });
 
         try {
             sessionStorage.removeItem(NAV_KEY);
@@ -87,6 +80,18 @@
         button.setAttribute('aria-busy', 'true');
         button.disabled = true;
     }
+
+    document.addEventListener('mousedown', (event) => {
+        if (event.button !== 0) {
+            return;
+        }
+
+        const anchor = event.target instanceof Element ? event.target.closest('a[href]') : null;
+
+        if (anchor && isInternalLink(anchor)) {
+            prefetch(anchor.href);
+        }
+    }, { passive: true });
 
     document.addEventListener('click', (event) => {
         const anchor = event.target instanceof Element ? event.target.closest('a[href]') : null;
@@ -155,7 +160,5 @@
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', finishNavigation, { once: true });
-    } else {
-        finishNavigation();
     }
 })();
