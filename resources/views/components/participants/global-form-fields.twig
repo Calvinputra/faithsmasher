@@ -1,0 +1,40 @@
+<div>
+    <label for="participant_form_name" class="form-label">Nama *</label>
+    <input type="text" id="participant_form_name" name="name" required class="input-field" autocomplete="off" data-field="name">
+    <p class="form-error hidden" data-error-for="name"></p>
+</div>
+<div>
+    <label for="participant_form_rank" class="form-label">Rank *</label>
+    <select id="participant_form_rank" name="rank" required class="input-field" data-field="rank" data-search-select>
+        <option value="">Pilih rank</option>
+        {% for value, label in ranks %}
+            <option value="{{ value }}">{{ label }}</option>
+        {% endfor %}
+    </select>
+    <p class="form-error hidden" data-error-for="rank"></p>
+</div>
+<div>
+    <label for="participant_form_gender" class="form-label">Gender</label>
+    <select id="participant_form_gender" name="gender" class="input-field" data-field="gender" data-search-select>
+        <option value="">— Opsional —</option>
+        {% for value, label in genders %}
+            <option value="{{ value }}">{{ label }}</option>
+        {% endfor %}
+    </select>
+    <p class="form-error hidden" data-error-for="gender"></p>
+</div>
+<div>
+    <label for="participant_form_phone" class="form-label">Telepon</label>
+    <input type="text" id="participant_form_phone" name="phone" class="input-field" autocomplete="off" data-field="phone">
+    <p class="form-error hidden" data-error-for="phone"></p>
+</div>
+<div>
+    <label for="participant_form_gms_source" class="form-label">GMS From</label>
+    <select id="participant_form_gms_source" name="gms_source" class="input-field" data-field="gms_source" data-search-select>
+        <option value="">— Opsional —</option>
+        {% for value, label in gmsSources|default({}) %}
+            <option value="{{ value }}">{{ label }}</option>
+        {% endfor %}
+    </select>
+    <p class="form-error hidden" data-error-for="gms_source"></p>
+</div>

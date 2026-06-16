@@ -1,0 +1,21 @@
+{# Compact audit trail — pass createdByName, createdAt, updatedByName, updatedAt #}
+{% macro render(createdByName, createdAt, updatedByName, updatedAt, compact) %}
+    {% set creator = createdByName|default('—') %}
+    {% set createdLabel = createdAt ? createdAt|date('d M Y, H:i') : '—' %}
+    <div class="audit-trail{% if compact|default(false) %} audit-trail-compact{% endif %}" aria-label="Riwayat perubahan">
+        <p class="audit-trail-row">
+            <span class="audit-trail-label">Dibuat</span>
+            <span class="audit-trail-value">{{ creator }}</span>
+            <span class="audit-trail-sep" aria-hidden="true">·</span>
+            <time class="audit-trail-time" datetime="{{ createdAt|default('') }}">{{ createdLabel }}</time>
+        </p>
+        {% if updatedByName and updatedAt and (updatedByName != createdByName or updatedAt|date('U') != createdAt|date('U')) %}
+            <p class="audit-trail-row">
+                <span class="audit-trail-label">Diupdate</span>
+                <span class="audit-trail-value">{{ updatedByName }}</span>
+                <span class="audit-trail-sep" aria-hidden="true">·</span>
+                <time class="audit-trail-time" datetime="{{ updatedAt }}">{{ updatedAt|date('d M Y, H:i') }}</time>
+            </p>
+        {% endif %}
+    </div>
+{% endmacro %}

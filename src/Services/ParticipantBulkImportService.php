@@ -22,7 +22,15 @@ final class ParticipantBulkImportService
     /**
      * Import ke daftar peserta global (user).
      *
-     * @return array{success: bool, imported: int, skipped: int, errors: list<string>, preview: list<array{name: string, rank: string}>}
+     * @return array{
+     *     success: bool,
+     *     imported: int,
+     *     skipped: int,
+     *     duplicatesSkipped: int,
+     *     assignedExisting: int,
+     *     errors: list<string>,
+     *     preview: list<array{name: string, rank: string}>
+     * }
      */
     public function importGlobal(int $userId, string $rawInput, string $defaultRank = 'C'): array
     {
@@ -36,6 +44,8 @@ final class ParticipantBulkImportService
      *     success: bool,
      *     imported: int,
      *     skipped: int,
+     *     duplicatesSkipped: int,
+     *     assignedExisting: int,
      *     errors: list<string>,
      *     preview: list<array{name: string, rank: string}>,
      *     matchesGenerated: int|null
@@ -49,9 +59,7 @@ final class ParticipantBulkImportService
         bool $replaceExisting = false,
         bool $generateMatches = false,
     ): array {
-        $result = $this->importRows($userId, $sessionId, $rawInput, $defaultRank, $replaceExisting, $generateMatches);
-
-        return $result;
+        return $this->importRows($userId, $sessionId, $rawInput, $defaultRank, $replaceExisting, $generateMatches);
     }
 
     /**
@@ -59,6 +67,8 @@ final class ParticipantBulkImportService
      *     success: bool,
      *     imported: int,
      *     skipped: int,
+     *     duplicatesSkipped: int,
+     *     assignedExisting: int,
      *     errors: list<string>,
      *     preview: list<array{name: string, rank: string}>,
      *     matchesGenerated: int|null
@@ -88,15 +98,38 @@ final class ParticipantBulkImportService
             $this->participants->unassignAllFromSession($sessionId);
         }
 
-        $ids = $this->participants->createMany($userId, $parsed['rows']);
+        $prepared = $this->prepareImportRows($parsed['rows'], $sessionId);
+
+        if ($prepared['create'] === [] && $prepared['assignIds'] === []) {
+            return [
+                'success' => true,
+                'imported' => 0,
+                'skipped' => $parsed['skipped'],
+                'duplicatesSkipped' => $prepared['duplicatesSkipped'],
+                'assignedExisting' => 0,
+                'errors' => [],
+                'preview' => $parsed['rows'],
+                'matchesGenerated' => null,
+            ];
+        }
+
+        $newIds = $this->participants->createMany($userId, $prepared['create']);
+
+        $assignedExisting = 0;
 
         if ($sessionId !== null) {
-            $this->participants->assignManyToSession($sessionId, $ids);
+            $assignedExisting = $this->participants->assignManyToSession(
+                $sessionId,
+                array_merge($newIds, $prepared['assignIds']),
+            );
         }
 
         $matchesGenerated = null;
+        $sessionParticipantCount = $sessionId !== null
+            ? $this->participants->countBySession($sessionId)
+            : 0;
 
-        if ($sessionId !== null && $generateMatches && count($ids) >= 2) {
+        if ($sessionId !== null && $generateMatches && $sessionParticipantCount >= 2) {
             try {
                 $matchesGenerated = $this->matchGenerator->autoGenerate($sessionId);
             } catch (\InvalidArgumentException) {
@@ -106,18 +139,95 @@ final class ParticipantBulkImportService
 
         return [
             'success' => true,
-            'imported' => count($ids),
+            'imported' => count($newIds),
             'skipped' => $parsed['skipped'],
+            'duplicatesSkipped' => $prepared['duplicatesSkipped'],
+            'assignedExisting' => $assignedExisting,
             'errors' => [],
-            'preview' => $parsed['rows'],
+            'preview' => $prepared['create'],
             'matchesGenerated' => $matchesGenerated,
         ];
     }
 
     /**
+     * @param list<array{name: string, rank: string}> $rows
+     * @return array{
+     *     create: list<array{name: string, rank: string}>,
+     *     assignIds: list<int>,
+     *     duplicatesSkipped: int
+     * }
+     */
+    private function prepareImportRows(array $rows, ?int $sessionId): array
+    {
+        $nameIndex = $this->participants->nameKeyIndex();
+        $sessionParticipantIds = $sessionId !== null
+            ? array_fill_keys($this->participants->participantIdsInSession($sessionId), true)
+            : [];
+
+        $toCreate = [];
+        $toAssignIds = [];
+        $duplicatesSkipped = 0;
+        $seenInBatch = [];
+
+        foreach ($rows as $row) {
+            $key = $this->normalizeNameKey($row['name']);
+
+            if ($key === '') {
+                continue;
+            }
+
+            if (isset($seenInBatch[$key])) {
+                ++$duplicatesSkipped;
+                continue;
+            }
+
+            $seenInBatch[$key] = true;
+
+            if (isset($nameIndex[$key])) {
+                $existingId = $nameIndex[$key];
+
+                if ($sessionId === null) {
+                    ++$duplicatesSkipped;
+                    continue;
+                }
+
+                if (isset($sessionParticipantIds[$existingId])) {
+                    ++$duplicatesSkipped;
+                    continue;
+                }
+
+                $toAssignIds[] = $existingId;
+                continue;
+            }
+
+            $toCreate[] = $row;
+        }
+
+        return [
+            'create' => $toCreate,
+            'assignIds' => array_values(array_unique($toAssignIds)),
+            'duplicatesSkipped' => $duplicatesSkipped,
+        ];
+    }
+
+    private function normalizeNameKey(string $name): string
+    {
+        return mb_strtolower(trim($name));
+    }
+
+    /**
      * @param list<string> $errors
      * @param list<array{name: string, rank: string}> $preview
-     * @return array{success: bool, imported: int, skipped: int, errors: list<string>, preview: list<array{name: string, rank: string}>, matchesGenerated: null}
+     * @return array{
+     *     success: bool,
+     *     imported: int,
+     *     skipped: int,
+     *     duplicatesSkipped: int,
+     *     assignedExisting: int,
+     *     errors: list<string>,
+     *     preview: list<array{name: string, rank: string}>,
+     *     matchesGenerated: null
+     * }
      */
     private function failure(array $errors, int $skipped, array $preview): array
     {
@@ -125,6 +235,8 @@ final class ParticipantBulkImportService
             'success' => false,
             'imported' => 0,
             'skipped' => $skipped,
+            'duplicatesSkipped' => 0,
+            'assignedExisting' => 0,
             'errors' => $errors,
             'preview' => $preview,
             'matchesGenerated' => null,

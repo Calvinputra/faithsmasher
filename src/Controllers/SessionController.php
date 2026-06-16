@@ -19,14 +19,7 @@ final class SessionController extends BaseController
 
     public function create(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
-        /** @var Twig $view */
-        $view = $request->getAttribute('view');
-
-        return $view->render($response, 'pages/sessions/form.twig', [
-            'session' => null,
-            'errors' => [],
-            'old' => [],
-        ]);
+        return $this->redirect($response, '/dashboard?modal=session-form-modal');
     }
 
     public function store(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
@@ -35,6 +28,10 @@ final class SessionController extends BaseController
         $errors = $this->validate($data);
 
         if ($errors !== []) {
+            if ($this->wantsJson($request)) {
+                return $this->jsonValidationErrors($response, $errors);
+            }
+
             /** @var Twig $view */
             $view = $request->getAttribute('view');
 
@@ -53,6 +50,15 @@ final class SessionController extends BaseController
             (int) ($data['court_count'] ?? 1),
         );
 
+        if ($this->wantsJson($request)) {
+            return $this->jsonFlash(
+                $response,
+                '/dashboard/' . $session->id,
+                'Session "' . $session->name . '" siap digunakan. Tambahkan peserta untuk mulai.',
+                FlashType::CREATE,
+            );
+        }
+
         return $this->flashRedirect(
             $response,
             '/dashboard/' . $session->id,
@@ -63,16 +69,10 @@ final class SessionController extends BaseController
 
     public function edit(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
-        $session = $this->requireSession((int) $args['id']);
+        $sessionId = (int) $args['id'];
+        $this->requireSession($sessionId);
 
-        /** @var Twig $view */
-        $view = $request->getAttribute('view');
-
-        return $view->render($response, 'pages/sessions/form.twig', [
-            'session' => $session,
-            'errors' => [],
-            'old' => [],
-        ]);
+        return $this->redirect($response, '/dashboard/' . $sessionId . '?modal=session-form-modal&edit=' . $sessionId);
     }
 
     public function update(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
@@ -83,11 +83,15 @@ final class SessionController extends BaseController
         $errors = $this->validate($data);
 
         if ($errors !== []) {
+            if ($this->wantsJson($request)) {
+                return $this->jsonValidationErrors($response, $errors);
+            }
+
             /** @var Twig $view */
             $view = $request->getAttribute('view');
 
             return $view->render($response, 'pages/sessions/form.twig', [
-                'session' => $this->sessions->find($sessionId, $this->userId()),
+                'session' => $this->sessions->find($sessionId),
                 'errors' => $errors,
                 'old' => $data,
             ]);
@@ -95,12 +99,21 @@ final class SessionController extends BaseController
 
         $this->sessions->update(
             $sessionId,
-            $this->userId(),
             trim((string) $data['name']),
             (string) $data['session_date'],
             trim((string) $data['location']),
             (int) ($data['court_count'] ?? 1),
+            $this->userId(),
         );
+
+        if ($this->wantsJson($request)) {
+            return $this->jsonFlash(
+                $response,
+                '/dashboard/' . $sessionId,
+                'Perubahan session berhasil disimpan.',
+                FlashType::UPDATE,
+            );
+        }
 
         return $this->flashRedirect(
             $response,
@@ -114,9 +127,9 @@ final class SessionController extends BaseController
     {
         $this->assertCanDelete();
         $sessionId = (int) $args['id'];
-        $this->requireSession($sessionId);
+        $session = $this->requireSession($sessionId);
 
-        if (!$this->sessions->delete($sessionId, $this->userId())) {
+        if (!$this->sessions->delete($sessionId)) {
             return $this->flashRedirect(
                 $response,
                 '/dashboard',
@@ -128,7 +141,7 @@ final class SessionController extends BaseController
         return $this->flashRedirect(
             $response,
             '/dashboard',
-            'Session beserta data terkait telah dihapus.',
+            'Session "' . $session->name . '" beserta rules, matches, dan assignment peserta telah dihapus.',
             FlashType::DELETE,
         );
     }

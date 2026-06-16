@@ -19,7 +19,7 @@
 <div class="grid gap-4 sm:grid-cols-2">
     <div class="form-group">
         <label for="default_rank" class="form-label">Default rank (jika kolom rank kosong)</label>
-        <select id="default_rank" name="default_rank" class="input-field">
+        <select id="default_rank" name="default_rank" class="input-field" data-search-select>
             {% for value, label in ranks %}
                 <option value="{{ value }}" {% if (old.default_rank|default('C')) == value %}selected{% endif %}>{{ label }}</option>
             {% endfor %}

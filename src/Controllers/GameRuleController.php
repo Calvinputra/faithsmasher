@@ -23,6 +23,12 @@ final class GameRuleController extends BaseController
     public function index(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
         $session = $this->requireSession((int) $args['sessionId']);
+        $editRule = null;
+        $editId = (int) ($request->getQueryParams()['edit'] ?? 0);
+
+        if ($editId > 0) {
+            $editRule = $this->rules->find($editId, $session->id);
+        }
 
         /** @var Twig $view */
         $view = $request->getAttribute('view');
@@ -30,22 +36,16 @@ final class GameRuleController extends BaseController
         return $view->render($response, 'pages/rules/index.twig', [
             'session' => $session,
             'rules' => $this->rules->allBySession($session->id),
+            'editRule' => $editRule,
         ]);
     }
 
     public function create(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
-        $session = $this->requireSession((int) $args['sessionId']);
+        $sessionId = (int) $args['sessionId'];
+        $this->requireSession($sessionId);
 
-        /** @var Twig $view */
-        $view = $request->getAttribute('view');
-
-        return $view->render($response, 'pages/rules/form.twig', [
-            'session' => $session,
-            'rule' => null,
-            'errors' => [],
-            'old' => [],
-        ]);
+        return $this->redirect($response, '/sessions/' . $sessionId . '/rules?modal=rule-form-modal');
     }
 
     public function store(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
@@ -56,6 +56,10 @@ final class GameRuleController extends BaseController
         $errors = $this->validate($data);
 
         if ($errors !== []) {
+            if ($this->wantsJson($request)) {
+                return $this->jsonValidationErrors($response, $errors);
+            }
+
             /** @var Twig $view */
             $view = $request->getAttribute('view');
 
@@ -74,6 +78,15 @@ final class GameRuleController extends BaseController
             (int) $data['lose_points'],
         );
 
+        if ($this->wantsJson($request)) {
+            return $this->jsonFlash(
+                $response,
+                '/sessions/' . $sessionId . '/rules',
+                'Aturan permainan berhasil ditambahkan.',
+                FlashType::CREATE,
+            );
+        }
+
         return $this->flashRedirect(
             $response,
             '/sessions/' . $sessionId . '/rules',
@@ -85,22 +98,14 @@ final class GameRuleController extends BaseController
     public function edit(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
         $sessionId = (int) $args['sessionId'];
-        $session = $this->requireSession($sessionId);
-        $rule = $this->rules->find((int) $args['id'], $sessionId);
+        $this->requireSession($sessionId);
+        $ruleId = (int) $args['id'];
 
-        if ($rule === null) {
+        if ($this->rules->find($ruleId, $sessionId) === null) {
             return $this->redirect($response, '/sessions/' . $sessionId . '/rules');
         }
 
-        /** @var Twig $view */
-        $view = $request->getAttribute('view');
-
-        return $view->render($response, 'pages/rules/form.twig', [
-            'session' => $session,
-            'rule' => $rule,
-            'errors' => [],
-            'old' => [],
-        ]);
+        return $this->redirect($response, '/sessions/' . $sessionId . '/rules?edit=' . $ruleId);
     }
 
     public function update(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
@@ -112,6 +117,10 @@ final class GameRuleController extends BaseController
         $errors = $this->validate($data);
 
         if ($errors !== []) {
+            if ($this->wantsJson($request)) {
+                return $this->jsonValidationErrors($response, $errors);
+            }
+
             /** @var Twig $view */
             $view = $request->getAttribute('view');
 
@@ -130,6 +139,15 @@ final class GameRuleController extends BaseController
             (int) $data['win_points'],
             (int) $data['lose_points'],
         );
+
+        if ($this->wantsJson($request)) {
+            return $this->jsonFlash(
+                $response,
+                '/sessions/' . $sessionId . '/rules',
+                'Aturan permainan berhasil diperbarui.',
+                FlashType::UPDATE,
+            );
+        }
 
         return $this->flashRedirect(
             $response,

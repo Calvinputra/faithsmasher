@@ -1,0 +1,13 @@
+{% embed 'components/ui/form-modal.twig' with {
+    id: 'rule-form-modal',
+    title: 'Tambah Game Rule',
+    subtitle: 'Pengaturan poin menang / kalah.',
+    formType: 'rule',
+    sessionId: session.id,
+    action: '/sessions/' ~ session.id ~ '/rules',
+    submitLabel: 'Simpan'
+} %}
+    {% block form_fields %}
+        {% include 'components/rules/form-fields.twig' %}
+    {% endblock %}
+{% endembed %}

@@ -9,7 +9,7 @@
         Kembali ke Peserta Global
     </a>
     <h1 class="mt-3 text-2xl font-bold text-navy-900">{% if participant %}Edit Peserta{% else %}Tambah Peserta{% endif %}</h1>
-    <p class="mt-1 text-sm text-navy-600">Data ini bisa dipakai di semua session.</p>
+    <p class="mt-1 text-sm text-navy-600">Data peserta bersama — semua admin melihat daftar yang sama.</p>
 
     <form method="post" action="{% if participant %}/participants/{{ participant.id }}{% else %}/participants{% endif %}" class="card mt-6 space-y-4">
         <div>
@@ -19,7 +19,7 @@
         </div>
         <div>
             <label for="rank" class="mb-1.5 block text-sm font-medium text-navy-700">Rank *</label>
-            <select id="rank" name="rank" required class="input-field">
+            <select id="rank" name="rank" required class="input-field" data-search-select>
                 <option value="">Pilih rank</option>
                 {% for value, label in ranks %}
                     <option value="{{ value }}" {% if (old.rank|default(participant.rank|default(''))) == value %}selected{% endif %}>{{ label }}</option>
@@ -29,7 +29,7 @@
         </div>
         <div>
             <label for="gender" class="mb-1.5 block text-sm font-medium text-navy-700">Gender</label>
-            <select id="gender" name="gender" class="input-field">
+            <select id="gender" name="gender" class="input-field" data-search-select>
                 <option value="">— Opsional —</option>
                 {% for value, label in genders %}
                     <option value="{{ value }}" {% if (old.gender|default(participant.gender|default(''))) == value %}selected{% endif %}>{{ label }}</option>
@@ -43,7 +43,7 @@
         </div>
         <div>
             <label for="gms_source" class="mb-1.5 block text-sm font-medium text-navy-700">GMS From</label>
-            <select id="gms_source" name="gms_source" class="input-field">
+            <select id="gms_source" name="gms_source" class="input-field" data-search-select>
                 <option value="">— Opsional —</option>
                 {% for value, label in gmsSources|default({}) %}
                     <option value="{{ value }}" {% if (old.gms_source|default(participant.gmsSource|default(''))) == value %}selected{% endif %}>{{ label }}</option>

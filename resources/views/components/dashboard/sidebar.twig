@@ -1,11 +1,11 @@
 <aside class="dashboard-sidebar hidden lg:flex lg:h-screen lg:w-72 lg:sticky lg:top-0 lg:flex-col">
-    <div class="sidebar-brand">
+    <a href="/dashboard" class="sidebar-brand" aria-label="Kembali ke Dashboard">
         <img src="/assets/images/logo.png" alt="" class="sidebar-brand-logo">
         <div class="min-w-0">
             <p class="truncate text-base font-bold text-navy-900">{{ app.name }}</p>
             <p class="sidebar-brand-sub">Tournament Manager</p>
         </div>
-    </div>
+    </a>
 
     <nav class="sidebar-nav flex-1 overflow-y-auto" aria-label="Main navigation">
         <a href="/dashboard" class="sidebar-link{% if active|default('') == 'dashboard' %} sidebar-link-active{% endif %}">

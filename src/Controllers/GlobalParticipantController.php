@@ -10,6 +10,7 @@ use App\Services\ParticipantBulkImportService;
 use App\Support\FlashType;
 use App\Support\Gender;
 use App\Support\GmsSource;
+use App\Support\ParticipantFilter;
 use App\Support\Rank;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -18,6 +19,8 @@ use Slim\Views\Twig;
 
 final class GlobalParticipantController extends BaseController
 {
+    private const PER_PAGE = 25;
+
     public function __construct(
         AuthService $auth,
         private readonly ParticipantRepository $participants = new ParticipantRepository(),
@@ -28,28 +31,42 @@ final class GlobalParticipantController extends BaseController
 
     public function index(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
-        $search = trim((string) ($request->getQueryParams()['q'] ?? ''));
-        $userId = $this->userId();
+        $params = $request->getQueryParams();
+        $filter = ParticipantFilter::fromQueryParams($params);
+        $repoFilters = $filter->repositoryFilters();
+        $page = max(1, (int) ($params['page'] ?? 1));
+        $result = $this->participants->paginateFiltered($repoFilters, $page, self::PER_PAGE);
+        $totalCount = $this->participants->countAll();
+        $editParticipant = null;
+        $editId = (int) ($params['edit'] ?? 0);
+
+        if ($editId > 0) {
+            $editParticipant = $this->participants->find($editId);
+        }
 
         /** @var Twig $view */
         $view = $request->getAttribute('view');
 
         return $view->render($response, 'pages/participants/global/index.twig', [
-            'participants' => $this->participants->allByUser($userId, $search),
-            'rankCounts' => $this->participants->countByRankForUser($userId),
+            'participants' => $result['participants'],
+            'paginator' => $result['paginator'],
+            'rankCounts' => $this->participants->countByRankGlobal(),
+            'genderCounts' => $this->participants->countByGenderGlobal(),
+            'gmsCounts' => $this->participants->countByGmsSourceGlobal(),
             'genders' => Gender::labels(),
             'ranks' => Rank::options(),
             'gmsSources' => GmsSource::options(),
-            'search' => $search,
-            'totalCount' => $this->participants->countByUser($userId),
+            'filter' => $filter,
+            'search' => $filter->search,
+            'totalCount' => $totalCount,
+            'editParticipant' => $editParticipant,
         ]);
     }
 
     public function inlineUpdate(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
-        $userId = $this->userId();
         $participantId = (int) $args['id'];
-        $participant = $this->participants->find($participantId, $userId);
+        $participant = $this->participants->find($participantId);
 
         if ($participant === null) {
             return $this->json($response, ['ok' => false, 'error' => 'Peserta tidak ditemukan.'], 404);
@@ -81,7 +98,7 @@ final class GlobalParticipantController extends BaseController
             ]);
         }
 
-        if (!$this->participants->updateInlineField($participantId, $userId, $field, $normalized)) {
+        if (!$this->participants->updateInlineField($participantId, $field, $normalized, $this->userId())) {
             return $this->json($response, ['ok' => false, 'error' => 'Gagal menyimpan perubahan.'], 500);
         }
 
@@ -96,17 +113,7 @@ final class GlobalParticipantController extends BaseController
 
     public function create(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
-        /** @var Twig $view */
-        $view = $request->getAttribute('view');
-
-        return $view->render($response, 'pages/participants/global/form.twig', [
-            'participant' => null,
-            'ranks' => Rank::options(),
-            'genders' => Gender::labels(),
-            'gmsSources' => GmsSource::options(),
-            'errors' => [],
-            'old' => [],
-        ]);
+        return $this->redirect($response, '/participants?modal=participant-form-modal');
     }
 
     public function store(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
@@ -116,6 +123,10 @@ final class GlobalParticipantController extends BaseController
         $errors = $this->validate($data);
 
         if ($errors !== []) {
+            if ($this->wantsJson($request)) {
+                return $this->jsonValidationErrors($response, $errors);
+            }
+
             /** @var Twig $view */
             $view = $request->getAttribute('view');
 
@@ -138,6 +149,15 @@ final class GlobalParticipantController extends BaseController
             GmsSource::normalize($this->nullableString($data['gms_source'] ?? null)),
         );
 
+        if ($this->wantsJson($request)) {
+            return $this->jsonFlash(
+                $response,
+                '/participants',
+                'Peserta global berhasil ditambahkan. Bisa dipakai di semua session.',
+                FlashType::CREATE,
+            );
+        }
+
         return $this->flashRedirect(
             $response,
             '/participants',
@@ -148,9 +168,9 @@ final class GlobalParticipantController extends BaseController
 
     public function edit(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
-        $participant = $this->participants->find((int) $args['id'], $this->userId());
+        $participantId = (int) $args['id'];
 
-        if ($participant === null) {
+        if ($this->participants->find($participantId) === null) {
             return $this->flashRedirect(
                 $response,
                 '/participants',
@@ -159,24 +179,13 @@ final class GlobalParticipantController extends BaseController
             );
         }
 
-        /** @var Twig $view */
-        $view = $request->getAttribute('view');
-
-        return $view->render($response, 'pages/participants/global/form.twig', [
-            'participant' => $participant,
-            'ranks' => Rank::options(),
-            'genders' => Gender::labels(),
-            'gmsSources' => GmsSource::options(),
-            'errors' => [],
-            'old' => [],
-        ]);
+        return $this->redirect($response, '/participants?edit=' . $participantId);
     }
 
     public function update(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
-        $userId = $this->userId();
         $participantId = (int) $args['id'];
-        $participant = $this->participants->find($participantId, $userId);
+        $participant = $this->participants->find($participantId);
 
         if ($participant === null) {
             return $this->flashRedirect(
@@ -191,6 +200,10 @@ final class GlobalParticipantController extends BaseController
         $errors = $this->validate($data);
 
         if ($errors !== []) {
+            if ($this->wantsJson($request)) {
+                return $this->jsonValidationErrors($response, $errors);
+            }
+
             /** @var Twig $view */
             $view = $request->getAttribute('view');
 
@@ -206,13 +219,22 @@ final class GlobalParticipantController extends BaseController
 
         $this->participants->update(
             $participantId,
-            $userId,
             trim((string) $data['name']),
             (string) $data['rank'],
             $this->nullableString($data['gender'] ?? null),
             $this->nullableString($data['phone'] ?? null),
             GmsSource::normalize($this->nullableString($data['gms_source'] ?? null)),
+            $this->userId(),
         );
+
+        if ($this->wantsJson($request)) {
+            return $this->jsonFlash(
+                $response,
+                '/participants',
+                'Data peserta global berhasil diperbarui.',
+                FlashType::UPDATE,
+            );
+        }
 
         return $this->flashRedirect(
             $response,
@@ -226,7 +248,7 @@ final class GlobalParticipantController extends BaseController
     {
         $this->assertCanDelete();
 
-        if (!$this->participants->delete((int) $args['id'], $this->userId())) {
+        if (!$this->participants->delete((int) $args['id'])) {
             return $this->flashRedirect(
                 $response,
                 '/participants',
@@ -286,17 +308,14 @@ final class GlobalParticipantController extends BaseController
             ]);
         }
 
-        $message = "{$result['imported']} peserta global berhasil diimport.";
-
-        if ($result['skipped'] > 0) {
-            $message .= " ({$result['skipped']} baris header/kosong dilewati)";
-        }
+        $message = $this->buildBulkImportMessage($result, 'global');
+        $flashType = $result['imported'] > 0 ? FlashType::CREATE : FlashType::WARNING;
 
         return $this->flashRedirect(
             $response,
             '/participants',
             $message,
-            FlashType::CREATE,
+            $flashType,
             'Import peserta global',
         );
     }
@@ -404,5 +423,33 @@ final class GlobalParticipantController extends BaseController
         $stream->rewind();
 
         return trim($stream->getContents());
+    }
+
+    /** @param array{imported: int, skipped: int, duplicatesSkipped: int, assignedExisting?: int} $result */
+    private function buildBulkImportMessage(array $result, string $context): string
+    {
+        $parts = [];
+
+        if ($result['imported'] > 0) {
+            $parts[] = $context === 'global'
+                ? "{$result['imported']} peserta global berhasil diimport"
+                : "{$result['imported']} peserta baru diimport ke global & session";
+        } else {
+            $parts[] = 'Tidak ada peserta baru diimport';
+        }
+
+        if (($result['assignedExisting'] ?? 0) > 0) {
+            $parts[] = "{$result['assignedExisting']} peserta existing ditambahkan ke session";
+        }
+
+        if ($result['duplicatesSkipped'] > 0) {
+            $parts[] = "{$result['duplicatesSkipped']} nama duplikat dilewati";
+        }
+
+        if ($result['skipped'] > 0) {
+            $parts[] = "{$result['skipped']} baris header/kosong dilewati";
+        }
+
+        return implode('. ', $parts) . '.';
     }
 }

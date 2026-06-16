@@ -11,7 +11,7 @@
         {% include 'components/ui/icon.twig' with { name: 'ri-trophy-line', size: 'md' } %}
         <span>Match</span>
     </a>
-    <a href="/sessions/{{ session.id }}/edit" class="mobile-nav-item">
+    <a href="/dashboard/{{ session.id }}?modal=session-form-modal&amp;edit={{ session.id }}" class="mobile-nav-item">
         {% include 'components/ui/icon.twig' with { name: 'ri-settings-3-line', size: 'md' } %}
         <span>Setup</span>
     </a>

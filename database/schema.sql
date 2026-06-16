@@ -22,8 +22,11 @@ CREATE TABLE IF NOT EXISTS sessions (
     court_count TINYINT UNSIGNED NOT NULL DEFAULT 1,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_by_user_id INT UNSIGNED NULL DEFAULT NULL,
     KEY sessions_user_id_index (user_id),
-    CONSTRAINT sessions_user_id_foreign FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+    KEY sessions_updated_by_user_id_index (updated_by_user_id),
+    CONSTRAINT sessions_user_id_foreign FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+    CONSTRAINT sessions_updated_by_user_id_foreign FOREIGN KEY (updated_by_user_id) REFERENCES users (id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS participants (
@@ -36,9 +39,12 @@ CREATE TABLE IF NOT EXISTS participants (
     gms_source VARCHAR(150) NULL DEFAULT NULL COMMENT 'Where participant knows GMS from',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_by_user_id INT UNSIGNED NULL DEFAULT NULL,
     KEY participants_user_id_index (user_id),
+    KEY participants_updated_by_user_id_index (updated_by_user_id),
     KEY participants_rank_index (`rank`),
-    CONSTRAINT participants_user_id_foreign FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+    CONSTRAINT participants_user_id_foreign FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+    CONSTRAINT participants_updated_by_user_id_foreign FOREIGN KEY (updated_by_user_id) REFERENCES users (id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS session_participants (

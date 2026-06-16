@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{{ app.name }}{% endblock %}</title>
     {% include 'components/favicon.twig' %}
+    <script>
+        try{if(sessionStorage.getItem('fs-nav'))document.documentElement.classList.add('fs-nav-loading')}catch(e){}
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -13,24 +16,26 @@
     {% block head %}{% endblock %}
 </head>
 <body class="min-h-full font-sans antialiased">
+    <div id="page-progress" class="page-progress" aria-hidden="true"></div>
     <div class="app-bg"></div>
 
-    <div class="relative flex min-h-full flex-col items-center justify-center px-4 py-10">
-        <a href="/" class="mb-8 flex flex-col items-center gap-3 sm:flex-row">
-            <img src="/assets/images/logo.png" alt="{{ app.name }}" class="h-16 w-16 rounded-full object-cover ring-4 ring-gold-400/30 shadow-lg">
-            <span class="text-2xl font-extrabold text-navy-900">{{ app.name }}</span>
+    <div class="relative flex min-h-full flex-col items-center justify-center px-4 py-8 sm:py-10">
+        <a href="/" class="mb-6 flex flex-col items-center gap-2 sm:mb-8 sm:flex-row sm:gap-3">
+            <img src="/assets/images/logo.png" alt="{{ app.name }}" class="h-14 w-14 rounded-full object-cover ring-4 ring-gold-400/30 shadow-lg sm:h-16 sm:w-16" width="64" height="64" decoding="async">
+            <span class="text-xl font-extrabold text-navy-900 sm:text-2xl">{{ app.name }}</span>
         </a>
 
-        <div class="auth-card w-full max-w-md">
+        <div class="auth-card page-content w-full max-w-md">
             {% block content %}{% endblock %}
         </div>
 
-        <p class="mt-8 text-center text-xs text-navy-500">&copy; {{ "now"|date("Y") }} {{ app.name }}</p>
+        <p class="mt-6 text-center text-xs text-navy-500 sm:mt-8">&copy; {{ "now"|date("Y") }} {{ app.name }}</p>
     </div>
 
     {% block overlays %}{% endblock %}
     {% include 'components/ui/toast-container.twig' %}
-    <script src="{{ asset('assets/js/toast.js') }}"></script>
+    <script src="{{ asset('assets/js/page-nav.js') }}" defer></script>
+    <script src="{{ asset('assets/js/toast.js') }}" defer></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

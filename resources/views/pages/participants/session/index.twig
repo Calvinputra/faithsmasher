@@ -3,12 +3,16 @@
 {% set sidebar_session = session %}
 {% block sidebar_nav %}{% include 'components/sidebar.twig' with { session: session, active: 'participants' } %}{% endblock %}
 
+{% block page_header %}
+<div class="min-w-0">
+    <h1 class="page-title text-xl sm:text-2xl">Peserta Session</h1>
+    <p class="hidden text-xs text-navy-500 sm:block">{{ session.name }} · {{ availableCount|default(0) }} belum ditambahkan</p>
+</div>
+{% endblock %}
+
 {% block content %}
-<div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-    <div>
-        <h1 class="text-2xl font-bold text-navy-900">Peserta Session</h1>
-        <p class="text-sm text-navy-600">{{ session.name }} — {{ availableCount|default(0) }} peserta global belum ditambahkan ke session ini</p>
-    </div>
+<div class="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:justify-between">
+    <p class="text-sm text-navy-600 sm:hidden">{{ session.name }}</p>
     <div class="flex flex-col gap-2 sm:flex-row">
         <a href="/participants" class="btn-ghost justify-center text-sm">Kelola Global</a>
         <a href="/sessions/{{ session.id }}/participants/bulk" class="btn-secondary justify-center">
@@ -34,7 +38,8 @@
                 <th class="pb-3 pr-4">Nama</th>
                 <th class="pb-3 pr-4">Rank</th>
                 <th class="pb-3 pr-4">Gender</th>
-                <th class="pb-3 pr-4">Telepon</th>
+                <th class="pb-3 pr-4">No. Telp</th>
+                <th class="pb-3 pr-4">GMS Dari Mana</th>
                 <th class="pb-3">Aksi</th>
             </tr>
         </thead>
@@ -43,14 +48,28 @@
                 <tr class="border-b border-border/60">
                     <td class="py-3 pr-4 font-medium text-navy-900">{{ p.name }}</td>
                     <td class="py-3 pr-4"><span class="rounded bg-gold-100 px-2 py-0.5 text-xs font-bold text-navy-800">{{ p.rank }}</span></td>
-                    <td class="py-3 pr-4 text-navy-600">{{ p.gender ? genders[p.gender]|default(p.gender) : '—' }}</td>
+                    <td class="py-3 pr-4">
+                        {% if p.gender %}
+                            <span class="inline-pill {{ p.gender == 'male' ? 'inline-pill-male' : (p.gender == 'female' ? 'inline-pill-female' : 'inline-pill-empty') }}">
+                                {{ genders[p.gender]|default(p.gender) }}
+                            </span>
+                        {% else %}
+                            <span class="text-navy-400">—</span>
+                        {% endif %}
+                    </td>
                     <td class="py-3 pr-4 text-navy-600">{{ p.phone|default('—') }}</td>
+                    <td class="py-3 pr-4">
+                        {% if p.gmsSource %}
+                            <span class="inline-pill inline-pill-{{ p.gmsSource|lower }}">{{ p.gmsSource }}</span>
+                        {% else %}
+                            <span class="text-navy-400">—</span>
+                        {% endif %}
+                    </td>
                     <td class="py-3">
                         <div class="icon-action-group">
-                            {% include 'components/ui/icon-action-edit.twig' with {
-                                href: '/participants/' ~ p.id ~ '/edit',
-                                label: 'Edit peserta'
-                            } %}
+                            <a href="/participants?edit={{ p.id }}" class="icon-action icon-action-edit" aria-label="Edit peserta" title="Edit peserta">
+                                {% include 'components/ui/icon.twig' with { name: 'ri-pencil-line', size: 'sm' } %}
+                            </a>
                             {% include 'components/ui/icon-action-remove.twig' with {
                                 action: '/sessions/' ~ session.id ~ '/participants/' ~ p.id ~ '/remove',
                                 confirm: 'Keluarkan peserta dari session ini?',
@@ -61,11 +80,11 @@
                 </tr>
             {% else %}
                 <tr>
-                    <td colspan="5" class="py-10 text-center">
+                    <td colspan="6" class="py-10 text-center">
                         <p class="text-navy-500">Belum ada peserta di session ini.</p>
                         <div class="mt-4 flex flex-col items-center gap-2 sm:flex-row sm:justify-center">
                             <a href="/sessions/{{ session.id }}/participants/assign" class="btn-primary inline-flex justify-center">Tambah dari Global</a>
-                            <a href="/participants/create" class="btn-secondary inline-flex justify-center">Buat Peserta Global</a>
+                            <a href="/participants?modal=participant-form-modal" class="btn-secondary inline-flex justify-center">Buat Peserta Global</a>
                         </div>
                     </td>
                 </tr>

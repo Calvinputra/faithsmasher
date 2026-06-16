@@ -2,11 +2,20 @@
 <article class="session-card">
     <div class="session-card-top">
         <span class="session-date-badge">{{ s.sessionDate|date('d M Y') }}</span>
-        {% if summary.participantCount > 0 %}
-            <span class="session-active-badge">Aktif</span>
-        {% else %}
-            <span class="session-draft-badge">Baru</span>
-        {% endif %}
+        <div class="session-card-top-actions">
+            {% if summary.participantCount > 0 %}
+                <span class="session-active-badge">Aktif</span>
+            {% else %}
+                <span class="session-draft-badge">Baru</span>
+            {% endif %}
+            {% if currentUser.canDelete %}
+                {% include 'components/ui/icon-action-delete.twig' with {
+                    action: '/sessions/' ~ s.id ~ '/delete',
+                    confirm: 'Hapus session "' ~ s.name ~ '" beserta rules, matches, dan peserta di session ini? (Peserta global tidak dihapus)',
+                    label: 'Hapus session'
+                } %}
+            {% endif %}
+        </div>
     </div>
 
     <h2 class="session-card-title">{{ s.name }}</h2>
@@ -17,6 +26,13 @@
             <span class="line-clamp-1">{{ s.location }}</span>
         </p>
     {% endif %}
+
+    <p class="session-card-audit">
+        Dibuat {{ s.createdByName|default('—') }} · {{ s.createdAt|date('d M Y, H:i') }}
+        {% if s.updatedByName and s.wasUpdated %}
+            · Update {{ s.updatedByName }} · {{ s.updatedAt|date('d M Y, H:i') }}
+        {% endif %}
+    </p>
 
     <div class="session-stats">
         {% include 'components/ui/stat-pill.twig' with {

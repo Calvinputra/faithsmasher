@@ -1,0 +1,120 @@
+<form method="get" action="/participants" class="participant-filter mb-3 sm:mb-6" role="search">
+    <div class="participant-filter-row">
+        <div class="search-input-wrap participant-filter-search">
+            {% include 'components/ui/icon.twig' with { name: 'ri-search-line', class: 'search-icon' } %}
+            <input
+                type="search"
+                name="q"
+                value="{{ filter.search|default('') }}"
+                placeholder="Cari nama, telp..."
+                class="search-input"
+                autocomplete="off"
+                aria-label="Cari peserta"
+            >
+        </div>
+
+        <div class="participant-filter-select-wrap">
+            <label for="filter_rank" class="sr-only">Filter rank</label>
+            <select id="filter_rank" name="rank" class="input-field participant-filter-select" data-search-select>
+                <option value="">Semua rank</option>
+                {% for value, label in ranks %}
+                    <option value="{{ value }}"{% if filter.rank == value %} selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="participant-filter-select-wrap">
+            <label for="filter_gender" class="sr-only">Filter gender</label>
+            <select id="filter_gender" name="gender" class="input-field participant-filter-select" data-search-select>
+                <option value="">Semua gender</option>
+                <option value="male"{% if filter.gender == 'male' %} selected{% endif %}>Male</option>
+                <option value="female"{% if filter.gender == 'female' %} selected{% endif %}>Female</option>
+                <option value="unset"{% if filter.gender == constant('App\\Support\\ParticipantFilter::UNSET') %} selected{% endif %}>Belum diisi</option>
+            </select>
+        </div>
+
+        <div class="participant-filter-select-wrap">
+            <label for="filter_gms" class="sr-only">Filter gereja lokal</label>
+            <select id="filter_gms" name="gms" class="input-field participant-filter-select" data-search-select>
+                <option value="">Semua GMS</option>
+                {% for value, label in gmsSources %}
+                    <option value="{{ value }}"{% if filter.gmsSource == value %} selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+                <option value="unset"{% if filter.gmsSource == constant('App\\Support\\ParticipantFilter::UNSET') %} selected{% endif %}>Belum diisi</option>
+            </select>
+        </div>
+
+        <div class="participant-filter-submit">
+            <button type="submit" class="btn-secondary search-submit participant-filter-btn">
+                {% include 'components/ui/icon.twig' with { name: 'ri-search-line', class: 'mr-1 sm:mr-1.5', size: 'sm' } %}
+                Cari
+            </button>
+            {% if filter.hasActiveFilters %}
+                <a href="/participants" class="btn-ghost search-clear participant-filter-btn">
+                    {% include 'components/ui/icon.twig' with { name: 'ri-close-circle-line', class: 'mr-1 sm:mr-1.5', size: 'sm' } %}
+                    Reset
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if paginator.total > 0 %}
+        <p class="participant-filter-meta">
+            Menampilkan {{ paginator.from() }}–{{ paginator.to() }} dari {{ paginator.total }} peserta
+            {% if filter.hasActiveFilters and paginator.total != totalCount %}
+                (dari {{ totalCount }} total)
+            {% endif %}
+        </p>
+    {% endif %}
+</form>
+
+<div class="participant-stats mb-3 sm:mb-6">
+    <div class="participant-stats-group">
+        <span class="participant-stats-label">Rank</span>
+        <div class="participant-stats-chips">
+            {% for rank, count in rankCounts %}
+                {% if count > 0 %}
+                    <a
+                        href="{{ filter.toggleUrl('rank', rank) }}"
+                        class="participant-stat-chip participant-stat-chip-rank{% if filter.isActive('rank', rank) %} participant-stat-chip--active{% endif %}"
+                        title="Filter rank {{ rank }}"
+                    >{{ rank }}: {{ count }}</a>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="participant-stats-group">
+        <span class="participant-stats-label">Gender</span>
+        <div class="participant-stats-chips">
+            {% for key, count in genderCounts %}
+                {% if count > 0 %}
+                    {% set genderLabel = key == constant('App\\Support\\ParticipantFilter::UNSET') ? 'Belum diisi' : genders[key]|default(key) %}
+                    {% set genderChipClass = key == 'male' ? 'participant-stat-chip-male' : (key == 'female' ? 'participant-stat-chip-female' : 'participant-stat-chip-empty') %}
+                    <a
+                        href="{{ filter.toggleUrl('gender', key) }}"
+                        class="participant-stat-chip {{ genderChipClass }}{% if filter.isActive('gender', key) %} participant-stat-chip--active{% endif %}"
+                        title="Filter gender {{ genderLabel }}"
+                    >{{ genderLabel == 'Belum diisi' ? '—' : genderLabel }}: {{ count }}</a>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="participant-stats-group">
+        <span class="participant-stats-label">GMS From</span>
+        <div class="participant-stats-chips">
+            {% for key, count in gmsCounts %}
+                {% if count > 0 %}
+                    {% set gmsLabel = key == constant('App\\Support\\ParticipantFilter::UNSET') ? 'Belum diisi' : key %}
+                    {% set gmsChipClass = key == constant('App\\Support\\ParticipantFilter::UNSET') ? 'participant-stat-chip-empty' : 'participant-stat-chip-gms-' ~ key|lower %}
+                    <a
+                        href="{{ filter.toggleUrl('gms', key) }}"
+                        class="participant-stat-chip {{ gmsChipClass }}{% if filter.isActive('gms', key) %} participant-stat-chip--active{% endif %}"
+                        title="Filter GMS {{ gmsLabel }}"
+                    >{{ gmsLabel == 'Belum diisi' ? '—' : gmsLabel }}: {{ count }}</a>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</div>

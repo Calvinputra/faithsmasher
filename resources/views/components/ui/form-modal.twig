@@ -1,0 +1,45 @@
+<div
+    class="modal form-modal"
+    id="{{ id }}"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="{{ id }}-title"
+    data-form-modal-root="{{ formType|default('') }}"
+>
+    <div class="modal-backdrop" data-modal-close tabindex="-1"></div>
+    <div class="modal-panel form-modal-panel">
+        <div class="form-modal-header">
+            <div class="min-w-0">
+                <h2 class="form-modal-title" id="{{ id }}-title">{{ title }}</h2>
+                {% if subtitle is defined %}
+                    <p class="form-modal-subtitle">{{ subtitle }}</p>
+                {% endif %}
+            </div>
+            <button type="button" class="form-modal-close" data-modal-close aria-label="Tutup">
+                {% include 'components/ui/icon.twig' with { name: 'ri-close-line', size: 'lg' } %}
+            </button>
+        </div>
+
+        <form
+            method="post"
+            action="{{ action|default('#') }}"
+            class="form-modal-body"
+            data-form-modal
+            data-form-type="{{ formType|default('') }}"
+            {% if sessionId is defined %}data-session-id="{{ sessionId }}"{% endif %}
+            novalidate
+        >
+            <div class="form-modal-fields space-y-4">
+                {% block form_fields %}{% endblock %}
+            </div>
+            <div class="form-modal-error hidden" data-form-modal-error role="alert"></div>
+            <div class="form-modal-audit hidden" data-form-modal-audit aria-live="polite"></div>
+            <div class="form-modal-actions">
+                <button type="button" class="btn-secondary" data-modal-close>Batal</button>
+                <button type="submit" class="btn-primary" data-form-modal-submit>
+                    {{ submitLabel|default('Simpan') }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

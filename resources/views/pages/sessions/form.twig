@@ -117,11 +117,14 @@
     </form>
 
     {% if session and currentUser.canDelete %}
-        <form method="post" action="/sessions/{{ session.id }}/delete" class="mt-6 text-center" onsubmit="return confirm('Delete this session and all data?')">
-            <button type="submit" class="text-sm font-medium text-red-600 hover:text-red-700 hover:underline">
-                Delete Session
-            </button>
-        </form>
+        <div class="mt-8 flex justify-center border-t border-border pt-6">
+            {% include 'components/ui/icon-action-delete.twig' with {
+                action: '/sessions/' ~ session.id ~ '/delete',
+                confirm: 'Hapus session "' ~ session.name ~ '" beserta rules, matches, dan peserta di session ini? (Peserta global tidak dihapus)',
+                label: 'Hapus session'
+            } %}
+            <span class="ml-2 self-center text-sm text-navy-500">Hapus session &amp; semua data di dalamnya</span>
+        </div>
     {% endif %}
 </div>
 {% endblock %}

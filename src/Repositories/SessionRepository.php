@@ -12,7 +12,11 @@ use PDO;
 
 final class SessionRepository
 {
-    private const SELECT_FIELDS = 's.id, s.user_id, s.name, s.session_date, s.location, s.court_count, s.created_at';
+    private const SELECT_FIELDS = 's.id, s.user_id, s.name, s.session_date, s.location, s.court_count, s.created_at, s.updated_at, s.updated_by_user_id';
+
+    private const AUDIT_JOINS = ' LEFT JOIN users uc ON uc.id = s.user_id LEFT JOIN users uu ON uu.id = s.updated_by_user_id ';
+
+    private const AUDIT_NAMES = ', uc.name AS created_by_name, uu.name AS updated_by_name';
 
     private PDO $db;
 
@@ -24,14 +28,14 @@ final class SessionRepository
     /**
      * @return array{sessions: list<SessionSummary>, paginator: Paginator}
      */
-    public function paginateByUser(int $userId, string $search, string $date, int $page, int $perPage): array
+    public function paginate(string $search, string $date, int $page, int $perPage): array
     {
-        $filters = $this->buildUserFilters($userId, $search, $date);
-        $paginator = Paginator::fromTotal($this->countByUser($userId, $search, $date), $page, $perPage);
+        $filters = $this->buildFilters($search, $date);
+        $paginator = Paginator::fromTotal($this->countAll($search, $date), $page, $perPage);
 
-        $sql = 'SELECT ' . self::SELECT_FIELDS . ',
+        $sql = 'SELECT ' . self::SELECT_FIELDS . self::AUDIT_NAMES . ',
                        COUNT(sp.participant_id) AS participant_count
-                FROM sessions s
+                FROM sessions s' . self::AUDIT_JOINS . '
                 LEFT JOIN session_participants sp ON sp.session_id = s.id
                 WHERE ' . $filters['sql'] . '
                 GROUP BY s.id
@@ -56,9 +60,9 @@ final class SessionRepository
         return ['sessions' => $sessions, 'paginator' => $paginator];
     }
 
-    public function countByUser(int $userId, string $search = '', string $date = ''): int
+    public function countAll(string $search = '', string $date = ''): int
     {
-        $filters = $this->buildUserFilters($userId, $search, $date);
+        $filters = $this->buildFilters($search, $date);
         $statement = $this->db->prepare('SELECT COUNT(*) FROM sessions s WHERE ' . $filters['sql']);
         $this->bindFilterParams($statement, $filters['params']);
         $statement->execute();
@@ -69,30 +73,33 @@ final class SessionRepository
     /**
      * @return array{sessionCount: int, participantCount: int, courtCount: int}
      */
-    public function statsByUser(int $userId, string $search = '', string $date = ''): array
+    public function stats(string $search = '', string $date = ''): array
     {
-        $filters = $this->buildUserFilters($userId, $search, $date);
+        $filters = $this->buildFilters($search, $date);
         $filter = $filters['sql'];
         $params = $filters['params'];
 
         $sessionSql = "SELECT COUNT(*) FROM sessions s WHERE {$filter}";
-        $participantSql = 'SELECT COUNT(*) FROM participants p WHERE p.user_id = :user_id';
+        $participantSql = 'SELECT COUNT(*) FROM participants';
         $courtSql = "SELECT COALESCE(SUM(s.court_count), 0) FROM sessions s WHERE {$filter}";
 
         return [
             'sessionCount' => $this->fetchInt($sessionSql, $params),
-            'participantCount' => $this->fetchInt($participantSql, ['user_id' => $userId]),
+            'participantCount' => $this->fetchInt($participantSql, []),
             'courtCount' => $this->fetchInt($courtSql, $params),
         ];
     }
 
     /** @return list<string> Dates in Y-m-d format */
-    public function distinctDatesByUser(int $userId): array
+    public function distinctDates(): array
     {
-        $statement = $this->db->prepare(
-            'SELECT DISTINCT session_date FROM sessions WHERE user_id = :user_id ORDER BY session_date ASC'
+        $statement = $this->db->query(
+            'SELECT DISTINCT session_date FROM sessions ORDER BY session_date ASC'
         );
-        $statement->execute(['user_id' => $userId]);
+
+        if ($statement === false) {
+            return [];
+        }
 
         return array_map(
             static fn (array $row): string => (string) $row['session_date'],
@@ -103,18 +110,20 @@ final class SessionRepository
     /**
      * @return array{sql: string, params: array<string, mixed>}
      */
-    private function buildUserFilters(int $userId, string $search, string $date): array
+    private function buildFilters(string $search, string $date): array
     {
         $search = trim($search);
         $date = trim($date);
-        $sql = 's.user_id = :user_id';
-        $params = ['user_id' => $userId];
+        $sql = '1=1';
+        $params = [];
 
         if ($search !== '') {
-            $sql .= ' AND (s.name LIKE :search OR s.location LIKE :search2)';
+            $sql .= ' AND (s.name LIKE :search OR s.location LIKE :search2 OR DATE_FORMAT(s.session_date, \'%d %M %Y\') LIKE :search3 OR DATE_FORMAT(s.session_date, \'%e %M %Y\') LIKE :search4)';
             $like = '%' . $search . '%';
             $params['search'] = $like;
             $params['search2'] = $like;
+            $params['search3'] = $like;
+            $params['search4'] = $like;
         }
 
         if ($date !== '') {
@@ -147,12 +156,12 @@ final class SessionRepository
         return (int) $statement->fetchColumn();
     }
 
-    public function find(int $id, int $userId): ?Session
+    public function find(int $id): ?Session
     {
         $statement = $this->db->prepare(
-            'SELECT ' . self::SELECT_FIELDS . ' FROM sessions s WHERE s.id = :id AND s.user_id = :user_id LIMIT 1'
+            'SELECT ' . self::SELECT_FIELDS . self::AUDIT_NAMES . ' FROM sessions s' . self::AUDIT_JOINS . ' WHERE s.id = :id LIMIT 1'
         );
-        $statement->execute(['id' => $id, 'user_id' => $userId]);
+        $statement->execute(['id' => $id]);
 
         $row = $statement->fetch();
 
@@ -178,37 +187,38 @@ final class SessionRepository
             'court_count' => $courtCount,
         ]);
 
-        return $this->find((int) $this->db->lastInsertId(), $userId)
+        return $this->find((int) $this->db->lastInsertId())
             ?? throw new \RuntimeException('Failed to create session.');
     }
 
     public function update(
         int $id,
-        int $userId,
         string $name,
         string $sessionDate,
         string $location,
         int $courtCount,
+        int $updatedByUserId,
     ): bool {
         $statement = $this->db->prepare(
-            'UPDATE sessions SET name = :name, session_date = :session_date, location = :location, court_count = :court_count
-             WHERE id = :id AND user_id = :user_id'
+            'UPDATE sessions SET name = :name, session_date = :session_date, location = :location, court_count = :court_count,
+             updated_by_user_id = :updated_by_user_id
+             WHERE id = :id'
         );
 
         return $statement->execute([
             'id' => $id,
-            'user_id' => $userId,
             'name' => $name,
             'session_date' => $sessionDate,
             'location' => $location,
             'court_count' => $courtCount,
+            'updated_by_user_id' => $updatedByUserId,
         ]);
     }
 
-    public function delete(int $id, int $userId): bool
+    public function delete(int $id): bool
     {
-        $statement = $this->db->prepare('DELETE FROM sessions WHERE id = :id AND user_id = :user_id');
-        $statement->execute(['id' => $id, 'user_id' => $userId]);
+        $statement = $this->db->prepare('DELETE FROM sessions WHERE id = :id');
+        $statement->execute(['id' => $id]);
 
         return $statement->rowCount() > 0;
     }

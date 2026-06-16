@@ -21,6 +21,7 @@ final class SchemaEnsurer
         self::ensureSessionsCourtCount($pdo);
         self::ensureUserRoleStatus($pdo);
         self::ensureGlobalParticipants($pdo);
+        self::ensureAuditTrail($pdo);
     }
 
     private static function ensureSessionsCourtCount(PDO $pdo): void
@@ -134,6 +135,40 @@ final class SchemaEnsurer
             }
         } catch (PDOException $exception) {
             error_log('[faithsmasher] Schema migration failed (global participants): ' . $exception->getMessage());
+        }
+    }
+
+    private static function ensureAuditTrail(PDO $pdo): void
+    {
+        foreach (['sessions', 'participants'] as $table) {
+            try {
+                $column = $pdo->query("SHOW COLUMNS FROM {$table} LIKE 'updated_by_user_id'");
+
+                if ($column !== false && $column->rowCount() === 0) {
+                    $pdo->exec(
+                        "ALTER TABLE {$table}
+                         ADD COLUMN updated_by_user_id INT UNSIGNED NULL DEFAULT NULL AFTER updated_at"
+                    );
+                }
+
+                try {
+                    $pdo->exec(
+                        "ALTER TABLE {$table}
+                         ADD KEY {$table}_updated_by_user_id_index (updated_by_user_id)"
+                    );
+                } catch (PDOException) {
+                }
+
+                try {
+                    $pdo->exec(
+                        "ALTER TABLE {$table}
+                         ADD CONSTRAINT {$table}_updated_by_user_id_foreign
+                         FOREIGN KEY (updated_by_user_id) REFERENCES users (id) ON DELETE SET NULL"
+                    );
+                } catch (PDOException) {
+                }
+            } catch (PDOException) {
+            }
         }
     }
 

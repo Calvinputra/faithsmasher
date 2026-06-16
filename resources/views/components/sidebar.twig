@@ -22,7 +22,7 @@
     active: active|default('') == 'rules'
 } %}
 {% include 'components/ui/sidebar-link.twig' with {
-    href: '/sessions/' ~ session.id ~ '/edit',
+    href: '/dashboard/' ~ session.id ~ '?modal=session-form-modal&edit=' ~ session.id,
     icon: 'ri-edit-line',
     label: 'Edit Session',
     active: active|default('') == 'edit'

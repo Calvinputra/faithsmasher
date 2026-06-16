@@ -8,19 +8,53 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
+    const navLinks = () => drawer.querySelectorAll('.sidebar-link');
+
+    const setLinkDelays = (open) => {
+        navLinks().forEach((link, index) => {
+            link.style.setProperty('--drawer-delay', open ? `${60 + index * 40}ms` : '0ms');
+        });
+    };
+
     const open = () => {
-        drawer.classList.remove('hidden');
-        overlay.classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
+        overlay.setAttribute('aria-hidden', 'false');
+        drawer.setAttribute('aria-hidden', 'false');
+        setLinkDelays(true);
+        overlay.classList.add('is-open');
+        drawer.classList.add('is-open');
+        document.body.classList.add('mobile-drawer-open');
+        openBtn.setAttribute('aria-expanded', 'true');
     };
 
     const close = () => {
-        drawer.classList.add('hidden');
-        overlay.classList.add('hidden');
-        document.body.style.overflow = '';
+        setLinkDelays(false);
+        overlay.classList.remove('is-open');
+        drawer.classList.remove('is-open');
+        document.body.classList.remove('mobile-drawer-open');
+        openBtn.setAttribute('aria-expanded', 'false');
+
+        window.setTimeout(() => {
+            if (!drawer.classList.contains('is-open')) {
+                overlay.setAttribute('aria-hidden', 'true');
+                drawer.setAttribute('aria-hidden', 'true');
+            }
+        }, 320);
     };
+
+    openBtn.setAttribute('aria-expanded', 'false');
+    openBtn.setAttribute('aria-controls', 'mobile-drawer');
 
     openBtn.addEventListener('click', open);
     closeBtn?.addEventListener('click', close);
     overlay.addEventListener('click', close);
+
+    drawer.querySelectorAll('a').forEach((link) => {
+        link.addEventListener('click', close);
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && drawer.classList.contains('is-open')) {
+            close();
+        }
+    });
 });

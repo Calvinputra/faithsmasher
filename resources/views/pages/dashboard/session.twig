@@ -14,6 +14,7 @@
 {% endblock %}
 
 {% block content %}
+{% import 'components/ui/audit-trail.twig' as audit %}
 <div class="page-header">
     <div class="min-w-0 space-y-2">
         <span class="session-date-badge inline-flex">{{ session.sessionDate|date('d M Y') }}</span>
@@ -24,11 +25,41 @@
                 {{ session.location }}
             </p>
         {% endif %}
+        <div class="mt-2 max-w-md">
+            {{ audit.render(session.createdByName, session.createdAt, session.updatedByName, session.updatedAt, false) }}
+        </div>
     </div>
-    <a href="/sessions/{{ session.id }}/edit" class="btn-secondary shrink-0">
-        {% include 'components/ui/icon.twig' with { name: 'ri-edit-line', class: 'mr-2', size: 'sm' } %}
-        Edit Session
-    </a>
+    <div class="flex shrink-0 items-center gap-2">
+        <button
+            type="button"
+            class="btn-secondary"
+            data-form-open="session-form-modal"
+            data-form-type="session"
+            data-form-mode="edit"
+            data-form-edit-id="{{ session.id }}"
+            data-form-payload="{{ {
+                id: session.id,
+                name: session.name,
+                session_date: session.sessionDate,
+                location: session.location,
+                court_count: session.courtCount,
+                created_by_name: session.createdByName|default(''),
+                created_at: session.createdAt,
+                updated_by_name: session.updatedByName|default(''),
+                updated_at: session.updatedAt|default('')
+            }|json_encode|e('html_attr') }}"
+        >
+            {% include 'components/ui/icon.twig' with { name: 'ri-pencil-line', class: 'mr-2', size: 'sm' } %}
+            Edit Session
+        </button>
+        {% if currentUser.canDelete %}
+            {% include 'components/ui/icon-action-delete.twig' with {
+                action: '/sessions/' ~ session.id ~ '/delete',
+                confirm: 'Hapus session "' ~ session.name ~ '" beserta rules, matches, dan peserta di session ini? (Peserta global tidak dihapus)',
+                label: 'Hapus session'
+            } %}
+        {% endif %}
+    </div>
 </div>
 
 <div class="stat-grid">
@@ -50,7 +81,7 @@
             <li>{% include 'components/ui/action-link.twig' with { href: '/sessions/' ~ session.id ~ '/participants', label: 'Peserta Session' } %}</li>
             <li>{% include 'components/ui/action-link.twig' with { href: '/participants', label: 'Kelola Peserta Global' } %}</li>
             <li>{% include 'components/ui/action-link.twig' with { href: '/sessions/' ~ session.id ~ '/rules', label: 'Game Rules' } %}</li>
-            <li>{% include 'components/ui/action-link.twig' with { href: '/sessions/' ~ session.id ~ '/edit', label: 'Edit Session' } %}</li>
+            <li>{% include 'components/ui/action-link.twig' with { href: '/dashboard/' ~ session.id ~ '?modal=session-form-modal&edit=' ~ session.id, label: 'Edit Session' } %}</li>
         </ul>
     </section>
     <section class="action-card">

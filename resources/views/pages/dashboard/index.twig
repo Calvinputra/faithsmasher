@@ -3,21 +3,26 @@
 
 {% block title %}Dashboard — {{ app.name }}{% endblock %}
 
-{% block head %}
-<link rel="stylesheet" href="{{ asset('assets/vendor/flatpickr/flatpickr.min.css') }}">
-{% endblock %}
+{% block head %}{% endblock %}
 
 {% block page_header %}
 <div class="min-w-0">
     <h1 class="page-title text-xl sm:text-2xl">Dashboard</h1>
-    <p class="hidden text-xs text-navy-500 sm:block">Kelola session turnamen badminton</p>
+    <p class="text-[10px] text-navy-500 sm:hidden">Session & peserta global · shared semua admin</p>
+    <p class="hidden text-xs text-navy-500 sm:block">Kelola session turnamen · semua admin (A, B, C, D…) melihat session & peserta global yang sama</p>
 </div>
 {% endblock %}
 
 {% block content %}
-<div class="page-header mb-2 sm:mb-4">
+<div class="page-header mb-0 sm:mb-4">
     <div class="w-full sm:hidden">
-        <a href="/sessions/create" class="btn-primary w-full justify-center">+ Session Baru</a>
+        <button
+            type="button"
+            class="btn-primary w-full justify-center"
+            data-form-open="session-form-modal"
+            data-form-type="session"
+            data-form-mode="create"
+        >+ Session Baru</button>
     </div>
 </div>
 
@@ -50,7 +55,13 @@
         {% if search or date|default('') %}
             <a href="/dashboard" class="btn-secondary mt-6 justify-center">Reset Filter</a>
         {% else %}
-            <a href="/sessions/create" class="btn-primary mt-6 justify-center">Buat Session</a>
+            <button
+                type="button"
+                class="btn-primary mt-6 justify-center"
+                data-form-open="session-form-modal"
+                data-form-type="session"
+                data-form-mode="create"
+            >Buat Session</button>
         {% endif %}
     </div>
 {% else %}
@@ -78,6 +89,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ asset('assets/vendor/flatpickr/flatpickr.min.js') }}"></script>
-<script src="{{ asset('assets/js/dashboard-filter.js') }}"></script>
+<script src="{{ asset('assets/js/dashboard-filter.js') }}" defer></script>
 {% endblock %}

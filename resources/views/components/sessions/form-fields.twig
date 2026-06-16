@@ -1,0 +1,35 @@
+<div class="form-group">
+    <label for="session_form_name" class="form-label">Session Name <span class="text-red-500">*</span></label>
+    <div class="input-icon-wrap">
+        {% include 'components/ui/icon.twig' with { name: 'ri-price-tag-3-line', class: 'input-icon' } %}
+        <input type="text" id="session_form_name" name="name" required autocomplete="off" placeholder="e.g. Asuka Weekly" class="input-field input-with-icon" data-field="name">
+    </div>
+    <p class="form-error hidden" data-error-for="name"></p>
+</div>
+
+<div class="form-group">
+    <label for="session_form_date" class="form-label">Session Date <span class="text-red-500">*</span></label>
+    <div class="input-icon-wrap">
+        {% include 'components/ui/icon.twig' with { name: 'ri-calendar-line', class: 'input-icon' } %}
+        <input type="text" id="session_form_date" name="session_date" required placeholder="Select date" readonly class="input-field input-with-icon flatpickr-input" data-field="session_date">
+    </div>
+    <p class="form-error hidden" data-error-for="session_date"></p>
+</div>
+
+<div class="form-group">
+    <label for="session_form_location" class="form-label">Location <span class="text-red-500">*</span></label>
+    <div class="input-icon-wrap">
+        {% include 'components/ui/icon.twig' with { name: 'ri-map-pin-line', class: 'input-icon' } %}
+        <input type="text" id="session_form_location" name="location" required autocomplete="off" placeholder="e.g. GMS Arena, Surabaya" class="input-field input-with-icon" data-field="location">
+    </div>
+    <p class="form-error hidden" data-error-for="location"></p>
+</div>
+
+<div class="form-group">
+    <label for="session_form_court_count" class="form-label">Number of Courts <span class="text-red-500">*</span></label>
+    <div class="input-icon-wrap">
+        {% include 'components/ui/icon.twig' with { name: 'ri-building-2-line', class: 'input-icon' } %}
+        <input type="number" id="session_form_court_count" name="court_count" required min="1" max="99" class="input-field input-with-icon" data-field="court_count" value="1">
+    </div>
+    <p class="form-error hidden" data-error-for="court_count"></p>
+</div>

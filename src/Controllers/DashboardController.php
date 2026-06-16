@@ -8,6 +8,7 @@ use App\Repositories\GameRuleRepository;
 use App\Repositories\MatchRepository;
 use App\Repositories\ParticipantRepository;
 use App\Services\AuthService;
+use App\Support\SearchDateParser;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Slim\Views\Twig;
@@ -28,17 +29,24 @@ final class DashboardController extends BaseController
     public function index(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         $params = $request->getQueryParams();
-        $search = (string) ($params['q'] ?? '');
-        $date = (string) ($params['date'] ?? '');
+        $search = trim((string) ($params['q'] ?? ''));
+        $date = trim((string) ($params['date'] ?? ''));
         $page = max(1, (int) ($params['page'] ?? 1));
 
         if ($date !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) !== 1) {
             $date = '';
         }
 
-        $userId = $this->userId();
-        $result = $this->sessions->paginateByUser($userId, $search, $date, $page, self::PER_PAGE);
-        $stats = $this->sessions->statsByUser($userId, $search, $date);
+        if ($date === '' && $search !== '') {
+            $parsed = SearchDateParser::extractFromQuery($search);
+            if ($parsed['date'] !== null) {
+                $date = $parsed['date'];
+                $search = $parsed['text'];
+            }
+        }
+
+        $result = $this->sessions->paginate($search, $date, $page, self::PER_PAGE);
+        $stats = $this->sessions->stats($search, $date);
 
         /** @var Twig $view */
         $view = $request->getAttribute('view');
@@ -48,7 +56,7 @@ final class DashboardController extends BaseController
             'paginator' => $result['paginator'],
             'search' => $search,
             'date' => $date,
-            'sessionDates' => $this->sessions->distinctDatesByUser($userId),
+            'sessionDates' => $this->sessions->distinctDates(),
             'stats' => $stats,
         ]);
     }

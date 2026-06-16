@@ -6,6 +6,9 @@
     <title>{% block title %}{{ app.name }}{% endblock %}</title>
     <meta name="description" content="{% block description %}Badminton tournament bracket & score management{% endblock %}">
     {% include 'components/favicon.twig' %}
+    <script>
+        try{if(sessionStorage.getItem('fs-nav'))document.documentElement.classList.add('fs-nav-loading')}catch(e){}
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -14,12 +17,13 @@
     {% block head %}{% endblock %}
 </head>
 <body class="min-h-full font-sans antialiased">
+    <div id="page-progress" class="page-progress" aria-hidden="true"></div>
     <div class="app-bg"></div>
 
     <header class="site-header">
         <div class="site-container flex items-center justify-between py-4">
             <a href="/" class="flex items-center gap-3">
-                <img src="/assets/images/logo.png" alt="" class="h-10 w-10 rounded-full ring-2 ring-gold-400/40">
+                <img src="/assets/images/logo.png" alt="" class="h-10 w-10 rounded-full ring-2 ring-gold-400/40" width="40" height="40" decoding="async">
                 <span class="text-lg font-extrabold text-navy-900">{{ app.name }}</span>
             </a>
             <nav class="hidden items-center gap-6 text-sm font-medium text-navy-600 md:flex">
@@ -36,7 +40,9 @@
         </div>
     </header>
 
-    <main>{% block content %}{% endblock %}</main>
+    <main class="page-content">
+        {% block content %}{% endblock %}
+    </main>
 
     <footer class="site-footer">
         <div class="site-container py-10 text-center text-sm text-navy-500">
@@ -45,8 +51,9 @@
     </footer>
 
     {% include 'components/ui/toast-container.twig' %}
-    <script src="{{ asset('assets/js/app.js') }}"></script>
-    <script src="{{ asset('assets/js/toast.js') }}"></script>
+    <script src="{{ asset('assets/js/page-nav.js') }}" defer></script>
+    <script src="{{ asset('assets/js/app.js') }}" defer></script>
+    <script src="{{ asset('assets/js/toast.js') }}" defer></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

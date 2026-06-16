@@ -1,0 +1,13 @@
+<button
+    type="button"
+    class="icon-action icon-action-edit"
+    aria-label="{{ label|default('Edit') }}"
+    title="{{ label|default('Edit') }}"
+    data-form-open="{{ modalId }}"
+    data-form-type="{{ formType }}"
+    data-form-mode="edit"
+    {% if editId is defined %}data-form-edit-id="{{ editId }}"{% endif %}
+    {% if payload is defined %}data-form-payload="{{ payload|json_encode|e('html_attr') }}"{% endif %}
+>
+    {% include 'components/ui/icon.twig' with { name: 'ri-pencil-line', size: 'sm' } %}
+</button>

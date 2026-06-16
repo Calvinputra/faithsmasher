@@ -1,0 +1,12 @@
+{% embed 'components/ui/form-modal.twig' with {
+    id: 'session-form-modal',
+    title: 'Session Baru',
+    subtitle: 'Nama, tanggal, lokasi, dan jumlah lapangan.',
+    formType: 'session',
+    action: '/sessions',
+    submitLabel: 'Buat Session'
+} %}
+    {% block form_fields %}
+        {% include 'components/sessions/form-fields.twig' %}
+    {% endblock %}
+{% endembed %}

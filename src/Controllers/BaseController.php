@@ -8,6 +8,7 @@ use App\Models\Session;
 use App\Repositories\SessionRepository;
 use App\Services\AuthService;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use App\Support\FlashBag;
 use App\Support\FlashType;
 use Slim\Exception\HttpForbiddenException;
@@ -41,7 +42,7 @@ abstract class BaseController
 
     protected function requireSession(int $sessionId): Session
     {
-        $session = $this->sessions->find($sessionId, $this->userId());
+        $session = $this->sessions->find($sessionId);
 
         if ($session === null) {
             throw new HttpNotFoundException(new \Slim\Psr7\ServerRequest('GET', '/'));
@@ -75,6 +76,42 @@ abstract class BaseController
         return $response
             ->withHeader('Content-Type', 'application/json')
             ->withStatus($status);
+    }
+
+    protected function wantsJson(ServerRequestInterface $request): bool
+    {
+        if ($request->getHeaderLine('X-Requested-With') === 'XMLHttpRequest') {
+            return true;
+        }
+
+        return str_contains($request->getHeaderLine('Accept'), 'application/json');
+    }
+
+    /** @param array<string, mixed> $data */
+    protected function jsonFlash(
+        ResponseInterface $response,
+        string $redirect,
+        string $message,
+        string $type = FlashType::SUCCESS,
+        ?string $title = null,
+        array $data = [],
+    ): ResponseInterface {
+        FlashBag::set($message, $type, $title);
+
+        return $this->json($response, array_merge(['ok' => true, 'redirect' => $redirect], $data));
+    }
+
+    /** @param array<string, string> $errors */
+    protected function jsonValidationErrors(
+        ResponseInterface $response,
+        array $errors,
+        string $message = 'Periksa kembali data yang diisi.',
+    ): ResponseInterface {
+        return $this->json($response, [
+            'ok' => false,
+            'message' => $message,
+            'errors' => $errors,
+        ], 422);
     }
 
     /** @deprecated Flash is injected globally via FlashMiddleware */

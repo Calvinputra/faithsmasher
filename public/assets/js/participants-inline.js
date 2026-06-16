@@ -16,6 +16,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let activeTrigger = null;
     let isSaving = false;
+    let searchInput = null;
+    let optionsContainer = null;
 
     const pillClasses = [
         'inline-pill-empty',
@@ -44,13 +46,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeMenu = () => {
         menu.classList.add('hidden');
         menu.innerHTML = '';
+        searchInput = null;
+        optionsContainer = null;
         activeTrigger?.setAttribute('aria-expanded', 'false');
         activeTrigger = null;
     };
 
     const positionMenu = (trigger) => {
         const rect = trigger.getBoundingClientRect();
-        const menuWidth = Math.max(rect.width, 140);
+        const menuWidth = Math.max(rect.width, 180);
         let left = rect.left;
         let top = rect.bottom + 6;
 
@@ -58,7 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
             left = window.innerWidth - menuWidth - 12;
         }
 
-        if (top + 220 > window.innerHeight) {
+        if (top + 260 > window.innerHeight) {
             top = rect.top - 6;
             menu.style.transform = 'translateY(-100%)';
         } else {
@@ -87,6 +91,31 @@ document.addEventListener('DOMContentLoaded', () => {
         return gmsPillMap[value] || 'inline-pill-empty';
     };
 
+    const filterOptions = (query) => {
+        if (!optionsContainer) {
+            return;
+        }
+
+        const normalized = query.trim().toLowerCase();
+        let visibleCount = 0;
+
+        optionsContainer.querySelectorAll('.inline-edit-option').forEach((option) => {
+            const text = option.textContent?.trim().toLowerCase() || '';
+            const visible = normalized === '' || text.includes(normalized);
+            option.hidden = !visible;
+
+            if (visible) {
+                visibleCount += 1;
+            }
+        });
+
+        const emptyState = optionsContainer.querySelector('[data-inline-edit-empty]');
+
+        if (emptyState) {
+            emptyState.hidden = visibleCount > 0;
+        }
+    };
+
     const renderMenu = (trigger) => {
         const field = trigger.dataset.field;
         const fieldConfig = config[field];
@@ -96,6 +125,32 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         menu.innerHTML = '';
+
+        const searchWrap = document.createElement('div');
+        searchWrap.className = 'inline-edit-search-wrap';
+
+        searchInput = document.createElement('input');
+        searchInput.type = 'search';
+        searchInput.className = 'inline-edit-search';
+        searchInput.placeholder = 'Cari...';
+        searchInput.autocomplete = 'off';
+        searchInput.setAttribute('aria-label', 'Cari opsi');
+        searchInput.addEventListener('input', () => filterOptions(searchInput.value));
+        searchInput.addEventListener('keydown', (event) => event.stopPropagation());
+        searchWrap.appendChild(searchInput);
+        menu.appendChild(searchWrap);
+
+        optionsContainer = document.createElement('div');
+        optionsContainer.className = 'inline-edit-options';
+        menu.appendChild(optionsContainer);
+
+        const emptyState = document.createElement('p');
+        emptyState.className = 'inline-edit-empty';
+        emptyState.dataset.inlineEditEmpty = 'true';
+        emptyState.hidden = true;
+        emptyState.textContent = 'Tidak ada hasil';
+        optionsContainer.appendChild(emptyState);
+
         const currentValue = trigger.dataset.value || '';
 
         Object.entries(fieldConfig.options || {}).forEach(([value, label]) => {
@@ -116,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             option.addEventListener('click', () => saveValue(trigger, field, value));
-            menu.appendChild(option);
+            optionsContainer.appendChild(option);
         });
 
         if (fieldConfig.allowClear) {
@@ -127,8 +182,10 @@ document.addEventListener('DOMContentLoaded', () => {
             clearBtn.setAttribute('role', 'option');
             clearBtn.textContent = fieldConfig.clearLabel || '— Kosongkan';
             clearBtn.addEventListener('click', () => saveValue(trigger, field, ''));
-            menu.appendChild(clearBtn);
+            optionsContainer.appendChild(clearBtn);
         }
+
+        window.setTimeout(() => searchInput?.focus(), 0);
     };
 
     const saveValue = async (trigger, field, value) => {
