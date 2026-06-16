@@ -8,6 +8,7 @@ use App\Repositories\MatchRepository;
 use App\Repositories\ParticipantRepository;
 use App\Services\AuthService;
 use App\Services\MatchGeneratorService;
+use App\Support\FlashType;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Slim\Views\Twig;
@@ -34,7 +35,6 @@ final class MatchController extends BaseController
             'session' => $session,
             'participantCount' => $this->participants->countBySession($session->id),
             'matchCount' => count($this->matches->allBySession($session->id)),
-            'flash' => $this->pullFlash(),
         ]);
     }
 
@@ -45,17 +45,22 @@ final class MatchController extends BaseController
 
         try {
             $count = $this->generator->autoGenerate($sessionId);
-            $message = "Auto-generated {$count} match(es) by rank skill.";
         } catch (\InvalidArgumentException $exception) {
             return $this->flashRedirect(
                 $response,
                 '/sessions/' . $sessionId . '/matches',
                 $exception->getMessage(),
-                'error',
+                FlashType::WARNING,
             );
         }
 
-        return $this->flashRedirect($response, '/sessions/' . $sessionId . '/matches/preview', $message);
+        return $this->flashRedirect(
+            $response,
+            '/sessions/' . $sessionId . '/matches/preview',
+            "{$count} match berhasil digenerate berdasarkan rank.",
+            FlashType::CREATE,
+            'Match digenerate',
+        );
     }
 
     public function manual(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
@@ -80,7 +85,6 @@ final class MatchController extends BaseController
             'participants' => $participants,
             'matches' => $matchRows,
             'matchCounts' => $matchCounts,
-            'flash' => $this->pullFlash(),
         ]);
     }
 
@@ -96,7 +100,12 @@ final class MatchController extends BaseController
         }
 
         if (!is_array($pairings)) {
-            return $this->flashRedirect($response, '/sessions/' . $sessionId . '/matches/manual', 'Invalid pairing data.', 'error');
+            return $this->flashRedirect(
+                $response,
+                '/sessions/' . $sessionId . '/matches/manual',
+                'Data pairing tidak valid. Coba susun ulang.',
+                FlashType::ERROR,
+            );
         }
 
         foreach ($pairings as $matchId => $slots) {
@@ -110,7 +119,12 @@ final class MatchController extends BaseController
             $this->matches->updatePairing((int) $matchId, $sessionId, $p1, $p2);
         }
 
-        return $this->flashRedirect($response, '/sessions/' . $sessionId . '/matches/preview', 'Manual bracket saved.');
+        return $this->flashRedirect(
+            $response,
+            '/sessions/' . $sessionId . '/matches/preview',
+            'Bracket manual berhasil disimpan.',
+            FlashType::UPDATE,
+        );
     }
 
     public function preview(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
@@ -124,7 +138,6 @@ final class MatchController extends BaseController
             'session' => $session,
             'matches' => $this->matches->allWithParticipants($session->id),
             'matchCounts' => $this->matches->playerMatchCounts($session->id),
-            'flash' => $this->pullFlash(),
         ]);
     }
 

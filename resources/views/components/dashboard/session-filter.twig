@@ -1,0 +1,69 @@
+<form
+    method="get"
+    action="{{ action|default('/dashboard') }}"
+    class="session-filter"
+    id="dashboard-filter-form"
+    role="search"
+    data-session-dates="{{ sessionDates|default([])|json_encode|e('html_attr') }}"
+>
+    <div class="session-filter-fields">
+        <div class="search-input-wrap session-filter-search">
+            {% include 'components/ui/icon.twig' with { name: 'ri-search-line', class: 'search-icon' } %}
+            <input
+                type="search"
+                name="q"
+                value="{{ query|default('') }}"
+                placeholder="{{ placeholder|default('Cari nama session atau lokasi...') }}"
+                class="search-input"
+                autocomplete="off"
+                aria-label="Cari session"
+            >
+        </div>
+
+        <div class="date-filter-wrap">
+            <label for="filter_date_picker" class="sr-only">Filter tanggal session</label>
+            <div class="date-filter-input-wrap">
+                {% include 'components/ui/icon.twig' with { name: 'ri-calendar-line', class: 'date-filter-icon' } %}
+                <input
+                    type="text"
+                    id="filter_date_picker"
+                    class="date-filter-input"
+                    placeholder="Filter tanggal"
+                    value="{{ date|default('') }}"
+                    readonly
+                    autocomplete="off"
+                    aria-label="Filter tanggal session"
+                >
+                <input type="hidden" name="date" id="filter_date" value="{{ date|default('') }}">
+            </div>
+            {% if date|default('') %}
+                <a
+                    href="{{ action|default('/dashboard') }}{% if query|default('') %}?q={{ query|url_encode }}{% endif %}"
+                    class="date-filter-clear-btn"
+                    aria-label="Hapus filter tanggal"
+                    title="Hapus filter tanggal"
+                >
+                    {% include 'components/ui/icon.twig' with { name: 'ri-close-line', size: 'sm' } %}
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="session-filter-actions">
+        <button type="submit" class="btn-secondary search-submit px-4 py-2.5 text-sm">
+            {% include 'components/ui/icon.twig' with { name: 'ri-search-line', class: 'mr-1.5', size: 'sm' } %}
+            Cari
+        </button>
+        {% if query|default('') or date|default('') %}
+            <a href="{{ action|default('/dashboard') }}" class="btn-ghost search-clear px-4 py-2.5 text-sm">
+                {% include 'components/ui/icon.twig' with { name: 'ri-close-circle-line', class: 'mr-1.5', size: 'sm' } %}
+                Reset
+            </a>
+        {% endif %}
+    </div>
+
+    <p class="date-filter-legend">
+        <span class="date-filter-legend-dot" aria-hidden="true"></span>
+        Titik kuning = tanggal ada session
+    </p>
+</form>

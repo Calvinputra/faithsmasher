@@ -29,9 +29,16 @@ final class DashboardController extends BaseController
     {
         $params = $request->getQueryParams();
         $search = (string) ($params['q'] ?? '');
+        $date = (string) ($params['date'] ?? '');
         $page = max(1, (int) ($params['page'] ?? 1));
 
-        $result = $this->sessions->paginateByUser($this->userId(), $search, $page, self::PER_PAGE);
+        if ($date !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) !== 1) {
+            $date = '';
+        }
+
+        $userId = $this->userId();
+        $result = $this->sessions->paginateByUser($userId, $search, $date, $page, self::PER_PAGE);
+        $stats = $this->sessions->statsByUser($userId, $search, $date);
 
         /** @var Twig $view */
         $view = $request->getAttribute('view');
@@ -40,7 +47,9 @@ final class DashboardController extends BaseController
             'sessions' => $result['sessions'],
             'paginator' => $result['paginator'],
             'search' => $search,
-            'flash' => $this->pullFlash(),
+            'date' => $date,
+            'sessionDates' => $this->sessions->distinctDatesByUser($userId),
+            'stats' => $stats,
         ]);
     }
 
@@ -57,7 +66,6 @@ final class DashboardController extends BaseController
             'ruleCount' => count($this->rules->allBySession($session->id)),
             'matchCount' => count($this->matches->allBySession($session->id)),
             'rankCounts' => $this->participants->countByRank($session->id),
-            'flash' => $this->pullFlash(),
         ]);
     }
 }

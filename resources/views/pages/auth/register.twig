@@ -19,13 +19,23 @@
     </div>
     <div class="form-group">
         <label for="password" class="form-label">Password</label>
-        <input type="password" id="password" name="password" required autocomplete="new-password" class="input-field{% if errors.password is defined %} input-error{% endif %}">
-        {% if errors.password is defined %}<p class="form-error">{{ errors.password }}</p>{% endif %}
+        {% include 'components/ui/password-input.twig' with {
+            id: 'password',
+            name: 'password',
+            required: true,
+            autocomplete: 'new-password',
+            error: errors.password|default(null)
+        } %}
     </div>
     <div class="form-group">
         <label for="password_confirm" class="form-label">Confirm Password</label>
-        <input type="password" id="password_confirm" name="password_confirm" required autocomplete="new-password" class="input-field{% if errors.password_confirm is defined %} input-error{% endif %}">
-        {% if errors.password_confirm is defined %}<p class="form-error">{{ errors.password_confirm }}</p>{% endif %}
+        {% include 'components/ui/password-input.twig' with {
+            id: 'password_confirm',
+            name: 'password_confirm',
+            required: true,
+            autocomplete: 'new-password',
+            error: errors.password_confirm|default(null)
+        } %}
     </div>
     <button type="submit" class="btn-primary w-full py-3">Create Account</button>
 </form>
@@ -34,4 +44,23 @@
     Already have an account?
     <a href="/login" class="font-bold text-navy-800 hover:underline">Sign In</a>
 </p>
+
+{% if pending|default(false) %}
+    {% embed 'components/ui/modal.twig' with {
+        id: 'pending-modal',
+        open: true,
+        icon: 'ri-time-line',
+        iconClass: 'text-gold-600',
+        title: 'Menunggu Konfirmasi',
+        message: 'Pendaftaran berhasil dikirim. Akun Admin akan aktif setelah disetujui oleh Superadmin. Anda akan bisa login setelah di-approve.'
+    } %}
+        {% block modal_actions %}
+            <a href="/login" class="btn-primary w-full justify-center">Ke Halaman Login</a>
+        {% endblock %}
+    {% endembed %}
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="/assets/js/auth.js"></script>
 {% endblock %}

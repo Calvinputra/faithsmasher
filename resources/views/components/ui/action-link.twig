@@ -1,0 +1,4 @@
+<a href="{{ href }}" class="action-link{% if active|default(false) %} action-link-active{% endif %}">
+    <span class="action-link-label">{{ label }}</span>
+    {% include 'components/ui/icon.twig' with { name: 'ri-arrow-right-s-line', class: 'action-link-arrow', size: 'sm' } %}
+</a>

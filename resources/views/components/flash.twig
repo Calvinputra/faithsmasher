@@ -1,5 +1,1 @@
-{% if flash %}
-    <div class="mb-4 rounded-xl border px-4 py-3 text-sm {% if flash.type == 'error' %}border-red-200 bg-red-50 text-red-700{% else %}border-emerald-200 bg-emerald-50 text-emerald-800{% endif %}" role="alert">
-        {{ flash.message }}
-    </div>
-{% endif %}
+{# Flash messages are rendered as toasts via components/ui/toast-container.twig #}

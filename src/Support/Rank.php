@@ -11,7 +11,24 @@ final class Rank
 
     public static function isValid(string $rank): bool
     {
-        return in_array($rank, self::LEVELS, true);
+        return self::normalize($rank) !== null;
+    }
+
+    public static function normalize(string $rank): ?string
+    {
+        $rank = trim($rank);
+
+        if ($rank === '') {
+            return null;
+        }
+
+        foreach (self::LEVELS as $level) {
+            if (strcasecmp($rank, $level) === 0) {
+                return $level;
+            }
+        }
+
+        return null;
     }
 
     public static function index(string $rank): int

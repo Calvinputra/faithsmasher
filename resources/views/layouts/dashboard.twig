@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    {% include 'components/remixicon.twig' %}
     <link rel="stylesheet" href="/assets/css/app.css">
     {% block head %}{% endblock %}
 </head>
@@ -27,7 +28,7 @@
             <header class="dashboard-topbar">
                 <div class="flex items-center gap-3 min-w-0">
                     <button type="button" class="mobile-menu-btn lg:hidden" id="mobile-menu-btn" aria-label="Open menu">
-                        <svg class="h-6 w-6 text-navy-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                        {% include 'components/ui/icon.twig' with { name: 'ri-menu-line', class: 'text-navy-800', size: 'lg' } %}
                     </button>
                     {% block page_header %}{% endblock %}
                 </div>
@@ -37,7 +38,6 @@
             </header>
 
             <main class="dashboard-main">
-                {% include 'components/flash.twig' %}
                 {% block content %}{% endblock %}
             </main>
         </div>
@@ -47,26 +47,31 @@
     <div class="mobile-drawer-overlay hidden" id="mobile-drawer-overlay"></div>
     <aside class="mobile-drawer hidden" id="mobile-drawer">
         <div class="mobile-drawer-header">
-            <img src="/assets/images/logo.png" alt="" class="h-9 w-9 rounded-full ring-2 ring-gold-400/40">
-            <span class="font-bold text-white">{{ app.name }}</span>
-            <button type="button" id="mobile-drawer-close" class="ml-auto text-white/70 hover:text-white" aria-label="Close menu">
-                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            <img src="/assets/images/logo.png" alt="" class="sidebar-brand-logo h-9 w-9">
+            <span class="font-bold text-navy-900">{{ app.name }}</span>
+            <button type="button" id="mobile-drawer-close" class="ml-auto rounded-lg p-1 text-navy-500 transition hover:bg-navy-50 hover:text-navy-900" aria-label="Close menu">
+                {% include 'components/ui/icon.twig' with { name: 'ri-close-line', size: 'lg' } %}
             </button>
         </div>
-        <nav class="mobile-drawer-nav">
-            <a href="/dashboard" class="sidebar-link">Dashboard</a>
+        <nav class="mobile-drawer-nav flex-1 overflow-y-auto">
+            <a href="/dashboard" class="sidebar-link{% if active|default('') == 'dashboard' %} sidebar-link-active{% endif %}">Dashboard</a>
+            {% if currentUser.isSuperadmin %}
+                <a href="/admin/users" class="sidebar-link{% if active|default('') == 'admin-users' %} sidebar-link-active{% endif %}">Kelola User</a>
+            {% endif %}
             {% if sidebar_session is defined %}
                 {% include 'components/sidebar.twig' with { session: sidebar_session } %}
             {% endif %}
         </nav>
-        {% include 'components/dashboard/user-profile.twig' %}
+        {% include 'components/dashboard/sidebar-footer.twig' %}
     </aside>
 
     {% if sidebar_session is defined %}
         {% include 'components/mobile-nav.twig' with { session: sidebar_session } %}
     {% endif %}
 
+    {% include 'components/ui/toast-container.twig' %}
     <script src="/assets/js/app.js"></script>
+    <script src="/assets/js/toast.js"></script>
     <script src="/assets/js/dashboard.js"></script>
     {% block scripts %}{% endblock %}
 </body>

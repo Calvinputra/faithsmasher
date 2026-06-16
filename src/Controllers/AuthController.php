@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Services\AuthService;
+use App\Support\FlashBag;
+use App\Support\FlashType;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Slim\Views\Twig;
@@ -24,10 +26,12 @@ final class AuthController
 
         /** @var Twig $view */
         $view = $request->getAttribute('view');
+        $old = $_SESSION['old_login'] ?? [];
+        unset($_SESSION['old_login']);
 
         return $view->render($response, 'pages/auth/login.twig', [
             'errors' => [],
-            'old' => [],
+            'old' => $old,
         ]);
     }
 
@@ -37,17 +41,18 @@ final class AuthController
         $email = (string) ($data['email'] ?? '');
         $password = (string) ($data['password'] ?? '');
 
-        if ($this->auth->login($email, $password)) {
+        $result = $this->auth->login($email, $password);
+
+        if ($result['ok']) {
+            FlashBag::set('Selamat datang kembali!', FlashType::SUCCESS, 'Login berhasil');
+
             return $response->withHeader('Location', '/dashboard')->withStatus(302);
         }
 
-        /** @var Twig $view */
-        $view = $request->getAttribute('view');
+        FlashBag::set($result['error'] ?? 'Email atau password salah.', FlashType::ERROR, 'Login gagal');
+        $_SESSION['old_login'] = ['email' => $email];
 
-        return $view->render($response, 'pages/auth/login.twig', [
-            'errors' => ['email' => 'Email atau password salah.'],
-            'old' => ['email' => $email],
-        ]);
+        return $response->withHeader('Location', '/login')->withStatus(302);
     }
 
     public function showRegister(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
@@ -62,6 +67,7 @@ final class AuthController
         return $view->render($response, 'pages/auth/register.twig', [
             'errors' => [],
             'old' => [],
+            'pending' => false,
         ]);
     }
 
@@ -77,7 +83,14 @@ final class AuthController
         );
 
         if ($result['success']) {
-            return $response->withHeader('Location', '/dashboard')->withStatus(302);
+            /** @var Twig $view */
+            $view = $request->getAttribute('view');
+
+            return $view->render($response, 'pages/auth/register.twig', [
+                'errors' => [],
+                'old' => [],
+                'pending' => $result['pending'],
+            ]);
         }
 
         /** @var Twig $view */
@@ -89,12 +102,15 @@ final class AuthController
                 'name' => (string) ($data['name'] ?? ''),
                 'email' => (string) ($data['email'] ?? ''),
             ],
+            'pending' => false,
         ]);
     }
 
     public function logout(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         $this->auth->logout();
+
+        FlashBag::set('Anda berhasil logout. Sampai jumpa!', FlashType::INFO, 'Logout berhasil');
 
         return $response->withHeader('Location', '/login')->withStatus(302);
     }

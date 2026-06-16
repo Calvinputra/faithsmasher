@@ -32,16 +32,29 @@ cp .env.example .env
 ### Hostinger (Server)
 
 1. Copy `.env.hostinger.example` ke `.env` di server
-2. Isi `DB_PASSWORD` dari hPanel → Database MySQL
-3. Import `database/schema.sql` via phpMyAdmin
-4. Jalankan `composer install --no-dev`
+2. Pastikan `DB_PASSWORD` sudah benar (sudah terisi di template)
+3. **Import schema** — pilih salah satu:
+   - **phpMyAdmin:** buka database → tab **Import** → pilih `database/schema.sql` → Go
+   - **Terminal hPanel:**
+     ```bash
+     composer install --no-dev
+     php bin/setup-database.php
+     ```
+4. **Buat superadmin pertama** (wajib, karena register butuh approval):
+   ```bash
+   php bin/create-admin.php "Calvin" calvin@gmail.com "password-login-anda"
+   ```
+5. Login di `/login` dengan email & password di atas
 
 ```env
 DB_HOST=localhost
+DB_PORT=3306
 DB_NAME=u753898012_faithsmasher
 DB_USER=u753898012_calvin
-DB_PASSWORD=password_dari_hpanel
+DB_PASSWORD=          # isi password MySQL dari hPanel
 ```
+
+> **Penting:** `DB_HOST=localhost` dipakai **di server Hostinger**. Jangan pakai IP (`153.92.15.70`) sebagai `DB_PORT` — port MySQL selalu **3306**. Host remote `srv1980.hstgr.io` hanya untuk koneksi dari luar (perlu aktifkan Remote MySQL + whitelist IP di hPanel).
 
 ## Assets
 

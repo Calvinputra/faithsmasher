@@ -24,36 +24,24 @@ final class SessionRepository
     /**
      * @return array{sessions: list<SessionSummary>, paginator: Paginator}
      */
-    public function paginateByUser(int $userId, string $search, int $page, int $perPage): array
+    public function paginateByUser(int $userId, string $search, string $date, int $page, int $perPage): array
     {
-        $search = trim($search);
-        $like = '%' . $search . '%';
-        $paginator = Paginator::fromTotal($this->countByUser($userId, $search), $page, $perPage);
+        $filters = $this->buildUserFilters($userId, $search, $date);
+        $paginator = Paginator::fromTotal($this->countByUser($userId, $search, $date), $page, $perPage);
 
         $sql = 'SELECT ' . self::SELECT_FIELDS . ',
                        COUNT(p.id) AS participant_count
                 FROM sessions s
                 LEFT JOIN participants p ON p.session_id = s.id
-                WHERE s.user_id = :user_id';
-
-        if ($search !== '') {
-            $sql .= ' AND (s.name LIKE :search OR s.location LIKE :search2)';
-        }
-
-        $sql .= ' GROUP BY s.id
-                  ORDER BY s.created_at DESC, s.id DESC
-                  LIMIT :limit OFFSET :offset';
+                WHERE ' . $filters['sql'] . '
+                GROUP BY s.id
+                ORDER BY s.created_at DESC, s.id DESC
+                LIMIT :limit OFFSET :offset';
 
         $statement = $this->db->prepare($sql);
-        $statement->bindValue('user_id', $userId, PDO::PARAM_INT);
+        $this->bindFilterParams($statement, $filters['params']);
         $statement->bindValue('limit', $paginator->perPage, PDO::PARAM_INT);
         $statement->bindValue('offset', $paginator->offset(), PDO::PARAM_INT);
-
-        if ($search !== '') {
-            $statement->bindValue('search', $like);
-            $statement->bindValue('search2', $like);
-        }
-
         $statement->execute();
 
         $sessions = [];
@@ -68,22 +56,93 @@ final class SessionRepository
         return ['sessions' => $sessions, 'paginator' => $paginator];
     }
 
-    public function countByUser(int $userId, string $search = ''): int
+    public function countByUser(int $userId, string $search = '', string $date = ''): int
+    {
+        $filters = $this->buildUserFilters($userId, $search, $date);
+        $statement = $this->db->prepare('SELECT COUNT(*) FROM sessions s WHERE ' . $filters['sql']);
+        $this->bindFilterParams($statement, $filters['params']);
+        $statement->execute();
+
+        return (int) $statement->fetchColumn();
+    }
+
+    /**
+     * @return array{sessionCount: int, participantCount: int, courtCount: int}
+     */
+    public function statsByUser(int $userId, string $search = '', string $date = ''): array
+    {
+        $filters = $this->buildUserFilters($userId, $search, $date);
+        $filter = $filters['sql'];
+        $params = $filters['params'];
+
+        $sessionSql = "SELECT COUNT(*) FROM sessions s WHERE {$filter}";
+        $participantSql = "SELECT COUNT(p.id)
+                           FROM participants p
+                           INNER JOIN sessions s ON s.id = p.session_id
+                           WHERE {$filter}";
+        $courtSql = "SELECT COALESCE(SUM(s.court_count), 0) FROM sessions s WHERE {$filter}";
+
+        return [
+            'sessionCount' => $this->fetchInt($sessionSql, $params),
+            'participantCount' => $this->fetchInt($participantSql, $params),
+            'courtCount' => $this->fetchInt($courtSql, $params),
+        ];
+    }
+
+    /** @return list<string> Dates in Y-m-d format */
+    public function distinctDatesByUser(int $userId): array
+    {
+        $statement = $this->db->prepare(
+            'SELECT DISTINCT session_date FROM sessions WHERE user_id = :user_id ORDER BY session_date ASC'
+        );
+        $statement->execute(['user_id' => $userId]);
+
+        return array_map(
+            static fn (array $row): string => (string) $row['session_date'],
+            $statement->fetchAll(),
+        );
+    }
+
+    /**
+     * @return array{sql: string, params: array<string, mixed>}
+     */
+    private function buildUserFilters(int $userId, string $search, string $date): array
     {
         $search = trim($search);
-        $sql = 'SELECT COUNT(*) FROM sessions s WHERE s.user_id = :user_id';
+        $date = trim($date);
+        $sql = 's.user_id = :user_id';
+        $params = ['user_id' => $userId];
 
         if ($search !== '') {
             $sql .= ' AND (s.name LIKE :search OR s.location LIKE :search2)';
+            $like = '%' . $search . '%';
+            $params['search'] = $like;
+            $params['search2'] = $like;
         }
 
-        $statement = $this->db->prepare($sql);
-        $statement->bindValue('user_id', $userId, PDO::PARAM_INT);
+        if ($date !== '') {
+            $sql .= ' AND s.session_date = :session_date';
+            $params['session_date'] = $date;
+        }
 
-        if ($search !== '') {
-            $like = '%' . $search . '%';
-            $statement->bindValue('search', $like);
-            $statement->bindValue('search2', $like);
+        return ['sql' => $sql, 'params' => $params];
+    }
+
+    /** @param array<string, mixed> $params */
+    private function bindFilterParams(\PDOStatement $statement, array $params): void
+    {
+        foreach ($params as $key => $value) {
+            $statement->bindValue($key, $value);
+        }
+    }
+
+    /** @param array<string, mixed> $params */
+    private function fetchInt(string $sql, array $params): int
+    {
+        $statement = $this->db->prepare($sql);
+
+        foreach ($params as $key => $value) {
+            $statement->bindValue($key, $value);
         }
 
         $statement->execute();

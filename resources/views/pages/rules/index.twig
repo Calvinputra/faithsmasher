@@ -18,9 +18,11 @@
             <p class="mt-2 text-sm text-navy-600">Win: <strong>{{ rule.winPoints }}</strong> pts · Lose: <strong>{{ rule.losePoints }}</strong> pts</p>
             <div class="mt-4 flex gap-3 text-sm">
                 <a href="/sessions/{{ session.id }}/rules/{{ rule.id }}/edit" class="text-navy-700 hover:underline">Edit</a>
-                <form method="post" action="/sessions/{{ session.id }}/rules/{{ rule.id }}/delete" onsubmit="return confirm('Delete rule?')">
-                    <button type="submit" class="text-red-600 hover:underline">Delete</button>
-                </form>
+                {% if currentUser.canDelete %}
+                    <form method="post" action="/sessions/{{ session.id }}/rules/{{ rule.id }}/delete" onsubmit="return confirm('Delete rule?')">
+                        <button type="submit" class="text-red-600 hover:underline">Delete</button>
+                    </form>
+                {% endif %}
             </div>
         </article>
     {% else %}

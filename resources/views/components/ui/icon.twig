@@ -1,0 +1,8 @@
+{% set sizes = {
+    'xs': 'text-sm',
+    'sm': 'text-base',
+    'md': 'text-lg',
+    'lg': 'text-xl',
+    'xl': 'text-2xl'
+} %}
+<i class="{{ name }} {{ sizes[size|default('sm')] }} {{ class|default('') }}"{% if label is defined %} aria-label="{{ label }}" role="img"{% else %} aria-hidden="true"{% endif %}></i>

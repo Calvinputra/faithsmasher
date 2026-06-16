@@ -43,6 +43,24 @@ final class Paginator
         return $this->page < $this->totalPages();
     }
 
+    public function from(): int
+    {
+        if ($this->total === 0) {
+            return 0;
+        }
+
+        return $this->offset() + 1;
+    }
+
+    public function to(): int
+    {
+        if ($this->total === 0) {
+            return 0;
+        }
+
+        return min($this->offset() + $this->perPage, $this->total);
+    }
+
     /** @return list<int> */
     public function pages(int $window = 2): array
     {

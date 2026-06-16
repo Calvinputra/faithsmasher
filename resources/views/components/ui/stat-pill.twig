@@ -1,0 +1,11 @@
+<div class="stat-pill{% if accent|default(false) %} stat-pill-accent{% endif %}">
+    {% if icon is defined %}
+        <span class="stat-pill-icon">
+            {% include 'components/ui/icon.twig' with { name: icon, size: 'sm' } %}
+        </span>
+    {% endif %}
+    <div class="stat-pill-body">
+        <span class="stat-pill-value">{{ value }}</span>
+        <span class="stat-pill-label">{{ label }}</span>
+    </div>
+</div>

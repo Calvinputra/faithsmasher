@@ -18,7 +18,9 @@
         }
     },
     "scripts": {
-        "start": "php -S localhost:8000 -t public public/router.php"
+        "start": "php -S localhost:8000 -t public public/router.php",
+        "db:setup": "php bin/setup-database.php",
+        "db:admin": "php bin/create-admin.php"
     },
     "config": {
         "sort-packages": true

@@ -1,0 +1,28 @@
+<div class="session-toolbar">
+    <div class="session-toolbar-top">
+        {% include 'components/dashboard/session-filter.twig' with {
+            query: search,
+            date: date|default(''),
+            sessionDates: sessionDates|default([]),
+            placeholder: 'Cari nama session atau lokasi...'
+        } %}
+    </div>
+    <div class="session-toolbar-meta">
+        <p class="session-toolbar-count">
+            {% if search and date|default('') %}
+                <strong>{{ paginator.total }}</strong> session untuk "<span class="text-navy-800">{{ search }}</span>" · {{ date|date('d M Y') }}
+            {% elseif search %}
+                <strong>{{ paginator.total }}</strong> session ditemukan untuk "<span class="text-navy-800">{{ search }}</span>"
+            {% elseif date|default('') %}
+                <strong>{{ paginator.total }}</strong> session pada <span class="text-navy-800">{{ date|date('d M Y') }}</span>
+            {% else %}
+                <strong>{{ paginator.total }}</strong> session · urutan terbaru
+            {% endif %}
+        </p>
+        {% if paginator.total > 0 %}
+            <p class="session-toolbar-range">
+                Menampilkan {{ paginator.from() }}–{{ paginator.to() }} dari {{ paginator.total }}
+            </p>
+        {% endif %}
+    </div>
+</div>

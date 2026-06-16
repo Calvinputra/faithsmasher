@@ -8,6 +8,9 @@ use App\Models\Session;
 use App\Repositories\SessionRepository;
 use App\Services\AuthService;
 use Psr\Http\Message\ResponseInterface;
+use App\Support\FlashBag;
+use App\Support\FlashType;
+use Slim\Exception\HttpForbiddenException;
 use Slim\Exception\HttpNotFoundException;
 use Slim\Psr7\Response;
 
@@ -17,6 +20,13 @@ abstract class BaseController
         protected readonly AuthService $auth,
         protected readonly SessionRepository $sessions = new SessionRepository(),
     ) {
+    }
+
+    protected function assertCanDelete(): void
+    {
+        if (!$this->auth->canDelete()) {
+            throw new HttpForbiddenException(new \Slim\Psr7\ServerRequest('POST', '/'));
+        }
     }
 
     protected function userId(): int
@@ -46,19 +56,21 @@ abstract class BaseController
         return $response->withHeader('Location', $path)->withStatus(302);
     }
 
-    protected function flashRedirect(ResponseInterface $response, string $path, string $message, string $type = 'success'): ResponseInterface
-    {
-        $_SESSION['flash'] = ['message' => $message, 'type' => $type];
+    protected function flashRedirect(
+        ResponseInterface $response,
+        string $path,
+        string $message,
+        string $type = FlashType::SUCCESS,
+        ?string $title = null,
+    ): ResponseInterface {
+        FlashBag::set($message, $type, $title);
 
         return $this->redirect($response, $path);
     }
 
-    /** @return array{message: string, type: string}|null */
+    /** @deprecated Flash is injected globally via FlashMiddleware */
     protected function pullFlash(): ?array
     {
-        $flash = $_SESSION['flash'] ?? null;
-        unset($_SESSION['flash']);
-
-        return is_array($flash) ? $flash : null;
+        return null;
     }
 }

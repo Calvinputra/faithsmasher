@@ -1,0 +1,4 @@
+<div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="false"></div>
+{% if flash %}
+    <script type="application/json" id="fs-flash-data">{{ flash|json_encode|raw }}</script>
+{% endif %}

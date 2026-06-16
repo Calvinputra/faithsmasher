@@ -9,6 +9,7 @@ use App\Controllers\HomeController;
 use App\Controllers\MatchController;
 use App\Controllers\ParticipantController;
 use App\Controllers\SessionController;
+use App\Controllers\UserAdminController;
 use App\Middleware\AuthMiddleware;
 use App\Services\AuthService;
 use Slim\App;
@@ -22,6 +23,7 @@ return function (App $app, AuthService $auth): void {
     $participantController = new ParticipantController($auth);
     $gameRuleController = new GameRuleController($auth);
     $matchController = new MatchController($auth);
+    $userAdminController = new UserAdminController($auth);
 
     $app->get('/', [$homeController, 'index']);
 
@@ -37,9 +39,14 @@ return function (App $app, AuthService $auth): void {
         $participantController,
         $gameRuleController,
         $matchController,
+        $userAdminController,
     ) {
         $group->get('/dashboard', [$dashboardController, 'index']);
         $group->get('/dashboard/{id}', [$dashboardController, 'show']);
+
+        $group->get('/admin/users', [$userAdminController, 'index']);
+        $group->post('/admin/users/{id}/approve', [$userAdminController, 'approve']);
+        $group->post('/admin/users/{id}/reject', [$userAdminController, 'reject']);
 
         $group->get('/sessions/create', [$sessionController, 'create']);
         $group->post('/sessions', [$sessionController, 'store']);
@@ -47,6 +54,8 @@ return function (App $app, AuthService $auth): void {
         $group->post('/sessions/{id}', [$sessionController, 'update']);
         $group->post('/sessions/{id}/delete', [$sessionController, 'destroy']);
 
+        $group->get('/sessions/{sessionId}/participants/bulk', [$participantController, 'bulk']);
+        $group->post('/sessions/{sessionId}/participants/bulk', [$participantController, 'bulkStore']);
         $group->get('/sessions/{sessionId}/participants', [$participantController, 'index']);
         $group->get('/sessions/{sessionId}/participants/create', [$participantController, 'create']);
         $group->post('/sessions/{sessionId}/participants', [$participantController, 'store']);

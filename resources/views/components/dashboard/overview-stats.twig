@@ -1,0 +1,29 @@
+<div class="overview-stats">
+    <div class="overview-stat">
+        <span class="overview-stat-icon" aria-hidden="true">
+            {% include 'components/ui/icon.twig' with { name: 'ri-calendar-event-line', size: 'lg', class: 'text-navy-600' } %}
+        </span>
+        <div>
+            <p class="overview-stat-value">{{ stats.sessionCount }}</p>
+            <p class="overview-stat-label">Total Session</p>
+        </div>
+    </div>
+    <div class="overview-stat">
+        <span class="overview-stat-icon" aria-hidden="true">
+            {% include 'components/ui/icon.twig' with { name: 'ri-group-line', size: 'lg', class: 'text-navy-600' } %}
+        </span>
+        <div>
+            <p class="overview-stat-value">{{ stats.participantCount }}</p>
+            <p class="overview-stat-label">Total Peserta</p>
+        </div>
+    </div>
+    <div class="overview-stat">
+        <span class="overview-stat-icon" aria-hidden="true">
+            {% include 'components/ui/icon.twig' with { name: 'ri-building-2-line', size: 'lg', class: 'text-navy-600' } %}
+        </span>
+        <div>
+            <p class="overview-stat-value">{{ stats.courtCount }}</p>
+            <p class="overview-stat-label">Total Lapangan</p>
+        </div>
+    </div>
+</div>

@@ -1,30 +1,30 @@
 {% if paginator.hasPages() %}
 <nav class="pagination" aria-label="Pagination">
     {% if paginator.hasPrevious() %}
-        <a href="{{ baseUrl }}?{{ queryString|default('') }}page={{ paginator.page - 1 }}" class="pagination-btn" aria-label="Previous page">
-            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+        <a href="{{ baseUrl }}?{{ queryString|default('') }}page={{ paginator.page - 1 }}" class="pagination-btn" aria-label="Halaman sebelumnya">
+            {% include 'components/ui/icon.twig' with { name: 'ri-arrow-left-s-line', size: 'sm' } %}
         </a>
     {% else %}
         <span class="pagination-btn pagination-btn-disabled" aria-disabled="true">
-            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+            {% include 'components/ui/icon.twig' with { name: 'ri-arrow-left-s-line', size: 'sm' } %}
         </span>
     {% endif %}
 
     {% for p in paginator.pages() %}
         {% if p == paginator.page %}
-            <span class="pagination-num pagination-num-active">{{ p }}</span>
+            <span class="pagination-num pagination-num-active" aria-current="page">{{ p }}</span>
         {% else %}
-            <a href="{{ baseUrl }}?{{ queryString|default('') }}page={{ p }}" class="pagination-num">{{ p }}</a>
+            <a href="{{ baseUrl }}?{{ queryString|default('') }}page={{ p }}" class="pagination-num" aria-label="Halaman {{ p }}">{{ p }}</a>
         {% endif %}
     {% endfor %}
 
     {% if paginator.hasNext() %}
-        <a href="{{ baseUrl }}?{{ queryString|default('') }}page={{ paginator.page + 1 }}" class="pagination-btn" aria-label="Next page">
-            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        <a href="{{ baseUrl }}?{{ queryString|default('') }}page={{ paginator.page + 1 }}" class="pagination-btn" aria-label="Halaman berikutnya">
+            {% include 'components/ui/icon.twig' with { name: 'ri-arrow-right-s-line', size: 'sm' } %}
         </a>
     {% else %}
         <span class="pagination-btn pagination-btn-disabled" aria-disabled="true">
-            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+            {% include 'components/ui/icon.twig' with { name: 'ri-arrow-right-s-line', size: 'sm' } %}
         </span>
     {% endif %}
 </nav>

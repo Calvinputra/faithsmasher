@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Services\AuthService;
+use App\Support\FlashType;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Slim\Views\Twig;
@@ -52,7 +53,12 @@ final class SessionController extends BaseController
             (int) ($data['court_count'] ?? 1),
         );
 
-        return $this->flashRedirect($response, '/dashboard/' . $session->id, 'Session created successfully.');
+        return $this->flashRedirect(
+            $response,
+            '/dashboard/' . $session->id,
+            'Session "' . $session->name . '" siap digunakan. Tambahkan peserta untuk mulai.',
+            FlashType::CREATE,
+        );
     }
 
     public function edit(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
@@ -96,14 +102,25 @@ final class SessionController extends BaseController
             (int) ($data['court_count'] ?? 1),
         );
 
-        return $this->flashRedirect($response, '/dashboard/' . $sessionId, 'Session updated successfully.');
+        return $this->flashRedirect(
+            $response,
+            '/dashboard/' . $sessionId,
+            'Perubahan session berhasil disimpan.',
+            FlashType::UPDATE,
+        );
     }
 
     public function destroy(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
+        $this->assertCanDelete();
         $this->sessions->delete((int) $args['id'], $this->userId());
 
-        return $this->flashRedirect($response, '/dashboard', 'Session deleted.');
+        return $this->flashRedirect(
+            $response,
+            '/dashboard',
+            'Session beserta data terkait telah dihapus.',
+            FlashType::DELETE,
+        );
     }
 
     /** @param array<string, mixed> $data @return array<string, string> */

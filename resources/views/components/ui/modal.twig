@@ -1,0 +1,18 @@
+<div class="modal{% if open|default(false) %} modal-open{% endif %}" id="{{ id|default('app-modal') }}" role="dialog" aria-modal="true" aria-labelledby="{{ id|default('app-modal') }}-title">
+    <div class="modal-backdrop" data-modal-close></div>
+    <div class="modal-panel">
+        {% if icon is defined %}
+            <div class="modal-icon" aria-hidden="true">
+                {% include 'components/ui/icon.twig' with { name: icon, size: 'xl', class: iconClass|default('text-gold-600') } %}
+            </div>
+        {% endif %}
+        <h2 class="modal-title" id="{{ id|default('app-modal') }}-title">{{ title }}</h2>
+        {% if message is defined %}
+            <p class="modal-message">{{ message }}</p>
+        {% endif %}
+        {% block modal_body %}{% endblock %}
+        <div class="modal-actions">
+            {% block modal_actions %}{% endblock %}
+        </div>
+    </div>
+</div>

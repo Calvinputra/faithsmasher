@@ -72,6 +72,47 @@ final class ParticipantRepository
             ?? throw new \RuntimeException('Failed to create participant.');
     }
 
+    /**
+     * @param list<array{name: string, rank: string}> $rows
+     */
+    public function createMany(int $sessionId, array $rows): int
+    {
+        if ($rows === []) {
+            return 0;
+        }
+
+        $statement = $this->db->prepare(
+            'INSERT INTO participants (session_id, name, `rank`, gender, phone, gms_source)
+             VALUES (:session_id, :name, :rank, NULL, NULL, NULL)'
+        );
+
+        $this->db->beginTransaction();
+
+        try {
+            foreach ($rows as $row) {
+                $statement->execute([
+                    'session_id' => $sessionId,
+                    'name' => $row['name'],
+                    'rank' => $row['rank'],
+                ]);
+            }
+
+            $this->db->commit();
+        } catch (\Throwable $exception) {
+            $this->db->rollBack();
+
+            throw $exception;
+        }
+
+        return count($rows);
+    }
+
+    public function deleteAllBySession(int $sessionId): void
+    {
+        $statement = $this->db->prepare('DELETE FROM participants WHERE session_id = :session_id');
+        $statement->execute(['session_id' => $sessionId]);
+    }
+
     public function update(
         int $id,
         int $sessionId,

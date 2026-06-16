@@ -3,47 +3,54 @@
 
 {% block title %}Dashboard — {{ app.name }}{% endblock %}
 
+{% block head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+{% endblock %}
+
 {% block page_header %}
 <div class="min-w-0">
     <h1 class="page-title text-xl sm:text-2xl">Dashboard</h1>
-    <p class="hidden text-xs text-navy-500 sm:block">Manage your tournament sessions</p>
+    <p class="hidden text-xs text-navy-500 sm:block">Kelola session turnamen badminton</p>
 </div>
 {% endblock %}
 
 {% block content %}
-<div class="page-header mb-4 sm:mb-6">
+<div class="page-header mb-2 sm:mb-4">
     <div class="w-full sm:hidden">
-        <a href="/sessions/create" class="btn-primary w-full justify-center">+ New Session</a>
+        <a href="/sessions/create" class="btn-primary w-full justify-center">+ Session Baru</a>
     </div>
 </div>
 
-{% include 'components/ui/search-bar.twig' with { query: search, placeholder: 'Search by name or location...' } %}
-
-{% if search %}
-    <p class="mt-3 text-sm text-navy-500">
-        {{ paginator.total }} result{{ paginator.total != 1 ? 's' : '' }} for "<strong class="text-navy-800">{{ search }}</strong>"
-    </p>
-{% else %}
-    <p class="mt-3 text-sm text-navy-500">{{ paginator.total }} session{{ paginator.total != 1 ? 's' : '' }} · newest first</p>
+{% if stats.sessionCount > 0 %}
+    {% include 'components/dashboard/overview-stats.twig' with { stats: stats } %}
 {% endif %}
+
+{% include 'components/dashboard/session-toolbar.twig' with {
+    search: search,
+    date: date|default(''),
+    sessionDates: sessionDates|default([]),
+    paginator: paginator
+} %}
 
 {% if sessions is empty %}
     <div class="empty-state mt-6">
-        <div class="empty-state-icon">🏸</div>
+        <div class="empty-state-icon">
+            {% include 'components/ui/icon.twig' with { name: 'ri-calendar-event-line', size: 'xl', class: 'text-navy-500' } %}
+        </div>
         <h2 class="text-lg font-bold text-navy-900">
-            {% if search %}No sessions found{% else %}No sessions yet{% endif %}
+            {% if search or date|default('') %}Session tidak ditemukan{% else %}Belum ada session{% endif %}
         </h2>
         <p class="mt-2 text-sm text-navy-600 max-w-xs">
-            {% if search %}
-                Try a different search term or clear the filter.
+            {% if search or date|default('') %}
+                Coba kata kunci lain, tanggal lain, atau reset filter.
             {% else %}
-                Create your first session to start adding players and generating matches.
+                Buat session pertama untuk mulai menambah peserta dan generate match.
             {% endif %}
         </p>
-        {% if search %}
-            <a href="/dashboard" class="btn-secondary mt-6 justify-center">Clear Search</a>
+        {% if search or date|default('') %}
+            <a href="/dashboard" class="btn-secondary mt-6 justify-center">Reset Filter</a>
         {% else %}
-            <a href="/sessions/create" class="btn-primary mt-6 justify-center">Create Session</a>
+            <a href="/sessions/create" class="btn-primary mt-6 justify-center">Buat Session</a>
         {% endif %}
     </div>
 {% else %}
@@ -53,11 +60,13 @@
         {% endfor %}
     </div>
 
-    {% set qs = search ? 'q=' ~ search|url_encode ~ '&' : '' %}
-    <div class="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
-        <p class="text-sm text-navy-500">
-            Page {{ paginator.page }} of {{ paginator.totalPages() }}
-            · {{ paginator.total }} total
+    {% set qs = '' %}
+    {% if search %}{% set qs = qs ~ 'q=' ~ search|url_encode ~ '&' %}{% endif %}
+    {% if date|default('') %}{% set qs = qs ~ 'date=' ~ date|url_encode ~ '&' %}{% endif %}
+    <div class="session-list-footer">
+        <p class="session-list-footer-text">
+            Halaman {{ paginator.page }} dari {{ paginator.totalPages() }}
+            · {{ paginator.perPage }} per halaman
         </p>
         {% include 'components/ui/pagination.twig' with {
             paginator: paginator,
@@ -66,4 +75,9 @@
         } %}
     </div>
 {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="/assets/js/dashboard-filter.js"></script>
 {% endblock %}

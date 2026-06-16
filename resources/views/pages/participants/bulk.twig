@@ -1,0 +1,130 @@
+{% extends 'layouts/dashboard.twig' %}
+{% block title %}Bulk Upload Peserta — {{ session.name }}{% endblock %}
+{% set sidebar_session = session %}
+{% block sidebar_nav %}{% include 'components/sidebar.twig' with { session: session, active: 'participants' } %}{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-3xl">
+    <div class="mb-6">
+        <a href="/sessions/{{ session.id }}/participants" class="inline-flex items-center gap-1 text-sm font-medium text-navy-600 hover:text-navy-900">
+            {% include 'components/ui/icon.twig' with { name: 'ri-arrow-left-s-line', size: 'sm' } %}
+            Kembali ke Participants
+        </a>
+        <h1 class="mt-3 text-2xl font-bold text-navy-900 sm:text-3xl">Bulk Upload Peserta</h1>
+        <p class="mt-1 text-sm text-navy-600">{{ session.name }} — paste dari Excel atau upload CSV</p>
+    </div>
+
+    <div class="bulk-format-card card mb-6">
+        <h2 class="flex items-center gap-2 font-bold text-navy-900">
+            {% include 'components/ui/icon.twig' with { name: 'ri-information-line', class: 'text-gold-600' } %}
+            Format yang didukung
+        </h2>
+        <ul class="bulk-format-list mt-3 space-y-2 text-sm text-navy-600">
+            <li><strong>Nama + Rank</strong> — paste 2 kolom: <code>Calvin,C</code> atau tab dari Excel</li>
+            <li><strong>No + Nama + Rank</strong> — <code>1,Calvin,C</code> (header otomatis dilewati)</li>
+            <li><strong>No + Nama</strong> — rank pakai default di bawah (cocok untuk sheet seperti screenshot)</li>
+        </ul>
+        <pre class="bulk-format-example mt-4">Nama,Rank
+Calvin,C
+Yosua,B+
+Pat,B
+Kevin,A-</pre>
+    </div>
+
+    <form method="post" action="/sessions/{{ session.id }}/participants/bulk" enctype="multipart/form-data" class="card space-y-5">
+        <div class="form-group">
+            <label for="bulk_data" class="form-label">Paste data peserta</label>
+            <textarea
+                id="bulk_data"
+                name="bulk_data"
+                rows="14"
+                class="bulk-textarea input-field font-mono text-sm"
+                placeholder="Paste dari Excel/Google Sheets di sini...&#10;Contoh:&#10;Calvin,C&#10;Yosua,B+&#10;Pat,B"
+            >{{ old.bulk_data|default('') }}</textarea>
+            <p class="form-hint">Copy kolom Nama & Rank dari spreadsheet, lalu paste. Baris header (No, Nama, Week, dll.) otomatis diabaikan.</p>
+        </div>
+
+        <div class="form-group">
+            <label for="bulk_file" class="form-label">Atau upload file CSV</label>
+            <input type="file" id="bulk_file" name="bulk_file" accept=".csv,.txt,text/csv" class="bulk-file-input">
+            <p class="form-hint">File .csv atau .txt, maks. 1 MB. Jika diisi, file akan dipakai menggantikan textarea.</p>
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2">
+            <div class="form-group">
+                <label for="default_rank" class="form-label">Default rank (jika kolom rank kosong)</label>
+                <select id="default_rank" name="default_rank" class="input-field">
+                    {% for value, label in ranks %}
+                        <option value="{{ value }}" {% if (old.default_rank|default('C')) == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="bulk-options space-y-3 rounded-xl border border-navy-100 bg-navy-50/60 p-4">
+            {% if currentUser.canDelete %}
+                <label class="bulk-checkbox">
+                    <input type="checkbox" name="replace_existing" value="1" {% if old.replace_existing is defined %}checked{% endif %}>
+                    <span>
+                        <strong>Ganti semua peserta</strong>
+                        <small>Hapus peserta & match lama, lalu import ulang</small>
+                    </span>
+                </label>
+            {% endif %}
+            <label class="bulk-checkbox">
+                <input type="checkbox" name="generate_matches" value="1" {% if old.generate_matches is defined %}checked{% endif %} checked>
+                <span>
+                    <strong>Generate match otomatis</strong>
+                    <small>Setelah upload, langsung buat match by rank (min. 2 peserta)</small>
+                </span>
+            </label>
+        </div>
+
+        {% if rowErrors is not empty %}
+            <div class="bulk-errors rounded-xl border border-red-200 bg-red-50 p-4">
+                <p class="flex items-center gap-2 font-semibold text-red-800">
+                    {% include 'components/ui/icon.twig' with { name: 'ri-error-warning-line', class: 'text-red-500' } %}
+                    Perbaiki error berikut:
+                </p>
+                <ul class="mt-2 list-inside list-disc space-y-1 text-sm text-red-700">
+                    {% for error in rowErrors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        {% if preview is not empty and rowErrors is not empty %}
+            <div class="bulk-preview">
+                <p class="mb-2 text-sm font-semibold text-navy-700">Preview baris valid ({{ preview|length }})</p>
+                <div class="overflow-x-auto rounded-xl border border-border">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b border-border bg-navy-50 text-left text-navy-500">
+                                <th class="px-4 py-2">Nama</th>
+                                <th class="px-4 py-2">Rank</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in preview %}
+                                <tr class="border-b border-border/60">
+                                    <td class="px-4 py-2 font-medium text-navy-900">{{ row.name }}</td>
+                                    <td class="px-4 py-2"><span class="rounded bg-gold-100 px-2 py-0.5 text-xs font-bold">{{ row.rank }}</span></td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="form-actions !border-t-0 !pt-0">
+            <button type="submit" class="btn-primary w-full sm:w-auto">
+                {% include 'components/ui/icon.twig' with { name: 'ri-upload-cloud-2-line', class: 'mr-2', size: 'sm' } %}
+                Upload Peserta
+            </button>
+            <a href="/sessions/{{ session.id }}/participants" class="btn-secondary w-full text-center sm:w-auto">Batal</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

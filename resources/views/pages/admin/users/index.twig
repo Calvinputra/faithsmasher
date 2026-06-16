@@ -1,0 +1,74 @@
+{% extends 'layouts/dashboard.twig' %}
+{% set active = 'admin-users' %}
+
+{% block title %}Kelola User — {{ app.name }}{% endblock %}
+
+{% block page_header %}
+<div class="min-w-0">
+    <h1 class="page-title text-xl sm:text-2xl">Kelola User</h1>
+    <p class="hidden text-xs text-navy-500 sm:block">Superadmin · approve atau tolak pendaftaran</p>
+</div>
+{% endblock %}
+
+{% block content %}
+{% if pendingCount > 0 %}
+    <div class="mb-6 rounded-xl border border-gold-200 bg-gold-50 px-4 py-3 text-sm text-navy-800">
+        {% include 'components/ui/icon.twig' with { name: 'ri-time-line', class: 'mr-1 inline text-gold-600' } %}
+        <strong>{{ pendingCount }}</strong> akun menunggu konfirmasi.
+    </div>
+{% endif %}
+
+<div class="card overflow-x-auto">
+    <table class="w-full text-sm">
+        <thead>
+            <tr class="border-b border-border text-left text-navy-500">
+                <th class="pb-3 pr-4">Nama</th>
+                <th class="pb-3 pr-4">Email</th>
+                <th class="pb-3 pr-4">Role</th>
+                <th class="pb-3 pr-4">Status</th>
+                <th class="pb-3 pr-4">Daftar</th>
+                <th class="pb-3">Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for u in users %}
+                <tr class="border-b border-border/60">
+                    <td class="py-3 pr-4 font-medium text-navy-900">{{ u.name }}</td>
+                    <td class="py-3 pr-4 text-navy-600">{{ u.email }}</td>
+                    <td class="py-3 pr-4">
+                        {% if u.isSuperadmin %}
+                            <span class="rounded-full bg-navy-100 px-2 py-0.5 text-xs font-bold text-navy-800">Superadmin</span>
+                        {% else %}
+                            <span class="rounded-full bg-navy-50 px-2 py-0.5 text-xs font-semibold text-navy-600">Admin</span>
+                        {% endif %}
+                    </td>
+                    <td class="py-3 pr-4">
+                        {% if u.isPending %}
+                            <span class="rounded-full bg-gold-100 px-2 py-0.5 text-xs font-bold text-gold-700">Pending</span>
+                        {% elseif u.status == 'rejected' %}
+                            <span class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-700">Ditolak</span>
+                        {% else %}
+                            <span class="rounded-full bg-green-100 px-2 py-0.5 text-xs font-bold text-green-700">Aktif</span>
+                        {% endif %}
+                    </td>
+                    <td class="py-3 pr-4 text-navy-500">{{ u.createdAt|date('d M Y') }}</td>
+                    <td class="py-3">
+                        {% if u.isPending and u.id != currentUser.id %}
+                            <div class="flex flex-wrap gap-2">
+                                <form method="post" action="/admin/users/{{ u.id }}/approve">
+                                    <button type="submit" class="btn-primary px-3 py-1.5 text-xs">Approve</button>
+                                </form>
+                                <form method="post" action="/admin/users/{{ u.id }}/reject">
+                                    <button type="submit" class="btn-secondary px-3 py-1.5 text-xs">Tolak</button>
+                                </form>
+                            </div>
+                        {% else %}
+                            <span class="text-navy-500">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

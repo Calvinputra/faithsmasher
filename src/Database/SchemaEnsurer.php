@@ -19,6 +19,7 @@ final class SchemaEnsurer
 
         self::ensureSessionsLocation($pdo);
         self::ensureSessionsCourtCount($pdo);
+        self::ensureUserRoleStatus($pdo);
     }
 
     private static function ensureSessionsCourtCount(PDO $pdo): void
@@ -47,6 +48,23 @@ final class SchemaEnsurer
             }
         } catch (PDOException) {
             // Table may not exist yet — run database/schema.sql manually
+        }
+    }
+
+    private static function ensureUserRoleStatus(PDO $pdo): void
+    {
+        try {
+            $statement = $pdo->query("SHOW COLUMNS FROM users LIKE 'role'");
+
+            if ($statement !== false && $statement->rowCount() === 0) {
+                $pdo->exec(
+                    "ALTER TABLE users
+                     ADD COLUMN role ENUM('superadmin', 'admin') NOT NULL DEFAULT 'admin' AFTER password,
+                     ADD COLUMN status ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending' AFTER role"
+                );
+                $pdo->exec("UPDATE users SET role = 'superadmin', status = 'approved'");
+            }
+        } catch (PDOException) {
         }
     }
 }

@@ -1,14 +1,20 @@
 {% extends 'layouts/dashboard.twig' %}
 {% block title %}Participants — {{ session.name }}{% endblock %}
 {% set sidebar_session = session %}
-{% block sidebar_nav %}{% include 'components/sidebar.twig' with { session: session } %}{% endblock %}
+{% block sidebar_nav %}{% include 'components/sidebar.twig' with { session: session, active: 'participants' } %}{% endblock %}
 {% block content %}
 <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
     <div>
         <h1 class="text-2xl font-bold text-navy-900">Participants</h1>
         <p class="text-sm text-navy-600">{{ session.name }} — name & rank required</p>
     </div>
-    <a href="/sessions/{{ session.id }}/participants/create" class="btn-primary">+ Add Participant</a>
+    <div class="flex flex-col gap-2 sm:flex-row">
+        <a href="/sessions/{{ session.id }}/participants/bulk" class="btn-secondary justify-center">
+            {% include 'components/ui/icon.twig' with { name: 'ri-upload-cloud-2-line', class: 'mr-2', size: 'sm' } %}
+            Bulk Upload
+        </a>
+        <a href="/sessions/{{ session.id }}/participants/create" class="btn-primary justify-center">+ Add Participant</a>
+    </div>
 </div>
 
 <div class="mb-6 flex flex-wrap gap-2">
@@ -41,13 +47,23 @@
                     <td class="py-3 pr-4 text-navy-600">{{ p.gmsSource|default('—') }}</td>
                     <td class="py-3 space-x-2">
                         <a href="/sessions/{{ session.id }}/participants/{{ p.id }}/edit" class="text-navy-700 hover:underline">Edit</a>
-                        <form method="post" action="/sessions/{{ session.id }}/participants/{{ p.id }}/delete" class="inline" onsubmit="return confirm('Delete participant?')">
-                            <button type="submit" class="text-red-600 hover:underline">Delete</button>
-                        </form>
+                        {% if currentUser.canDelete %}
+                            <form method="post" action="/sessions/{{ session.id }}/participants/{{ p.id }}/delete" class="inline" onsubmit="return confirm('Delete participant?')">
+                                <button type="submit" class="text-red-600 hover:underline">Delete</button>
+                            </form>
+                        {% endif %}
                     </td>
                 </tr>
             {% else %}
-                <tr><td colspan="6" class="py-8 text-center text-navy-500">No participants yet.</td></tr>
+                <tr>
+                    <td colspan="6" class="py-10 text-center">
+                        <p class="text-navy-500">Belum ada peserta.</p>
+                        <a href="/sessions/{{ session.id }}/participants/bulk" class="btn-primary mt-4 inline-flex justify-center">
+                            {% include 'components/ui/icon.twig' with { name: 'ri-upload-cloud-2-line', class: 'mr-2', size: 'sm' } %}
+                            Bulk Upload dari Excel
+                        </a>
+                    </td>
+                </tr>
             {% endfor %}
         </tbody>
     </table>

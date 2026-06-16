@@ -1,16 +1,24 @@
-<form method="get" action="{{ action|default('/dashboard') }}" class="search-bar">
+<form method="get" action="{{ action|default('/dashboard') }}" class="search-bar" role="search">
     <div class="search-input-wrap">
-        <svg class="search-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        {% include 'components/ui/icon.twig' with { name: 'ri-search-line', class: 'search-icon' } %}
         <input
             type="search"
             name="q"
             value="{{ query|default('') }}"
-            placeholder="{{ placeholder|default('Search sessions...') }}"
+            placeholder="{{ placeholder|default('Cari session, lokasi...') }}"
             class="search-input"
             autocomplete="off"
+            aria-label="{{ placeholder|default('Search sessions') }}"
         >
     </div>
+    <button type="submit" class="btn-secondary search-submit px-4 py-2.5 text-sm">
+        {% include 'components/ui/icon.twig' with { name: 'ri-search-line', class: 'mr-1.5', size: 'sm' } %}
+        Cari
+    </button>
     {% if query|default('') %}
-        <a href="{{ action|default('/dashboard') }}" class="btn-secondary px-4 py-2.5 text-sm">Clear</a>
+        <a href="{{ action|default('/dashboard') }}" class="btn-ghost search-clear px-4 py-2.5 text-sm">
+            {% include 'components/ui/icon.twig' with { name: 'ri-close-circle-line', class: 'mr-1.5', size: 'sm' } %}
+            Reset
+        </a>
     {% endif %}
 </form>

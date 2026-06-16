@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use App\Repositories\GameRuleRepository;
 use App\Services\AuthService;
+use App\Support\FlashType;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Slim\Views\Twig;
@@ -29,7 +30,6 @@ final class GameRuleController extends BaseController
         return $view->render($response, 'pages/rules/index.twig', [
             'session' => $session,
             'rules' => $this->rules->allBySession($session->id),
-            'flash' => $this->pullFlash(),
         ]);
     }
 
@@ -74,7 +74,12 @@ final class GameRuleController extends BaseController
             (int) $data['lose_points'],
         );
 
-        return $this->flashRedirect($response, '/sessions/' . $sessionId . '/rules', 'Game rule added.');
+        return $this->flashRedirect(
+            $response,
+            '/sessions/' . $sessionId . '/rules',
+            'Aturan permainan berhasil ditambahkan.',
+            FlashType::CREATE,
+        );
     }
 
     public function edit(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
@@ -126,15 +131,26 @@ final class GameRuleController extends BaseController
             (int) $data['lose_points'],
         );
 
-        return $this->flashRedirect($response, '/sessions/' . $sessionId . '/rules', 'Game rule updated.');
+        return $this->flashRedirect(
+            $response,
+            '/sessions/' . $sessionId . '/rules',
+            'Aturan permainan berhasil diperbarui.',
+            FlashType::UPDATE,
+        );
     }
 
     public function destroy(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
+        $this->assertCanDelete();
         $sessionId = (int) $args['sessionId'];
         $this->rules->delete((int) $args['id'], $sessionId);
 
-        return $this->flashRedirect($response, '/sessions/' . $sessionId . '/rules', 'Game rule deleted.');
+        return $this->flashRedirect(
+            $response,
+            '/sessions/' . $sessionId . '/rules',
+            'Aturan permainan berhasil dihapus.',
+            FlashType::DELETE,
+        );
     }
 
     /** @param array<string, mixed> $data @return array<string, string> */

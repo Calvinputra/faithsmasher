@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Models\User;
 use App\Repositories\UserRepository;
+use App\Support\UserStatus;
 
 final class AuthService
 {
@@ -27,7 +28,15 @@ final class AuthService
             return null;
         }
 
-        return $this->users->findById((int) $userId);
+        $user = $this->users->findById((int) $userId);
+
+        if ($user === null || !$user->isApproved()) {
+            unset($_SESSION[self::SESSION_KEY]);
+
+            return null;
+        }
+
+        return $user;
     }
 
     public function check(): bool
@@ -35,44 +44,78 @@ final class AuthService
         return $this->user() !== null;
     }
 
-    public function login(string $email, string $password): bool
+    public function canDelete(): bool
     {
-        $user = $this->users->verifyPassword($email, $password);
+        return $this->user()?->canDelete() ?? false;
+    }
+
+    public function isSuperadmin(): bool
+    {
+        return $this->user()?->isSuperadmin() ?? false;
+    }
+
+    /**
+     * @return array{ok: bool, error: string|null}
+     */
+    public function login(string $email, string $password): array
+    {
+        $user = $this->users->verifyPassword(strtolower(trim($email)), $password);
 
         if ($user === null) {
-            return false;
+            return ['ok' => false, 'error' => 'Email atau password salah.'];
+        }
+
+        if ($user->isPending()) {
+            return ['ok' => false, 'error' => 'Akun menunggu konfirmasi Superadmin.'];
+        }
+
+        if ($user->status === UserStatus::REJECTED) {
+            return ['ok' => false, 'error' => 'Pendaftaran akun ditolak. Hubungi Superadmin.'];
+        }
+
+        if (!$user->isApproved()) {
+            return ['ok' => false, 'error' => 'Akun belum aktif.'];
         }
 
         $_SESSION[self::SESSION_KEY] = $user->id;
 
-        return true;
+        return ['ok' => true, 'error' => null];
     }
 
     /**
-     * @return array{success: bool, errors: array<string, string>}
+     * @return array{success: bool, pending: bool, errors: array<string, string>}
      */
     public function register(string $name, string $email, string $password, string $passwordConfirm): array
     {
         $errors = $this->validateRegistration($name, $email, $password, $passwordConfirm);
 
         if ($errors !== []) {
-            return ['success' => false, 'errors' => $errors];
+            return ['success' => false, 'pending' => false, 'errors' => $errors];
         }
 
-        $user = $this->users->create(
+        $this->users->createPending(
             trim($name),
             strtolower(trim($email)),
             password_hash($password, PASSWORD_DEFAULT),
         );
 
-        $_SESSION[self::SESSION_KEY] = $user->id;
-
-        return ['success' => true, 'errors' => []];
+        return ['success' => true, 'pending' => true, 'errors' => []];
     }
 
     public function logout(): void
     {
         unset($_SESSION[self::SESSION_KEY]);
+    }
+
+    public function requireSuperadmin(): ?User
+    {
+        $user = $this->user();
+
+        if ($user === null || !$user->isSuperadmin()) {
+            return null;
+        }
+
+        return $user;
     }
 
     /**

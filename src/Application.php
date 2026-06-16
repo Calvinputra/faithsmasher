@@ -53,6 +53,7 @@ final class Application
         $twig->getEnvironment()->addGlobal('currentUser', $auth->user());
 
         $app = AppFactory::create();
+        $app->add(new \App\Middleware\FlashMiddleware($twig));
         $app->add(TwigMiddleware::create($app, $twig));
         $app->addBodyParsingMiddleware();
         $app->addRoutingMiddleware();

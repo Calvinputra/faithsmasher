@@ -6,10 +6,14 @@ namespace App\Repositories;
 
 use App\Database\Connection;
 use App\Models\User;
+use App\Support\UserRole;
+use App\Support\UserStatus;
 use PDO;
 
 final class UserRepository
 {
+    private const SELECT_FIELDS = 'id, name, email, role, status, created_at';
+
     private PDO $db;
 
     public function __construct()
@@ -19,7 +23,9 @@ final class UserRepository
 
     public function findByEmail(string $email): ?User
     {
-        $statement = $this->db->prepare('SELECT id, name, email, created_at FROM users WHERE email = :email LIMIT 1');
+        $statement = $this->db->prepare(
+            'SELECT ' . self::SELECT_FIELDS . ' FROM users WHERE email = :email LIMIT 1'
+        );
         $statement->execute(['email' => $email]);
 
         $row = $statement->fetch();
@@ -29,7 +35,9 @@ final class UserRepository
 
     public function findById(int $id): ?User
     {
-        $statement = $this->db->prepare('SELECT id, name, email, created_at FROM users WHERE id = :id LIMIT 1');
+        $statement = $this->db->prepare(
+            'SELECT ' . self::SELECT_FIELDS . ' FROM users WHERE id = :id LIMIT 1'
+        );
         $statement->execute(['id' => $id]);
 
         $row = $statement->fetch();
@@ -42,15 +50,18 @@ final class UserRepository
         return $this->findByEmail($email) !== null;
     }
 
-    public function create(string $name, string $email, string $passwordHash): User
+    public function createPending(string $name, string $email, string $passwordHash): User
     {
         $statement = $this->db->prepare(
-            'INSERT INTO users (name, email, password) VALUES (:name, :email, :password)'
+            'INSERT INTO users (name, email, password, role, status)
+             VALUES (:name, :email, :password, :role, :status)'
         );
         $statement->execute([
             'name' => $name,
             'email' => $email,
             'password' => $passwordHash,
+            'role' => UserRole::ADMIN,
+            'status' => UserStatus::PENDING,
         ]);
 
         $user = $this->findById((int) $this->db->lastInsertId());
@@ -64,7 +75,9 @@ final class UserRepository
 
     public function verifyPassword(string $email, string $password): ?User
     {
-        $statement = $this->db->prepare('SELECT id, name, email, password, created_at FROM users WHERE email = :email LIMIT 1');
+        $statement = $this->db->prepare(
+            'SELECT id, name, email, password, role, status, created_at FROM users WHERE email = :email LIMIT 1'
+        );
         $statement->execute(['email' => $email]);
 
         $row = $statement->fetch();
@@ -74,5 +87,38 @@ final class UserRepository
         }
 
         return User::fromRow($row);
+    }
+
+    /** @return list<User> */
+    public function allOrdered(): array
+    {
+        $statement = $this->db->query(
+            'SELECT ' . self::SELECT_FIELDS . ' FROM users
+             ORDER BY FIELD(status, \'pending\', \'approved\', \'rejected\'), created_at DESC'
+        );
+
+        return array_map(
+            static fn (array $row): User => User::fromRow($row),
+            $statement->fetchAll(),
+        );
+    }
+
+    public function countPending(): int
+    {
+        $statement = $this->db->prepare('SELECT COUNT(*) FROM users WHERE status = :status');
+        $statement->execute(['status' => UserStatus::PENDING]);
+
+        return (int) $statement->fetchColumn();
+    }
+
+    public function updateStatus(int $id, string $status): bool
+    {
+        if (!UserStatus::isValid($status)) {
+            return false;
+        }
+
+        $statement = $this->db->prepare('UPDATE users SET status = :status WHERE id = :id');
+
+        return $statement->execute(['id' => $id, 'status' => $status]);
     }
 }
