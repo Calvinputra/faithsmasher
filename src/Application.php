@@ -49,6 +49,12 @@ final class Application
 
         $twig->getEnvironment()->addGlobal('app', $config);
 
+        $basePath = $this->basePath;
+        $twig->getEnvironment()->addFunction(new \Twig\TwigFunction(
+            'asset',
+            static fn (string $path): string => \App\Support\AssetVersion::url($basePath, $path),
+        ));
+
         $auth = new \App\Services\AuthService();
         $twig->getEnvironment()->addGlobal('currentUser', $auth->user());
 

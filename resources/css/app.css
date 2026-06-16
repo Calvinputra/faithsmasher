@@ -1002,7 +1002,23 @@
 
 .fs-flatpickr-filter.flatpickr-calendar {
   margin-top: 0.35rem;
-  z-index: 9999;
+  z-index: 10000;
+  box-shadow: 0 12px 40px rgba(8, 24, 48, 0.15);
+}
+
+.fs-flatpickr-filter.flatpickr-calendar.open {
+  display: block;
+}
+
+.date-filter-wrap {
+  position: relative;
+}
+
+.date-filter-wrap .flatpickr-calendar.static {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  left: 0;
+  right: auto;
 }
 
 .fs-flatpickr span.flatpickr-weekday {
