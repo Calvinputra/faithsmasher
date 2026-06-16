@@ -1,0 +1,71 @@
+{% extends 'layouts/dashboard.twig' %}
+{% block title %}Manual Setup — {{ session.name }}{% endblock %}
+{% set sidebar_session = session %}
+{% block sidebar_nav %}{% include 'components/sidebar.twig' with { session: session } %}{% endblock %}
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
+{% endblock %}
+{% block content %}
+<div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+        <h1 class="text-2xl font-bold text-navy-900">Manual Match Setup</h1>
+        <p class="text-sm text-navy-600">Drag players into slots. Red badge = plays more than 2x in bracket.</p>
+    </div>
+    <a href="/sessions/{{ session.id }}/matches/preview" class="btn-secondary">Preview Bracket</a>
+</div>
+
+<form id="manual-form" method="post" action="/sessions/{{ session.id }}/matches/manual">
+    <input type="hidden" name="pairings" id="pairings-input">
+
+    <div class="grid gap-6 xl:grid-cols-3">
+        <section class="card xl:col-span-1">
+            <h2 class="font-semibold text-navy-900 mb-3">Players</h2>
+            <div id="player-pool" class="min-h-[120px] space-y-2 rounded-xl border border-dashed border-border p-3">
+                {% for p in participants %}
+                    <div
+                        class="player-chip cursor-grab rounded-lg border border-border bg-navy-50 px-3 py-2 text-sm font-medium text-navy-800"
+                        data-id="{{ p.id }}"
+                        data-name="{{ p.name }}"
+                        data-rank="{{ p.rank }}"
+                    >
+                        {{ p.name }} <span class="text-xs text-gold-700">({{ p.rank }})</span>
+                        <span class="match-count ml-1 hidden rounded bg-red-100 px-1.5 text-xs text-red-700"></span>
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="xl:col-span-2 space-y-4">
+            {% for row in matches %}
+                {% set m = row.match %}
+                <div class="card" data-match-id="{{ m.id }}">
+                    <p class="text-xs font-semibold uppercase text-navy-400 mb-3">Match {{ m.matchOrder }} · Round {{ m.roundNumber }}</p>
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        <div class="drop-slot min-h-[52px] rounded-xl border-2 border-dashed border-border p-2" data-slot="p1" data-match="{{ m.id }}">
+                            {% if row.p1 %}
+                                <div class="player-chip rounded-lg bg-gold-50 px-3 py-2 text-sm font-medium" data-id="{{ m.participant1Id }}">{{ row.p1.name }} ({{ row.p1.rank }})</div>
+                            {% endif %}
+                        </div>
+                        <div class="drop-slot min-h-[52px] rounded-xl border-2 border-dashed border-border p-2" data-slot="p2" data-match="{{ m.id }}">
+                            {% if row.p2 %}
+                                <div class="player-chip rounded-lg bg-gold-50 px-3 py-2 text-sm font-medium" data-id="{{ m.participant2Id }}">{{ row.p2.name }} ({{ row.p2.rank }})</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="card text-center text-navy-500 py-8">Generate matches first or add more participants.</div>
+            {% endfor %}
+        </section>
+    </div>
+
+    {% if matches is not empty %}
+        <div class="mt-6">
+            <button type="submit" class="btn-primary">Save Manual Bracket</button>
+        </div>
+    {% endif %}
+</form>
+{% endblock %}
+{% block scripts %}
+<script src="/assets/js/bracket-manual.js"></script>
+{% endblock %}

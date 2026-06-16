@@ -1,0 +1,48 @@
+{% extends 'layouts/dashboard.twig' %}
+{% block title %}{% if participant %}Edit{% else %}Add{% endif %} Participant — {{ session.name }}{% endblock %}
+{% set sidebar_session = session %}
+{% block sidebar_nav %}{% include 'components/sidebar.twig' with { session: session } %}{% endblock %}
+{% block content %}
+<div class="max-w-xl">
+    <h1 class="text-2xl font-bold text-navy-900">{% if participant %}Edit Participant{% else %}Add Participant{% endif %}</h1>
+
+    <form method="post" action="{% if participant %}/sessions/{{ session.id }}/participants/{{ participant.id }}{% else %}/sessions/{{ session.id }}/participants{% endif %}" class="card mt-6 space-y-4">
+        <div>
+            <label for="name" class="mb-1.5 block text-sm font-medium text-navy-700">Name *</label>
+            <input type="text" id="name" name="name" required class="input-field" value="{{ old.name|default(participant.name|default('')) }}">
+            {% if errors.name is defined %}<p class="mt-1 text-xs text-red-600">{{ errors.name }}</p>{% endif %}
+        </div>
+        <div>
+            <label for="rank" class="mb-1.5 block text-sm font-medium text-navy-700">Rank *</label>
+            <select id="rank" name="rank" required class="input-field">
+                <option value="">Select rank</option>
+                {% for value, label in ranks %}
+                    <option value="{{ value }}" {% if (old.rank|default(participant.rank|default(''))) == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            {% if errors.rank is defined %}<p class="mt-1 text-xs text-red-600">{{ errors.rank }}</p>{% endif %}
+        </div>
+        <div>
+            <label for="gender" class="mb-1.5 block text-sm font-medium text-navy-700">Gender</label>
+            <select id="gender" name="gender" class="input-field">
+                <option value="">— Optional —</option>
+                {% for value, label in genders %}
+                    <option value="{{ value }}" {% if (old.gender|default(participant.gender|default(''))) == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="phone" class="mb-1.5 block text-sm font-medium text-navy-700">Phone</label>
+            <input type="text" id="phone" name="phone" class="input-field" value="{{ old.phone|default(participant.phone|default('')) }}">
+        </div>
+        <div>
+            <label for="gms_source" class="mb-1.5 block text-sm font-medium text-navy-700">GMS From</label>
+            <input type="text" id="gms_source" name="gms_source" placeholder="Where they know GMS from" class="input-field" value="{{ old.gms_source|default(participant.gmsSource|default('')) }}">
+        </div>
+        <div class="flex gap-3">
+            <button type="submit" class="btn-primary">Save</button>
+            <a href="/sessions/{{ session.id }}/participants" class="btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

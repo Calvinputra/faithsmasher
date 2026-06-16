@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ app.name }}{% endblock %}</title>
+    {% include 'components/favicon.twig' %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/assets/css/app.css">
+    {% block head %}{% endblock %}
+</head>
+<body class="min-h-full font-sans antialiased">
+    <div class="app-bg"></div>
+
+    <div class="relative flex min-h-full">
+        {% embed 'components/dashboard/sidebar.twig' %}
+            {% block sidebar_nav %}
+                {% if sidebar_session is defined %}
+                    {% include 'components/sidebar.twig' with { session: sidebar_session } %}
+                {% endif %}
+            {% endblock %}
+        {% endembed %}
+
+        <div class="flex min-w-0 flex-1 flex-col">
+            <header class="dashboard-topbar">
+                <div class="flex items-center gap-3 min-w-0">
+                    <button type="button" class="mobile-menu-btn lg:hidden" id="mobile-menu-btn" aria-label="Open menu">
+                        <svg class="h-6 w-6 text-navy-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                    </button>
+                    {% block page_header %}{% endblock %}
+                </div>
+                <a href="/sessions/create" class="btn-primary hidden sm:inline-flex px-4 py-2 text-sm">
+                    + New Session
+                </a>
+            </header>
+
+            <main class="dashboard-main">
+                {% include 'components/flash.twig' %}
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    {# Mobile drawer #}
+    <div class="mobile-drawer-overlay hidden" id="mobile-drawer-overlay"></div>
+    <aside class="mobile-drawer hidden" id="mobile-drawer">
+        <div class="mobile-drawer-header">
+            <img src="/assets/images/logo.png" alt="" class="h-9 w-9 rounded-full ring-2 ring-gold-400/40">
+            <span class="font-bold text-white">{{ app.name }}</span>
+            <button type="button" id="mobile-drawer-close" class="ml-auto text-white/70 hover:text-white" aria-label="Close menu">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <nav class="mobile-drawer-nav">
+            <a href="/dashboard" class="sidebar-link">Dashboard</a>
+            {% if sidebar_session is defined %}
+                {% include 'components/sidebar.twig' with { session: sidebar_session } %}
+            {% endif %}
+        </nav>
+        {% include 'components/dashboard/user-profile.twig' %}
+    </aside>
+
+    {% if sidebar_session is defined %}
+        {% include 'components/mobile-nav.twig' with { session: sidebar_session } %}
+    {% endif %}
+
+    <script src="/assets/js/app.js"></script>
+    <script src="/assets/js/dashboard.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

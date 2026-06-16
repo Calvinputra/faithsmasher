@@ -28,6 +28,7 @@ final class Application
     {
         $this->loadEnvironment();
         $this->ensureStorageDirectories();
+        \App\Database\SchemaEnsurer::ensure();
         $this->createApp()->run();
     }
 
@@ -48,17 +49,41 @@ final class Application
 
         $twig->getEnvironment()->addGlobal('app', $config);
 
+        $auth = new \App\Services\AuthService();
+        $twig->getEnvironment()->addGlobal('currentUser', $auth->user());
+
         $app = AppFactory::create();
         $app->add(TwigMiddleware::create($app, $twig));
         $app->addBodyParsingMiddleware();
         $app->addRoutingMiddleware();
 
         $errorMiddleware = $app->addErrorMiddleware(
-            $config['debug'],
+            false,
             true,
             true,
             $logger
         );
+
+        $defaultHandler = function ($request, $exception, $displayErrorDetails) use ($twig, $config) {
+            $response = new Response();
+            $status = method_exists($exception, 'getCode') && $exception->getCode() >= 400 && $exception->getCode() < 600
+                ? (int) $exception->getCode()
+                : 500;
+
+            if ($exception instanceof HttpNotFoundException) {
+                return $twig->render($response->withStatus(404), 'pages/errors/404.twig');
+            }
+
+            return $twig->render($response->withStatus($status >= 400 ? $status : 500), 'pages/errors/error.twig', [
+                'message' => $config['debug']
+                    ? $exception->getMessage()
+                    : 'Please try again or contact support if the problem persists.',
+                'debug' => $config['debug'],
+                'exception' => $exception,
+            ]);
+        };
+
+        $errorMiddleware->setDefaultErrorHandler($defaultHandler);
 
         $errorMiddleware->setErrorHandler(
             HttpNotFoundException::class,
@@ -70,7 +95,7 @@ final class Application
         );
 
         $registerRoutes = require $this->basePath . '/routes/web.php';
-        $registerRoutes($app);
+        $registerRoutes($app, $auth);
 
         return $app;
     }

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ app.name }}{% endblock %}</title>
+    {% include 'components/favicon.twig' %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/assets/css/app.css">
+</head>
+<body class="min-h-full font-sans antialiased">
+    <div class="app-bg"></div>
+
+    <div class="relative flex min-h-full flex-col items-center justify-center px-4 py-10">
+        <a href="/" class="mb-8 flex flex-col items-center gap-3 sm:flex-row">
+            <img src="/assets/images/logo.png" alt="{{ app.name }}" class="h-16 w-16 rounded-full object-cover ring-4 ring-gold-400/30 shadow-lg">
+            <span class="text-2xl font-extrabold text-navy-900">{{ app.name }}</span>
+        </a>
+
+        <div class="auth-card w-full max-w-md">
+            {% block content %}{% endblock %}
+        </div>
+
+        <p class="mt-8 text-center text-xs text-navy-500">&copy; {{ "now"|date("Y") }} {{ app.name }}</p>
+    </div>
+</body>
+</html>

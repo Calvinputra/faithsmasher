@@ -1,0 +1,37 @@
+{% extends 'layouts/auth.twig' %}
+
+{% block title %}Register — {{ app.name }}{% endblock %}
+
+{% block content %}
+<h1 class="text-2xl font-extrabold text-navy-900">Create account</h1>
+<p class="mt-1 text-sm text-navy-600">Join Faith Smashers tournament platform.</p>
+
+<form method="post" action="/register" class="mt-6 space-y-4">
+    <div class="form-group">
+        <label for="name" class="form-label">Name</label>
+        <input type="text" id="name" name="name" value="{{ old.name|default('') }}" required autocomplete="name" class="input-field{% if errors.name is defined %} input-error{% endif %}">
+        {% if errors.name is defined %}<p class="form-error">{{ errors.name }}</p>{% endif %}
+    </div>
+    <div class="form-group">
+        <label for="email" class="form-label">Email</label>
+        <input type="email" id="email" name="email" value="{{ old.email|default('') }}" required autocomplete="email" class="input-field{% if errors.email is defined %} input-error{% endif %}">
+        {% if errors.email is defined %}<p class="form-error">{{ errors.email }}</p>{% endif %}
+    </div>
+    <div class="form-group">
+        <label for="password" class="form-label">Password</label>
+        <input type="password" id="password" name="password" required autocomplete="new-password" class="input-field{% if errors.password is defined %} input-error{% endif %}">
+        {% if errors.password is defined %}<p class="form-error">{{ errors.password }}</p>{% endif %}
+    </div>
+    <div class="form-group">
+        <label for="password_confirm" class="form-label">Confirm Password</label>
+        <input type="password" id="password_confirm" name="password_confirm" required autocomplete="new-password" class="input-field{% if errors.password_confirm is defined %} input-error{% endif %}">
+        {% if errors.password_confirm is defined %}<p class="form-error">{{ errors.password_confirm }}</p>{% endif %}
+    </div>
+    <button type="submit" class="btn-primary w-full py-3">Create Account</button>
+</form>
+
+<p class="mt-6 text-center text-sm text-navy-600">
+    Already have an account?
+    <a href="/login" class="font-bold text-navy-800 hover:underline">Sign In</a>
+</p>
+{% endblock %}

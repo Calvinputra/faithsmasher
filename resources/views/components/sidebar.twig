@@ -1,0 +1,18 @@
+<p class="sidebar-section-label">Session</p>
+<p class="sidebar-session-name">{{ session.name }}</p>
+
+<a href="/dashboard/{{ session.id }}" class="sidebar-link{% if active|default('') == 'overview' %} sidebar-link-active{% endif %}">
+    <svg class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6z"/></svg>
+    Overview
+</a>
+
+<p class="sidebar-section-label">Setup</p>
+<a href="/sessions/{{ session.id }}/participants" class="sidebar-link">Participants</a>
+<a href="/sessions/{{ session.id }}/rules" class="sidebar-link">Game Rules</a>
+<a href="/sessions/{{ session.id }}/edit" class="sidebar-link">Edit Session</a>
+
+<p class="sidebar-section-label">Match</p>
+<a href="/sessions/{{ session.id }}/matches" class="sidebar-link">Match Hub</a>
+<a href="/sessions/{{ session.id }}/matches/manual" class="sidebar-link">Manual Setup</a>
+<a href="/sessions/{{ session.id }}/matches/preview" class="sidebar-link">Preview Bracket</a>
+<a href="/sessions/{{ session.id }}/matches/counter" class="sidebar-link">Player Counter</a>

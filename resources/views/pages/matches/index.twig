@@ -1,0 +1,33 @@
+{% extends 'layouts/dashboard.twig' %}
+{% block title %}Match Hub — {{ session.name }}{% endblock %}
+{% set sidebar_session = session %}
+{% block sidebar_nav %}{% include 'components/sidebar.twig' with { session: session } %}{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold text-navy-900">Match Hub</h1>
+<p class="mt-1 text-sm text-navy-600">{{ participantCount }} participants · {{ matchCount }} matches</p>
+
+<div class="mt-8 grid gap-4 md:grid-cols-2">
+    <article class="card">
+        <h2 class="font-semibold text-navy-900">Auto Generate</h2>
+        <p class="mt-2 text-sm text-navy-600">Pair players by similar rank skill (C- → A+).</p>
+        <form method="post" action="/sessions/{{ session.id }}/matches/generate" class="mt-4">
+            <button type="submit" class="btn-primary" {% if participantCount < 2 %}disabled{% endif %}>Generate Matches</button>
+        </form>
+    </article>
+    <article class="card">
+        <h2 class="font-semibold text-navy-900">Manual Setup</h2>
+        <p class="mt-2 text-sm text-navy-600">Drag & drop players into bracket slots. Warns if player plays &gt;2x.</p>
+        <a href="/sessions/{{ session.id }}/matches/manual" class="btn-secondary mt-4 inline-flex">Open Manual Setup</a>
+    </article>
+    <article class="card">
+        <h2 class="font-semibold text-navy-900">Preview Bracket</h2>
+        <p class="mt-2 text-sm text-navy-600">View generated or manual bracket layout.</p>
+        <a href="/sessions/{{ session.id }}/matches/preview" class="btn-secondary mt-4 inline-flex">Preview</a>
+    </article>
+    <article class="card">
+        <h2 class="font-semibold text-navy-900">Player Counter</h2>
+        <p class="mt-2 text-sm text-navy-600">Track how many matches each player is assigned.</p>
+        <a href="/sessions/{{ session.id }}/matches/counter" class="btn-secondary mt-4 inline-flex">View Counter</a>
+    </article>
+</div>
+{% endblock %}

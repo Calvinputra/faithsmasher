@@ -1,0 +1,30 @@
+{% extends 'layouts/dashboard.twig' %}
+{% block title %}Game Rules — {{ session.name }}{% endblock %}
+{% set sidebar_session = session %}
+{% block sidebar_nav %}{% include 'components/sidebar.twig' with { session: session } %}{% endblock %}
+{% block content %}
+<div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+        <h1 class="text-2xl font-bold text-navy-900">Game Rules</h1>
+        <p class="text-sm text-navy-600">Win / lose point settings</p>
+    </div>
+    <a href="/sessions/{{ session.id }}/rules/create" class="btn-primary">+ Add Rule</a>
+</div>
+
+<div class="grid gap-4 md:grid-cols-2">
+    {% for rule in rules %}
+        <article class="card">
+            <h2 class="font-semibold text-navy-900">{{ rule.name }}</h2>
+            <p class="mt-2 text-sm text-navy-600">Win: <strong>{{ rule.winPoints }}</strong> pts · Lose: <strong>{{ rule.losePoints }}</strong> pts</p>
+            <div class="mt-4 flex gap-3 text-sm">
+                <a href="/sessions/{{ session.id }}/rules/{{ rule.id }}/edit" class="text-navy-700 hover:underline">Edit</a>
+                <form method="post" action="/sessions/{{ session.id }}/rules/{{ rule.id }}/delete" onsubmit="return confirm('Delete rule?')">
+                    <button type="submit" class="text-red-600 hover:underline">Delete</button>
+                </form>
+            </div>
+        </article>
+    {% else %}
+        <div class="card col-span-full text-center text-navy-500 py-8">No game rules yet.</div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% set s = summary.session %}
+<article class="session-card">
+    <div class="session-card-top">
+        <span class="session-date-badge">{{ s.sessionDate|date('d M Y') }}</span>
+        {% if summary.participantCount > 0 %}
+            <span class="session-new-badge">Active</span>
+        {% endif %}
+    </div>
+
+    <h2 class="mt-3 text-lg font-bold text-navy-900 leading-snug">{{ s.name }}</h2>
+
+    {% if s.location %}
+        <p class="session-location mt-2">
+            <svg class="h-4 w-4 shrink-0 text-gold-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            <span class="line-clamp-1">{{ s.location }}</span>
+        </p>
+    {% endif %}
+
+    <div class="session-stats">
+        <div class="session-stat">
+            <svg class="h-4 w-4 text-navy-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/></svg>
+            <span><strong>{{ summary.participantCount }}</strong> Players</span>
+        </div>
+        <div class="session-stat">
+            <svg class="h-4 w-4 text-navy-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
+            <span><strong>{{ s.courtCount }}</strong> Courts</span>
+        </div>
+    </div>
+
+    <a href="/dashboard/{{ s.id }}" class="btn-secondary mt-4 w-full justify-center text-sm">
+        Open Session →
+    </a>
+</article>

@@ -16,19 +16,18 @@ final class HomeController
         $view = $request->getAttribute('view');
 
         return $view->render($response, 'pages/home.twig', [
-            'phpVersion' => PHP_VERSION,
             'features' => [
                 [
-                    'title' => 'Slim Framework',
-                    'description' => 'Routing PSR-7 yang ringan dan cepat untuk API maupun halaman web.',
+                    'title' => 'Bagan Pertandingan',
+                    'description' => 'Buat dan kelola bracket turnamen badminton single & double.',
                 ],
                 [
-                    'title' => 'Twig Templates',
-                    'description' => 'Template engine aman dengan layout, component, dan inheritance.',
+                    'title' => 'Pencatatan Skor',
+                    'description' => 'Catat skor setiap game dan lihat riwayat pertandingan secara real-time.',
                 ],
                 [
-                    'title' => 'Tailwind CSS',
-                    'description' => 'Utility-first CSS modern — tanpa Bootstrap. Build production-ready dengan npm run build.',
+                    'title' => 'Manajemen Peserta',
+                    'description' => 'Daftarkan pemain, atur seeding, dan pantau progres turnamen.',
                 ],
             ],
         ]);

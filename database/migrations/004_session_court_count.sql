@@ -1,0 +1,2 @@
+ALTER TABLE sessions
+    ADD COLUMN court_count TINYINT UNSIGNED NOT NULL DEFAULT 1 AFTER location;

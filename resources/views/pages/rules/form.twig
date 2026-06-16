@@ -1,0 +1,30 @@
+{% extends 'layouts/dashboard.twig' %}
+{% block title %}{% if rule %}Edit{% else %}Add{% endif %} Rule — {{ session.name }}{% endblock %}
+{% set sidebar_session = session %}
+{% block sidebar_nav %}{% include 'components/sidebar.twig' with { session: session } %}{% endblock %}
+{% block content %}
+<div class="max-w-xl">
+    <h1 class="text-2xl font-bold text-navy-900">{% if rule %}Edit Game Rule{% else %}Add Game Rule{% endif %}</h1>
+    <form method="post" action="{% if rule %}/sessions/{{ session.id }}/rules/{{ rule.id }}{% else %}/sessions/{{ session.id }}/rules{% endif %}" class="card mt-6 space-y-4">
+        <div>
+            <label for="name" class="mb-1.5 block text-sm font-medium text-navy-700">Rule Name *</label>
+            <input type="text" id="name" name="name" required class="input-field" value="{{ old.name|default(rule.name|default('')) }}" placeholder="e.g. Standard 21">
+            {% if errors.name is defined %}<p class="mt-1 text-xs text-red-600">{{ errors.name }}</p>{% endif %}
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label for="win_points" class="mb-1.5 block text-sm font-medium text-navy-700">Win Points *</label>
+                <input type="number" id="win_points" name="win_points" min="0" required class="input-field" value="{{ old.win_points|default(rule.winPoints|default(21)) }}">
+            </div>
+            <div>
+                <label for="lose_points" class="mb-1.5 block text-sm font-medium text-navy-700">Lose Points *</label>
+                <input type="number" id="lose_points" name="lose_points" min="0" required class="input-field" value="{{ old.lose_points|default(rule.losePoints|default(0)) }}">
+            </div>
+        </div>
+        <div class="flex gap-3">
+            <button type="submit" class="btn-primary">Save</button>
+            <a href="/sessions/{{ session.id }}/rules" class="btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

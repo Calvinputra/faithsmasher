@@ -1,6 +1,6 @@
-# Faith Smasher
+# Faith Smashers
 
-PHP application dengan struktur MVC modern, siap dikembangkan dan di-deploy ke Hostinger.
+Aplikasi bagan & pencatatan turnamen badminton dengan login/register.
 
 ## Tech Stack
 
@@ -8,9 +8,46 @@ PHP application dengan struktur MVC modern, siap dikembangkan dan di-deploy ke H
 |---|---|
 | Routing | [Slim Framework 4](https://www.slimframework.com/) |
 | Templates | [Twig 3](https://twig.symfony.com/) |
-| Config | [vlucas/phpdotenv](https://github.com/vlucas/phpdotenv) |
-| Logging | [Monolog 3](https://github.com/Seldaek/monolog) |
-| UI | [Tailwind CSS 4](https://tailwindcss.com/) — tanpa Bootstrap |
+| Database | MySQL (PDO) |
+| UI | [Tailwind CSS 4](https://tailwindcss.com/) — palette navy & gold dari logo |
+
+## Brand Colors
+
+| Token | Warna | Penggunaan |
+|---|---|---|
+| `navy-*` | Biru tua (#102c54) | Teks, header, primary UI |
+| `gold-*` | Kuning emas (#f5b800) | CTA, accent, highlight |
+| `surface` | Putih | Background card |
+
+## Database Setup
+
+### Local
+
+```bash
+mysql -u root -e "CREATE DATABASE IF NOT EXISTS faithsmasher CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+mysql -u root faithsmasher < database/schema.sql
+cp .env.example .env
+```
+
+### Hostinger (Server)
+
+1. Copy `.env.hostinger.example` ke `.env` di server
+2. Isi `DB_PASSWORD` dari hPanel → Database MySQL
+3. Import `database/schema.sql` via phpMyAdmin
+4. Jalankan `composer install --no-dev`
+
+```env
+DB_HOST=localhost
+DB_NAME=u753898012_faithsmasher
+DB_USER=u753898012_calvin
+DB_PASSWORD=password_dari_hpanel
+```
+
+## Assets
+
+- Logo: `public/assets/images/logo.png`
+- CSS source: `resources/css/app.css`
+- CSS build: `public/assets/css/app.css`
 
 ## Struktur Project
 
@@ -70,10 +107,18 @@ $app->get('/about', [$aboutController, 'index']);
 ## Deploy Hostinger
 
 1. Set **branch** ke `master`
-2. Arahkan **document root** domain ke folder `public/`
-3. Atau deploy seluruh repo lalu ubah document root di hPanel
+2. Deploy ke root `public_html` (direktori kosong)
+3. Setelah deploy, jalankan di **Terminal hPanel**:
+   ```bash
+   composer install --no-dev --optimize-autoloader
+   ```
+4. Salin `.env.example` ke `.env` dan sesuaikan `APP_URL`
+5. Pastikan folder `storage/` writable (chmod 755)
 
-Webhook auto-deploy: push ke branch `master` akan trigger deploy otomatis.
+File `index.php` dan `.htaccess` di root repo sudah disiapkan agar Hostinger
+tidak 403 — Apache akan meneruskan request ke folder `public/`.
+
+Alternatif: arahkan **document root** domain ke folder `public/` di hPanel.
 
 ## Environment
 

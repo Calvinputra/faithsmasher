@@ -1,0 +1,136 @@
+{% extends 'layouts/dashboard.twig' %}
+{% if session %}{% set sidebar_session = session %}{% endif %}
+
+{% block title %}{% if session %}Edit Session{% else %}New Session{% endif %} — {{ app.name }}{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/airbnb.css">
+{% endblock %}
+
+{% block content %}
+<div class="mx-auto w-full max-w-lg">
+    <div class="mb-6">
+        <a href="{% if session %}/dashboard/{{ session.id }}{% else %}/dashboard{% endif %}" class="inline-flex items-center gap-1 text-sm font-medium text-navy-600 hover:text-navy-900">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+            Back
+        </a>
+        <h1 class="mt-3 text-2xl font-bold text-navy-900 sm:text-3xl">
+            {% if session %}Edit Session{% else %}New Session{% endif %}
+        </h1>
+        <p class="mt-1 text-sm text-navy-600">Set session name, date, and venue location.</p>
+    </div>
+
+    <form
+        method="post"
+        action="{% if session %}/sessions/{{ session.id }}{% else %}/sessions{% endif %}"
+        class="card space-y-5 p-4 sm:p-6"
+        id="session-form"
+    >
+        {# Session Name #}
+        <div class="form-group">
+            <label for="name" class="form-label">Session Name <span class="text-red-500">*</span></label>
+            <div class="input-icon-wrap">
+                <svg class="input-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z"/></svg>
+                <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    required
+                    autocomplete="off"
+                    placeholder="e.g. Asuka Weekly"
+                    class="input-field input-with-icon{% if errors.name is defined %} input-error{% endif %}"
+                    value="{{ old.name|default(session.name|default('')) }}"
+                >
+            </div>
+            {% if errors.name is defined %}<p class="form-error">{{ errors.name }}</p>{% endif %}
+        </div>
+
+        {# Session Date — flatpickr #}
+        <div class="form-group">
+            <label for="session_date" class="form-label">Session Date <span class="text-red-500">*</span></label>
+            <div class="input-icon-wrap">
+                <svg class="input-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                <input
+                    type="text"
+                    id="session_date"
+                    name="session_date"
+                    required
+                    placeholder="Select date"
+                    readonly
+                    class="input-field input-with-icon flatpickr-input{% if errors.session_date is defined %} input-error{% endif %}"
+                    value="{{ old.session_date|default(session.sessionDate|default('')) }}"
+                >
+            </div>
+            {% if errors.session_date is defined %}<p class="form-error">{{ errors.session_date }}</p>{% endif %}
+        </div>
+
+        {# Location #}
+        <div class="form-group">
+            <label for="location" class="form-label">Location <span class="text-red-500">*</span></label>
+            <div class="input-icon-wrap">
+                <svg class="input-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                <input
+                    type="text"
+                    id="location"
+                    name="location"
+                    required
+                    autocomplete="off"
+                    placeholder="e.g. GMS Arena, Surabaya"
+                    class="input-field input-with-icon{% if errors.location is defined %} input-error{% endif %}"
+                    value="{{ old.location|default(session.location|default('')) }}"
+                >
+            </div>
+            {% if errors.location is defined %}<p class="form-error">{{ errors.location }}</p>{% endif %}
+            <p class="form-hint">Venue or court name where the session takes place.</p>
+        </div>
+
+        {# Courts #}
+        <div class="form-group">
+            <label for="court_count" class="form-label">Number of Courts <span class="text-red-500">*</span></label>
+            <div class="input-icon-wrap">
+                <svg class="input-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5z"/></svg>
+                <input
+                    type="number"
+                    id="court_count"
+                    name="court_count"
+                    required
+                    min="1"
+                    max="99"
+                    class="input-field input-with-icon{% if errors.court_count is defined %} input-error{% endif %}"
+                    value="{{ old.court_count|default(session.courtCount|default(1)) }}"
+                >
+            </div>
+            {% if errors.court_count is defined %}<p class="form-error">{{ errors.court_count }}</p>{% endif %}
+            <p class="form-hint">How many badminton courts are available for this session.</p>
+        </div>
+
+        {# Actions — sticky on mobile #}
+        <div class="form-actions">
+            <button type="submit" class="btn-primary w-full sm:w-auto sm:min-w-[140px]">
+                {% if session %}Save Changes{% else %}Create Session{% endif %}
+            </button>
+            <a href="{% if session %}/dashboard/{{ session.id }}{% else %}/dashboard{% endif %}" class="btn-secondary w-full sm:w-auto text-center">
+                Cancel
+            </a>
+        </div>
+    </form>
+
+    {% if session %}
+        <form method="post" action="/sessions/{{ session.id }}/delete" class="mt-6 text-center" onsubmit="return confirm('Delete this session and all data?')">
+            <button type="submit" class="text-sm font-medium text-red-600 hover:text-red-700 hover:underline">
+                Delete Session
+            </button>
+        </form>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block sidebar_nav %}
+    {% if session %}{% include 'components/sidebar.twig' with { session: session } %}{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="/assets/js/session-form.js"></script>
+{% endblock %}

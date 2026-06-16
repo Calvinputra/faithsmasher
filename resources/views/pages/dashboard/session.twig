@@ -1,0 +1,59 @@
+{% extends 'layouts/dashboard.twig' %}
+{% set sidebar_session = session %}
+
+{% block title %}{{ session.name }} — {{ app.name }}{% endblock %}
+
+{% block page_header %}
+<div class="min-w-0">
+    <h1 class="truncate text-lg font-bold text-navy-900 sm:text-xl">{{ session.name }}</h1>
+</div>
+{% endblock %}
+
+{% block sidebar_nav %}
+    {% include 'components/sidebar.twig' with { session: session } %}
+{% endblock %}
+
+{% block content %}
+<div class="mb-6 space-y-2">
+    <span class="session-date-badge inline-flex">{{ session.sessionDate|date('d M Y') }}</span>
+    {% if session.location %}
+        <p class="session-location">
+            <svg class="h-4 w-4 shrink-0 text-gold-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            {{ session.location }}
+        </p>
+    {% endif %}
+</div>
+
+<div class="stat-grid">
+    <div class="stat-card"><p class="stat-label">Participants</p><p class="stat-value">{{ participantCount }}</p></div>
+    <div class="stat-card"><p class="stat-label">Courts</p><p class="stat-value">{{ session.courtCount }}</p></div>
+    <div class="stat-card"><p class="stat-label">Matches</p><p class="stat-value">{{ matchCount }}</p></div>
+    <div class="stat-card"><p class="stat-label">Game Rules</p><p class="stat-value">{{ ruleCount }}</p></div>
+</div>
+
+<div class="action-grid">
+    <section class="action-card">
+        <div class="action-card-header">
+            <div class="action-card-icon bg-navy-800 text-gold-400">⚙️</div>
+            <h2 class="font-bold text-navy-900">Setup Game</h2>
+        </div>
+        <ul class="action-list">
+            <li><a href="/sessions/{{ session.id }}/participants" class="nav-link-item">Participants</a></li>
+            <li><a href="/sessions/{{ session.id }}/rules" class="nav-link-item">Game Rules</a></li>
+            <li><a href="/sessions/{{ session.id }}/edit" class="nav-link-item">Edit Session</a></li>
+        </ul>
+    </section>
+    <section class="action-card">
+        <div class="action-card-header">
+            <div class="action-card-icon bg-gold-500 text-navy-900">🏸</div>
+            <h2 class="font-bold text-navy-900">Match</h2>
+        </div>
+        <ul class="action-list">
+            <li><a href="/sessions/{{ session.id }}/matches" class="nav-link-item">Match Hub</a></li>
+            <li><a href="/sessions/{{ session.id }}/matches/manual" class="nav-link-item">Manual Setup</a></li>
+            <li><a href="/sessions/{{ session.id }}/matches/preview" class="nav-link-item">Preview Bracket</a></li>
+            <li><a href="/sessions/{{ session.id }}/matches/counter" class="nav-link-item">Player Counter</a></li>
+        </ul>
+    </section>
+</div>
+{% endblock %}
