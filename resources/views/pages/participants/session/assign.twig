@@ -1,7 +1,8 @@
 {% extends 'layouts/dashboard.twig' %}
 {% block title %}Tambah Peserta — {{ session.name }}{% endblock %}
 {% set sidebar_session = session %}
-{% block sidebar_nav %}{% include 'components/sidebar.twig' with { session: session, active: 'participants' } %}{% endblock %}
+{% set active = 'participants' %}
+{% block sidebar_nav %}{% include 'components/sidebar.twig' with { session: session, active: active } %}{% endblock %}
 
 {% block page_header %}
 <div class="min-w-0">
@@ -12,10 +13,10 @@
 
 {% block content %}
 <div class="mb-4">
-    <a href="/sessions/{{ session.id }}/participants" class="inline-flex items-center gap-1 text-sm font-medium text-navy-600 hover:text-navy-900">
-        {% include 'components/ui/icon.twig' with { name: 'ri-arrow-left-s-line', size: 'sm' } %}
-        Kembali ke Peserta Session
-    </a>
+    {% include 'components/ui/back-link.twig' with {
+        href: '/sessions/' ~ session.id ~ '/participants',
+        label: 'Kembali ke Peserta Session'
+    } %}
     <p class="mt-2 text-sm text-navy-600 sm:hidden">{{ session.name }}</p>
 </div>
 
@@ -34,7 +35,8 @@
 {% include 'components/ui/filter-bar-simple.twig' with {
     action: '/sessions/' ~ session.id ~ '/participants/assign',
     query: search|default(''),
-    placeholder: 'Cari peserta global...'
+    placeholder: 'Cari peserta global...',
+    resetUrl: '/sessions/' ~ session.id ~ '/participants/assign'
 } %}
 
 {% if available is empty %}
@@ -52,16 +54,16 @@
             <p class="text-sm font-semibold text-navy-800">{{ available|length }} peserta tersedia</p>
             <button type="submit" class="btn-primary px-4 py-2 text-sm">Tambahkan ke Session</button>
         </div>
-        <div class="overflow-x-auto">
-            <table id="assign-participant-table" class="w-full text-sm">
+        <div class="data-table-card overflow-x-auto">
+            <table id="assign-participant-table" class="w-full text-sm data-table">
                 <thead>
                     <tr class="border-b border-border text-left text-navy-500">
                         <th class="w-10 px-3 py-2"></th>
                         <th class="px-3 py-2">Nama</th>
                         <th class="px-3 py-2">Rank</th>
-                        <th class="px-3 py-2">Gender</th>
-                        <th class="px-3 py-2">No. Telp</th>
-                        <th class="px-3 py-2">GMS Dari Mana</th>
+                        <th class="col-hide-sm px-3 py-2">Gender</th>
+                        <th class="col-hide-md px-3 py-2">No. Telp</th>
+                        <th class="col-hide-sm px-3 py-2">GMS Dari Mana</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -73,9 +75,16 @@
                             <td class="px-3 py-2">
                                 <input type="checkbox" name="participant_ids[]" value="{{ p.id }}" class="h-4 w-4 rounded border-navy-200 text-gold-500 focus:ring-gold-400">
                             </td>
-                            <td class="px-3 py-2 font-medium text-navy-900">{{ p.name }}</td>
+                            <td class="px-3 py-2 font-medium text-navy-900">
+                                {{ p.name }}
+                                <div class="mt-0.5 text-xs text-navy-500 sm:hidden">
+                                    {% if p.gender %}{{ genders[p.gender]|default(p.gender) }}{% endif %}
+                                    {% if p.phone %} · {{ p.phone }}{% endif %}
+                                    {% if p.gmsSource %} · {{ p.gmsSource }}{% endif %}
+                                </div>
+                            </td>
                             <td class="px-3 py-2"><span class="rounded bg-gold-100 px-2 py-0.5 text-xs font-bold">{{ p.rank }}</span></td>
-                            <td class="px-3 py-2">
+                            <td class="col-hide-sm px-3 py-2">
                                 {% if p.gender %}
                                     <span class="inline-pill {{ p.gender == 'male' ? 'inline-pill-male' : (p.gender == 'female' ? 'inline-pill-female' : 'inline-pill-empty') }}">
                                         {{ genders[p.gender]|default(p.gender) }}
@@ -84,8 +93,8 @@
                                     <span class="text-navy-400">—</span>
                                 {% endif %}
                             </td>
-                            <td class="px-3 py-2 text-navy-600">{{ p.phone|default('—') }}</td>
-                            <td class="px-3 py-2">
+                            <td class="col-hide-md px-3 py-2 text-navy-600">{{ p.phone|default('—') }}</td>
+                            <td class="col-hide-sm px-3 py-2">
                                 {% if p.gmsSource %}
                                     <span class="inline-pill inline-pill-{{ p.gmsSource|lower }}">{{ p.gmsSource }}</span>
                                 {% else %}

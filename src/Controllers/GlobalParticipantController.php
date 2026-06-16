@@ -10,6 +10,7 @@ use App\Services\ParticipantBulkImportService;
 use App\Support\FlashType;
 use App\Support\Gender;
 use App\Support\GmsSource;
+use App\Support\ParticipantBulkTemplate;
 use App\Support\ParticipantFilter;
 use App\Support\Rank;
 use Psr\Http\Message\ResponseInterface;
@@ -272,11 +273,22 @@ final class GlobalParticipantController extends BaseController
 
         return $view->render($response, 'pages/participants/global/bulk.twig', [
             'ranks' => Rank::options(),
+            'genders' => Gender::labels(),
+            'gmsSources' => GmsSource::options(),
             'errors' => [],
             'rowErrors' => [],
             'old' => [],
             'preview' => [],
         ]);
+    }
+
+    public function bulkTemplate(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    {
+        $response->getBody()->write(ParticipantBulkTemplate::csvContent());
+
+        return $response
+            ->withHeader('Content-Type', 'text/csv; charset=utf-8')
+            ->withHeader('Content-Disposition', 'attachment; filename="' . ParticipantBulkTemplate::filename() . '"');
     }
 
     public function bulkStore(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
@@ -301,6 +313,8 @@ final class GlobalParticipantController extends BaseController
 
             return $view->render($response, 'pages/participants/global/bulk.twig', [
                 'ranks' => Rank::options(),
+                'genders' => Gender::labels(),
+                'gmsSources' => GmsSource::options(),
                 'errors' => $result['errors'],
                 'rowErrors' => $result['errors'],
                 'old' => $data,

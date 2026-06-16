@@ -1,7 +1,8 @@
 {% extends 'layouts/dashboard.twig' %}
 {% block title %}Match Hub — {{ session.name }}{% endblock %}
 {% set sidebar_session = session %}
-{% block sidebar_nav %}{% include 'components/sidebar.twig' with { session: session, active: 'matches' } %}{% endblock %}
+{% set active = 'matches' %}
+{% block sidebar_nav %}{% include 'components/sidebar.twig' with { session: session, active: active } %}{% endblock %}
 
 {% block page_header %}
 <div class="min-w-0">
@@ -11,7 +12,9 @@
 {% endblock %}
 
 {% block content %}
-<p class="mb-4 text-sm text-navy-600 sm:hidden">{{ participantCount }} peserta · {{ matchCount }} match</p>
+<div class="page-toolbar mb-3 sm:mb-6">
+    <p class="page-toolbar-meta text-xs text-navy-600 sm:hidden">{{ participantCount }} peserta · {{ matchCount }} match</p>
+</div>
 
 <div class="grid gap-3 sm:gap-4 md:grid-cols-2">
     {% include 'components/matches/bagan-setup-form.twig' with {

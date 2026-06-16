@@ -1,17 +1,44 @@
 <nav class="mobile-nav lg:hidden" aria-label="Mobile navigation">
-    <a href="/dashboard/{{ session.id }}" class="mobile-nav-item">
+    {% set footerTab = {
+        'overview': 'home',
+        'participants': 'players',
+        'rules': 'setup',
+        'edit': 'setup',
+        'matches': 'match',
+        'manual': 'match',
+        'preview': 'match',
+        'counter': 'match',
+    }[active|default('')] ?? '' %}
+
+    <a
+        href="/dashboard/{{ session.id }}"
+        class="mobile-nav-item{% if footerTab == 'home' %} mobile-nav-item-active{% endif %}"
+        {% if footerTab == 'home' %}aria-current="page"{% endif %}
+    >
         {% include 'components/ui/icon.twig' with { name: 'ri-home-4-line', size: 'md' } %}
         <span>Home</span>
     </a>
-    <a href="/sessions/{{ session.id }}/participants" class="mobile-nav-item">
+    <a
+        href="/sessions/{{ session.id }}/participants"
+        class="mobile-nav-item{% if footerTab == 'players' %} mobile-nav-item-active{% endif %}"
+        {% if footerTab == 'players' %}aria-current="page"{% endif %}
+    >
         {% include 'components/ui/icon.twig' with { name: 'ri-group-line', size: 'md' } %}
         <span>Players</span>
     </a>
-    <a href="/sessions/{{ session.id }}/matches" class="mobile-nav-item">
+    <a
+        href="/sessions/{{ session.id }}/matches"
+        class="mobile-nav-item{% if footerTab == 'match' %} mobile-nav-item-active{% endif %}"
+        {% if footerTab == 'match' %}aria-current="page"{% endif %}
+    >
         {% include 'components/ui/icon.twig' with { name: 'ri-trophy-line', size: 'md' } %}
         <span>Match</span>
     </a>
-    <a href="/dashboard/{{ session.id }}?modal=session-form-modal&amp;edit={{ session.id }}" class="mobile-nav-item">
+    <a
+        href="/sessions/{{ session.id }}/rules"
+        class="mobile-nav-item{% if footerTab == 'setup' %} mobile-nav-item-active{% endif %}"
+        {% if footerTab == 'setup' %}aria-current="page"{% endif %}
+    >
         {% include 'components/ui/icon.twig' with { name: 'ri-settings-3-line', size: 'md' } %}
         <span>Setup</span>
     </a>

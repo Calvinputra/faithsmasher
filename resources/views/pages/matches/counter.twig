@@ -1,7 +1,8 @@
 {% extends 'layouts/dashboard.twig' %}
 {% block title %}Player Counter — {{ session.name }}{% endblock %}
 {% set sidebar_session = session %}
-{% block sidebar_nav %}{% include 'components/sidebar.twig' with { session: session, active: 'counter' } %}{% endblock %}
+{% set active = 'counter' %}
+{% block sidebar_nav %}{% include 'components/sidebar.twig' with { session: session, active: active } %}{% endblock %}
 
 {% block page_header %}
 <div class="min-w-0">
@@ -11,13 +12,11 @@
 {% endblock %}
 
 {% block content %}
-<div class="page-toolbar mb-3 sm:mb-6">
-    <p class="page-toolbar-meta text-sm text-navy-600">{{ participants|length }} peserta</p>
-    <div class="page-toolbar-actions">
-        <a href="/sessions/{{ session.id }}/matches" class="btn-secondary page-toolbar-btn justify-center">Match Hub</a>
-        <a href="/sessions/{{ session.id }}/matches/preview" class="btn-secondary page-toolbar-btn justify-center">Preview Bagan</a>
-    </div>
-</div>
+{% include 'components/matches/page-toolbar.twig' with {
+    session: session,
+    meta: participants|length ~ ' peserta',
+    hide: 'counter'
+} %}
 
 {% if rankCounts|default([])|length > 0 %}
 <div class="participant-stats mb-3 sm:mb-6">
@@ -62,7 +61,11 @@
                     </td>
                 </tr>
             {% else %}
-                <tr><td colspan="4" class="py-8 text-center text-navy-500">Belum ada peserta.</td></tr>
+                {% include 'components/ui/table-empty.twig' with {
+                    colspan: 4,
+                    title: 'Belum ada peserta',
+                    message: 'Tambahkan peserta ke session terlebih dahulu.'
+                } %}
             {% endfor %}
         </tbody>
     </table>

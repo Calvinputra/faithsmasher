@@ -70,6 +70,13 @@
                         {% endif %}
                     </td>
                 </tr>
+            {% else %}
+                {% include 'components/ui/table-empty.twig' with {
+                    colspan: 6,
+                    icon: 'ri-user-settings-line',
+                    title: 'Belum ada user terdaftar',
+                    message: 'User baru akan muncul di sini setelah registrasi.'
+                } %}
             {% endfor %}
         </tbody>
     </table>

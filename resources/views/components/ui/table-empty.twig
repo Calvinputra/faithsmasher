@@ -1,0 +1,20 @@
+{# Table row empty state — use inside tbody when list is empty #}
+<tr>
+    <td colspan="{{ colspan|default(6) }}" class="table-empty-cell">
+        {% if icon|default('') %}
+            <div class="table-empty-icon" aria-hidden="true">
+                {% include 'components/ui/icon.twig' with { name: icon, size: 'xl', class: 'text-navy-400' } %}
+            </div>
+        {% endif %}
+        <p class="table-empty-title">{{ title|default('Tidak ada data') }}</p>
+        {% if message|default('') %}
+            <p class="table-empty-message">{{ message }}</p>
+        {% endif %}
+        {% if resetUrl|default('') %}
+            <a href="{{ resetUrl }}" class="btn-secondary mt-3 inline-flex justify-center">Reset filter</a>
+        {% endif %}
+        {% if actionUrl|default('') and actionLabel|default('') %}
+            <a href="{{ actionUrl }}" class="btn-primary mt-3 inline-flex justify-center">{{ actionLabel }}</a>
+        {% endif %}
+    </td>
+</tr>

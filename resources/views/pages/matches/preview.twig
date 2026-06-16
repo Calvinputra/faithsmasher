@@ -1,7 +1,8 @@
 {% extends 'layouts/dashboard.twig' %}
 {% block title %}Preview Bagan — {{ session.name }}{% endblock %}
 {% set sidebar_session = session %}
-{% block sidebar_nav %}{% include 'components/sidebar.twig' with { session: session, active: 'preview' } %}{% endblock %}
+{% set active = 'preview' %}
+{% block sidebar_nav %}{% include 'components/sidebar.twig' with { session: session, active: active } %}{% endblock %}
 
 {% block head %}
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -22,24 +23,22 @@
 {% endblock %}
 
 {% block content %}
-<div class="page-toolbar mb-4 sm:mb-6">
-    <p class="page-toolbar-meta text-xs text-navy-600 sm:hidden">{{ baganSettings.baganCount }} bagan</p>
-    <div class="page-toolbar-actions">
-        <a href="/sessions/{{ session.id }}/matches" class="btn-secondary page-toolbar-btn justify-center">Setup Bagan</a>
-        <a href="/sessions/{{ session.id }}/matches/manual" class="btn-secondary page-toolbar-btn justify-center">Edit Manual</a>
-    </div>
-</div>
+{% include 'components/matches/page-toolbar.twig' with {
+    session: session,
+    meta: baganSettings.baganCount ~ ' bagan',
+    hide: 'preview,manual,counter'
+} %}
 
 {% if matches is empty %}
-    <div class="card py-12 text-center text-navy-500">
-        <p>Belum ada bagan. Atur jumlah bagan & pairing di Match Hub.</p>
-        <a href="/sessions/{{ session.id }}/matches" class="btn-primary mt-4 inline-flex">Setup Bagan</a>
+    <div class="empty-state">
+        <p class="text-navy-600">Belum ada bagan. Atur jumlah bagan & pairing di Match Hub.</p>
+        <a href="/sessions/{{ session.id }}/matches" class="btn-primary mt-4 inline-flex justify-center">Setup Bagan</a>
     </div>
 {% else %}
     <div class="bagan-share-actions card mb-4">
         <div class="bagan-share-actions-row">
             <button type="button" id="bagan-download-btn" class="btn-secondary bagan-share-btn">
-                <i class="ri-download-2-line" aria-hidden="true"></i>
+                {% include 'components/ui/icon.twig' with { name: 'ri-download-2-line', size: 'sm' } %}
                 Unduh Gambar
             </button>
             {% if shareToken %}
@@ -53,7 +52,7 @@
                         readonly
                     >
                     <button type="button" id="bagan-copy-link-btn" class="btn-primary bagan-share-btn">
-                        <i class="ri-link" aria-hidden="true"></i>
+                        {% include 'components/ui/icon.twig' with { name: 'ri-link', size: 'sm' } %}
                         Salin Link Share
                     </button>
                     <a
@@ -62,7 +61,7 @@
                         rel="noopener noreferrer"
                         class="btn-secondary bagan-share-btn"
                     >
-                        <i class="ri-external-link-line" aria-hidden="true"></i>
+                        {% include 'components/ui/icon.twig' with { name: 'ri-external-link-line', size: 'sm' } %}
                         Buka Link
                     </a>
                 </div>

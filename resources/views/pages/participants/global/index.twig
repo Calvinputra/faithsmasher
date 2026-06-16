@@ -33,16 +33,16 @@
 
 {% include 'components/participants/global-filter.twig' %}
 
-<div class="card participant-table-card overflow-x-auto">
-    <table class="w-full text-sm participants-inline-table">
+<div class="card data-table-card overflow-x-auto">
+    <table class="w-full text-sm data-table participants-inline-table">
         <thead>
             <tr class="border-b border-border text-left text-navy-500">
                 <th class="pb-3 pr-4">Nama *</th>
                 <th class="pb-3 pr-4">Rank *</th>
-                <th class="pb-3 pr-4">Gender</th>
-                <th class="pb-3 pr-4">Telepon</th>
-                <th class="pb-3 pr-4">GMS From</th>
-                <th class="hidden lg:table-cell pb-3 pr-4">Audit</th>
+                <th class="col-hide-sm pb-3 pr-4">Gender</th>
+                <th class="col-hide-md pb-3 pr-4">Telepon</th>
+                <th class="col-hide-sm pb-3 pr-4">GMS From</th>
+                <th class="col-hide-md pb-3 pr-4">Audit</th>
                 <th class="pb-3">Aksi</th>
             </tr>
         </thead>
@@ -51,7 +51,12 @@
                 <tr class="border-b border-border/60" data-participant-row="{{ p.id }}">
                     <td class="py-3 pr-4">
                         <div class="font-medium text-navy-900">{{ p.name }}</div>
-                        <div class="mt-1 lg:hidden">
+                        <div class="mt-1 text-xs text-navy-500 sm:hidden">
+                            {% if p.gender %}{{ genders[p.gender]|default(p.gender) }}{% endif %}
+                            {% if p.phone %} · {{ p.phone }}{% endif %}
+                            {% if p.gmsSource %} · {{ p.gmsSource }}{% endif %}
+                        </div>
+                        <div class="mt-1 md:hidden">
                             {{ audit.render(p.createdByName, p.createdAt, p.updatedByName, p.updatedAt, true) }}
                         </div>
                     </td>
@@ -65,7 +70,7 @@
                             pillClass: 'inline-pill-rank'
                         } %}
                     </td>
-                    <td class="py-3 pr-4">
+                    <td class="col-hide-sm py-3 pr-4">
                         {% include 'components/participants/inline-field.twig' with {
                             participantId: p.id,
                             field: 'gender',
@@ -75,8 +80,8 @@
                             pillClass: p.gender == 'male' ? 'inline-pill-male' : (p.gender == 'female' ? 'inline-pill-female' : 'inline-pill-empty')
                         } %}
                     </td>
-                    <td class="py-3 pr-4 text-navy-600">{{ p.phone|default('—') }}</td>
-                    <td class="py-3 pr-4">
+                    <td class="col-hide-md py-3 pr-4 text-navy-600">{{ p.phone|default('—') }}</td>
+                    <td class="col-hide-sm py-3 pr-4">
                         {% set gmsPill = p.gmsSource ? 'inline-pill-' ~ p.gmsSource|lower : 'inline-pill-empty' %}
                         {% include 'components/participants/inline-field.twig' with {
                             participantId: p.id,
@@ -87,7 +92,7 @@
                             pillClass: gmsPill
                         } %}
                     </td>
-                    <td class="hidden lg:table-cell py-3 pr-4">
+                    <td class="col-hide-md py-3 pr-4">
                         {{ audit.render(p.createdByName, p.createdAt, p.updatedByName, p.updatedAt, true) }}
                     </td>
                     <td class="py-3">
@@ -121,37 +126,34 @@
                     </td>
                 </tr>
             {% else %}
-                <tr>
-                    <td colspan="7" class="py-10 text-center">
-                        {% if filter.hasActiveFilters %}
-                            <p class="text-navy-500">Tidak ada peserta yang cocok dengan filter.</p>
-                            <a href="/participants" class="btn-secondary mt-4 inline-flex justify-center">Reset filter</a>
-                        {% else %}
-                            <p class="text-navy-500">Belum ada peserta global.</p>
-                            <a href="/participants/bulk" class="btn-primary mt-4 inline-flex justify-center">
-                                {% include 'components/ui/icon.twig' with { name: 'ri-upload-cloud-2-line', class: 'mr-2', size: 'sm' } %}
-                                Bulk Upload dari Excel
-                            </a>
-                        {% endif %}
-                    </td>
-                </tr>
+                {% if filter.hasActiveFilters %}
+                    {% include 'components/ui/table-empty.twig' with {
+                        colspan: 7,
+                        title: 'Tidak ada peserta yang cocok',
+                        message: 'Coba ubah kata kunci atau reset filter.',
+                        resetUrl: '/participants'
+                    } %}
+                {% else %}
+                    {% include 'components/ui/table-empty.twig' with {
+                        colspan: 7,
+                        icon: 'ri-team-line',
+                        title: 'Belum ada peserta global',
+                        message: 'Upload bulk atau tambah peserta satu per satu.',
+                        actionUrl: '/participants/bulk',
+                        actionLabel: 'Bulk Upload dari Excel'
+                    } %}
+                {% endif %}
             {% endfor %}
         </tbody>
     </table>
 </div>
 
 {% if paginator.total > 0 %}
-    <div class="session-list-footer mt-4">
-        <p class="session-list-footer-text">
-            Halaman {{ paginator.page }} dari {{ paginator.totalPages() }}
-            · {{ paginator.perPage }} per halaman
-        </p>
-        {% include 'components/ui/pagination.twig' with {
-            paginator: paginator,
-            baseUrl: '/participants',
-            queryString: filter.paginationQueryString()
-        } %}
-    </div>
+    {% include 'components/ui/list-footer.twig' with {
+        paginator: paginator,
+        baseUrl: '/participants',
+        queryString: filter.paginationQueryString()
+    } %}
 {% endif %}
 {% endblock %}
 

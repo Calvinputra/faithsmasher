@@ -1,7 +1,8 @@
 {% extends 'layouts/dashboard.twig' %}
 {% block title %}Manual Setup — {{ session.name }}{% endblock %}
 {% set sidebar_session = session %}
-{% block sidebar_nav %}{% include 'components/sidebar.twig' with { session: session, active: 'manual' } %}{% endblock %}
+{% set active = 'manual' %}
+{% block sidebar_nav %}{% include 'components/sidebar.twig' with { session: session, active: active } %}{% endblock %}
 
 {% block head %}
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
@@ -15,18 +16,16 @@
 {% endblock %}
 
 {% block content %}
-<div class="page-toolbar mb-4 sm:mb-6">
-    <p class="page-toolbar-meta text-xs text-navy-600 sm:hidden">Tarik pemain ke tabel bagan</p>
-    <div class="page-toolbar-actions">
-        <a href="/sessions/{{ session.id }}/matches" class="btn-secondary page-toolbar-btn justify-center">Setup Bagan</a>
-        <a href="/sessions/{{ session.id }}/matches/preview" class="btn-secondary page-toolbar-btn justify-center">Preview</a>
-    </div>
-</div>
+{% include 'components/matches/page-toolbar.twig' with {
+    session: session,
+    meta: 'Tarik pemain ke tabel bagan',
+    hide: 'manual'
+} %}
 
 {% if matches is empty %}
-    <div class="card py-12 text-center text-navy-500">
-        <p>Belum ada bagan. Generate dulu dari Match Hub.</p>
-        <a href="/sessions/{{ session.id }}/matches" class="btn-primary mt-4 inline-flex">Ke Match Hub</a>
+    <div class="empty-state">
+        <p class="text-navy-600">Belum ada bagan. Generate dulu dari Match Hub.</p>
+        <a href="/sessions/{{ session.id }}/matches" class="btn-primary mt-4 inline-flex justify-center">Ke Match Hub</a>
     </div>
 {% else %}
 <form id="manual-form" method="post" action="/sessions/{{ session.id }}/matches/manual">

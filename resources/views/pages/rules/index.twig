@@ -1,7 +1,8 @@
 {% extends 'layouts/dashboard.twig' %}
 {% block title %}Game Rules — {{ session.name }}{% endblock %}
 {% set sidebar_session = session %}
-{% block sidebar_nav %}{% include 'components/sidebar.twig' with { session: session, active: 'rules' } %}{% endblock %}
+{% set active = 'rules' %}
+{% block sidebar_nav %}{% include 'components/sidebar.twig' with { session: session, active: active } %}{% endblock %}
 
 {% block topbar_action %}
 <button
@@ -82,7 +83,16 @@
             </div>
         </article>
     {% else %}
-        <div class="card col-span-full py-8 text-center text-navy-500">Belum ada game rules.</div>
+        <div class="empty-state col-span-full">
+            <p class="text-navy-600">Belum ada game rules.</p>
+            <button
+                type="button"
+                class="btn-primary mt-4 inline-flex justify-center"
+                data-form-open="rule-form-modal"
+                data-form-type="rule"
+                data-form-mode="create"
+            >+ Add Rule</button>
+        </div>
     {% endfor %}
 </div>
 {% endblock %}

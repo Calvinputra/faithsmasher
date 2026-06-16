@@ -1,0 +1,21 @@
+{# session required; hide: comma-separated keys hub, preview, manual, counter #}
+{% set hidden = hide|default('')|split(',') %}
+<div class="page-toolbar mb-3 sm:mb-6">
+    {% if meta|default('') %}
+        <p class="page-toolbar-meta text-xs text-navy-600 sm:hidden">{{ meta }}</p>
+    {% endif %}
+    <div class="page-toolbar-actions">
+        {% if 'hub' not in hidden %}
+            <a href="/sessions/{{ session.id }}/matches" class="btn-secondary page-toolbar-btn justify-center">Match Hub</a>
+        {% endif %}
+        {% if 'preview' not in hidden %}
+            <a href="/sessions/{{ session.id }}/matches/preview" class="btn-secondary page-toolbar-btn justify-center">Preview</a>
+        {% endif %}
+        {% if 'manual' not in hidden %}
+            <a href="/sessions/{{ session.id }}/matches/manual" class="btn-secondary page-toolbar-btn justify-center">Manual</a>
+        {% endif %}
+        {% if 'counter' not in hidden %}
+            <a href="/sessions/{{ session.id }}/matches/counter" class="btn-secondary page-toolbar-btn justify-center">Counter</a>
+        {% endif %}
+    </div>
+</div>

@@ -1,4 +1,5 @@
 {% set s = summary.session %}
+{% import 'components/ui/audit-trail.twig' as audit %}
 <article class="session-card">
     <div class="session-card-top">
         <span class="session-date-badge">{{ s.sessionDate|date('d M Y') }}</span>
@@ -27,12 +28,9 @@
         </p>
     {% endif %}
 
-    <p class="session-card-audit">
-        Dibuat {{ s.createdByName|default('—') }} · {{ s.createdAt|date('d M Y, H:i') }}
-        {% if s.updatedByName and s.wasUpdated %}
-            · Update {{ s.updatedByName }} · {{ s.updatedAt|date('d M Y, H:i') }}
-        {% endif %}
-    </p>
+    <div class="session-card-audit">
+        {{ audit.render(s.createdByName, s.createdAt, s.updatedByName, s.updatedAt, true) }}
+    </div>
 
     <div class="session-stats">
         {% include 'components/ui/stat-pill.twig' with {

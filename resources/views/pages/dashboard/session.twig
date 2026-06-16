@@ -1,38 +1,68 @@
 {% extends 'layouts/dashboard.twig' %}
 {% set sidebar_session = session %}
+{% set active = 'overview' %}
 
 {% block title %}{{ session.name }} — {{ app.name }}{% endblock %}
 
 {% block page_header %}
-<div class="min-w-0">
-    <p class="text-xs font-medium text-navy-500 sm:hidden">{{ session.name }}</p>
+<div class="session-overview-meta min-w-0">
+    <span class="session-date-badge inline-flex text-[10px] sm:text-xs">{{ session.sessionDate|date('d M Y') }}</span>
+    <h1 class="page-title text-xl sm:text-2xl">{{ session.name }}</h1>
+    {% if session.location %}
+        <p class="session-location hidden text-xs text-navy-500 sm:flex sm:items-center sm:gap-1">
+            {% include 'components/ui/icon.twig' with { name: 'ri-map-pin-line', class: 'shrink-0 text-gold-600', size: 'sm' } %}
+            {{ session.location }}
+        </p>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block topbar_action %}
+<div class="hidden items-center gap-2 sm:flex">
+    <button
+        type="button"
+        class="btn-secondary px-3 py-2 text-sm"
+        data-form-open="session-form-modal"
+        data-form-type="session"
+        data-form-mode="edit"
+        data-form-edit-id="{{ session.id }}"
+        data-form-payload="{{ {
+            id: session.id,
+            name: session.name,
+            session_date: session.sessionDate,
+            location: session.location,
+            court_count: session.courtCount,
+            created_by_name: session.createdByName|default(''),
+            created_at: session.createdAt,
+            updated_by_name: session.updatedByName|default(''),
+            updated_at: session.updatedAt|default('')
+        }|json_encode|e('html_attr') }}"
+    >
+        {% include 'components/ui/icon.twig' with { name: 'ri-pencil-line', class: 'mr-1.5', size: 'sm' } %}
+        Edit
+    </button>
+    {% if currentUser.canDelete %}
+        {% include 'components/ui/icon-action-delete.twig' with {
+            action: '/sessions/' ~ session.id ~ '/delete',
+            confirm: 'Hapus session "' ~ session.name ~ '" beserta rules, matches, dan peserta di session ini? (Peserta global tidak dihapus)',
+            label: 'Hapus session'
+        } %}
+    {% endif %}
 </div>
 {% endblock %}
 
 {% block sidebar_nav %}
-    {% include 'components/sidebar.twig' with { session: session, active: 'overview' } %}
+    {% include 'components/sidebar.twig' with { session: session, active: active } %}
 {% endblock %}
 
 {% block content %}
 {% import 'components/ui/audit-trail.twig' as audit %}
-<div class="page-header">
-    <div class="min-w-0 space-y-2">
-        <span class="session-date-badge inline-flex">{{ session.sessionDate|date('d M Y') }}</span>
-        <h1 class="page-title">{{ session.name }}</h1>
-        {% if session.location %}
-            <p class="session-location">
-                {% include 'components/ui/icon.twig' with { name: 'ri-map-pin-line', class: 'shrink-0 text-gold-600', size: 'sm' } %}
-                {{ session.location }}
-            </p>
-        {% endif %}
-        <div class="mt-2 max-w-md">
-            {{ audit.render(session.createdByName, session.createdAt, session.updatedByName, session.updatedAt, false) }}
-        </div>
-    </div>
-    <div class="page-header-actions flex w-full shrink-0 flex-wrap items-center gap-2 sm:w-auto">
+
+<div class="page-toolbar mb-4 sm:hidden">
+    <div class="page-toolbar-actions w-full">
         <button
             type="button"
-            class="btn-secondary"
+            class="btn-secondary page-toolbar-btn flex-1 justify-center"
             data-form-open="session-form-modal"
             data-form-type="session"
             data-form-mode="edit"
@@ -49,7 +79,7 @@
                 updated_at: session.updatedAt|default('')
             }|json_encode|e('html_attr') }}"
         >
-            {% include 'components/ui/icon.twig' with { name: 'ri-pencil-line', class: 'mr-2', size: 'sm' } %}
+            {% include 'components/ui/icon.twig' with { name: 'ri-pencil-line', class: 'mr-1.5', size: 'sm' } %}
             Edit Session
         </button>
         {% if currentUser.canDelete %}
@@ -60,6 +90,10 @@
             } %}
         {% endif %}
     </div>
+</div>
+
+<div class="mb-4 max-w-lg sm:mb-6">
+    {{ audit.render(session.createdByName, session.createdAt, session.updatedByName, session.updatedAt, false) }}
 </div>
 
 <div class="stat-grid">

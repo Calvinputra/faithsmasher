@@ -50,4 +50,30 @@ final class Gender
 
         return self::labels()[$gender] ?? $gender;
     }
+
+    public static function normalize(?string $gender): ?string
+    {
+        if ($gender === null || trim($gender) === '') {
+            return null;
+        }
+
+        $value = strtolower(trim($gender));
+
+        if (in_array($value, self::OPTIONS, true)) {
+            return $value;
+        }
+
+        return match (true) {
+            in_array($value, ['m', 'l', 'laki', 'laki-laki', 'pria', 'cowok', 'male'], true) => 'male',
+            in_array($value, ['f', 'p', 'perempuan', 'wanita', 'cewek', 'female'], true) => 'female',
+            in_array($value, ['other', 'lain', 'lainnya', 'o'], true) => 'other',
+            default => null,
+        };
+    }
+
+    /** @return list<string> */
+    public static function acceptedInputExamples(): array
+    {
+        return ['Male', 'Female', 'male', 'female', 'M', 'F', 'Pria', 'Wanita'];
+    }
 }

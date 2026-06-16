@@ -389,7 +389,13 @@ final class ParticipantRepository
     }
 
     /**
-     * @param list<array{name: string, rank: string}> $rows
+     * @param list<array{
+     *     name: string,
+     *     rank: string,
+     *     gender?: ?string,
+     *     phone?: ?string,
+     *     gms_source?: ?string
+     * }> $rows
      * @return list<int> Created participant IDs
      */
     public function createMany(int $userId, array $rows): array
@@ -400,7 +406,7 @@ final class ParticipantRepository
 
         $statement = $this->db->prepare(
             'INSERT INTO participants (user_id, name, `rank`, gender, phone, gms_source)
-             VALUES (:user_id, :name, :rank, NULL, NULL, NULL)'
+             VALUES (:user_id, :name, :rank, :gender, :phone, :gms_source)'
         );
 
         $ids = [];
@@ -412,6 +418,9 @@ final class ParticipantRepository
                     'user_id' => $userId,
                     'name' => $row['name'],
                     'rank' => $row['rank'],
+                    'gender' => $row['gender'] ?? null,
+                    'phone' => $row['phone'] ?? null,
+                    'gms_source' => $row['gms_source'] ?? null,
                 ]);
                 $ids[] = (int) $this->db->lastInsertId();
             }

@@ -3,13 +3,13 @@
 {% block title %}{% if participant %}Edit{% else %}Tambah{% endif %} Peserta — {{ app.name }}{% endblock %}
 
 {% block content %}
-<div class="max-w-xl">
-    <a href="/participants" class="inline-flex items-center gap-1 text-sm font-medium text-navy-600 hover:text-navy-900">
-        {% include 'components/ui/icon.twig' with { name: 'ri-arrow-left-s-line', size: 'sm' } %}
-        Kembali ke Peserta Global
-    </a>
-    <h1 class="mt-3 text-2xl font-bold text-navy-900">{% if participant %}Edit Peserta{% else %}Tambah Peserta{% endif %}</h1>
-    <p class="mt-1 text-sm text-navy-600">Data peserta bersama — semua admin melihat daftar yang sama.</p>
+<div class="mx-auto max-w-xl">
+    {% include 'components/ui/form-page-shell.twig' with {
+        backHref: '/participants',
+        backLabel: 'Kembali ke Peserta Global',
+        title: participant is defined and participant ? 'Edit Peserta' : 'Tambah Peserta',
+        subtitle: 'Data peserta bersama — semua admin melihat daftar yang sama.'
+    } %}
 
     <form method="post" action="{% if participant %}/participants/{{ participant.id }}{% else %}/participants{% endif %}" class="card mt-6 space-y-4">
         <div>

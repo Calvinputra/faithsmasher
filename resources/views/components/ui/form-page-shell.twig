@@ -1,0 +1,12 @@
+{# Sub-page shell: back link + title block #}
+<div class="form-page-shell mb-4 sm:mb-6">
+    {% if backHref|default('') %}
+        {% include 'components/ui/back-link.twig' with { href: backHref, label: backLabel|default('Kembali') } %}
+    {% endif %}
+    {% if title|default('') %}
+        <h1 class="form-page-title">{{ title }}</h1>
+    {% endif %}
+    {% if subtitle|default('') %}
+        <p class="form-page-subtitle">{{ subtitle }}</p>
+    {% endif %}
+</div>

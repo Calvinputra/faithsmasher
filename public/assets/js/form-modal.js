@@ -42,17 +42,19 @@
 
         const creator = data.created_by_name || '—';
         const createdAt = formatAuditDate(data.created_at);
-        let html = `<div class="audit-trail audit-trail-compact"><p class="audit-trail-row"><span class="audit-trail-label">Dibuat</span> <span class="audit-trail-value">${escapeHtml(creator)}</span> <span class="audit-trail-sep" aria-hidden="true">·</span> <time class="audit-trail-time">${escapeHtml(createdAt)}</time></p>`;
-
-        if (
+        const hasUpdate = Boolean(
             data.updated_by_name
             && data.updated_at
-            && (data.updated_by_name !== data.created_by_name || data.updated_at !== data.created_at)
-        ) {
-            html += `<p class="audit-trail-row"><span class="audit-trail-label">Diupdate</span> <span class="audit-trail-value">${escapeHtml(data.updated_by_name)}</span> <span class="audit-trail-sep" aria-hidden="true">·</span> <time class="audit-trail-time">${escapeHtml(formatAuditDate(data.updated_at))}</time></p>`;
+            && (data.updated_by_name !== data.created_by_name || data.updated_at !== data.created_at),
+        );
+
+        let html = `<div class="audit-trail audit-trail-compact"><div class="audit-trail-items${hasUpdate ? ' audit-trail-items--multi' : ''}"><div class="audit-trail-item"><span class="audit-trail-item-icon audit-trail-item-icon-create" aria-hidden="true"><i class="ri-user-add-line"></i></span><div class="audit-trail-item-body"><span class="audit-trail-item-label">Dibuat</span><span class="audit-trail-item-user">${escapeHtml(creator)}</span><time class="audit-trail-item-time">${escapeHtml(createdAt)}</time></div></div>`;
+
+        if (hasUpdate) {
+            html += `<div class="audit-trail-item"><span class="audit-trail-item-icon audit-trail-item-icon-update" aria-hidden="true"><i class="ri-edit-circle-line"></i></span><div class="audit-trail-item-body"><span class="audit-trail-item-label">Terakhir diupdate</span><span class="audit-trail-item-user">${escapeHtml(data.updated_by_name)}</span><time class="audit-trail-item-time">${escapeHtml(formatAuditDate(data.updated_at))}</time></div></div>`;
         }
 
-        html += '</div>';
+        html += '</div></div>';
         auditEl.innerHTML = html;
         auditEl.classList.remove('hidden');
     }

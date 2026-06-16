@@ -1,0 +1,12 @@
+{# Expects: paginator, baseUrl, queryString (optional) #}
+<div class="session-list-footer mt-4">
+    <p class="session-list-footer-text">
+        Halaman {{ paginator.page }} dari {{ paginator.totalPages() }}
+        · {{ paginator.perPage }} per halaman
+    </p>
+    {% include 'components/ui/pagination.twig' with {
+        paginator: paginator,
+        baseUrl: baseUrl,
+        queryString: queryString|default('')
+    } %}
+</div>

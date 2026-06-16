@@ -1,12 +1,13 @@
 {% extends 'layouts/dashboard.twig' %}
 {% block title %}Peserta Session — {{ session.name }}{% endblock %}
 {% set sidebar_session = session %}
-{% block sidebar_nav %}{% include 'components/sidebar.twig' with { session: session, active: 'participants' } %}{% endblock %}
+{% set active = 'participants' %}
+{% block sidebar_nav %}{% include 'components/sidebar.twig' with { session: session, active: active } %}{% endblock %}
 
 {% block page_header %}
 <div class="min-w-0">
     <h1 class="page-title text-xl sm:text-2xl">Peserta Session</h1>
-    <p class="hidden text-xs text-navy-500 sm:block">{{ session.name }} · {{ participants|length }} peserta · {{ availableCount|default(0) }} belum ditambahkan</p>
+    <p class="hidden text-xs text-navy-500 sm:block">{{ session.name }} · {{ totalCount }} peserta · {{ availableCount|default(0) }} belum ditambahkan</p>
 </div>
 {% endblock %}
 
@@ -23,19 +24,8 @@
     </div>
 </div>
 
-{% if rankCounts|default([])|length > 0 %}
-<div class="participant-stats mb-3 sm:mb-6">
-    <div class="participant-stats-group">
-        <span class="participant-stats-label">Rank</span>
-        <div class="participant-stats-chips">
-            {% for rank, count in rankCounts %}
-                {% if count > 0 %}
-                    <span class="participant-stat-chip participant-stat-chip-rank">{{ rank }}: {{ count }}</span>
-                {% endif %}
-            {% endfor %}
-        </div>
-    </div>
-</div>
+{% if totalCount > 0 %}
+    {% include 'components/participants/session-filter.twig' %}
 {% endif %}
 
 <div class="card data-table-card overflow-x-auto">
@@ -45,8 +35,8 @@
                 <th class="pb-3 pr-4">Nama</th>
                 <th class="pb-3 pr-4">Rank</th>
                 <th class="col-hide-sm pb-3 pr-4">Gender</th>
-                <th class="col-hide-md pb-3 pr-4">Telepon</th>
-                <th class="col-hide-sm pb-3 pr-4">GMS</th>
+                <th class="col-hide-md pb-3 pr-4">No. Telp</th>
+                <th class="col-hide-sm pb-3 pr-4">GMS Dari Mana</th>
                 <th class="pb-3">Aksi</th>
             </tr>
         </thead>
@@ -58,6 +48,7 @@
                         <div class="mt-1 text-xs text-navy-500 sm:hidden">
                             {% if p.gender %}{{ genders[p.gender]|default(p.gender) }}{% endif %}
                             {% if p.phone %} · {{ p.phone }}{% endif %}
+                            {% if p.gmsSource %} · {{ p.gmsSource }}{% endif %}
                         </div>
                     </td>
                     <td class="py-3 pr-4"><span class="rounded bg-gold-100 px-2 py-0.5 text-xs font-bold text-navy-800">{{ p.rank }}</span></td>
@@ -92,17 +83,32 @@
                     </td>
                 </tr>
             {% else %}
-                <tr>
-                    <td colspan="6" class="py-10 text-center">
-                        <p class="text-navy-500">Belum ada peserta di session ini.</p>
-                        <div class="mt-4 flex flex-col items-center gap-2 sm:flex-row sm:justify-center">
-                            <a href="/sessions/{{ session.id }}/participants/assign" class="btn-primary inline-flex justify-center">Tambah dari Global</a>
-                            <a href="/participants?modal=participant-form-modal" class="btn-secondary inline-flex justify-center">Buat Peserta Global</a>
-                        </div>
-                    </td>
-                </tr>
+                {% if filter.hasActiveFilters|default(false) %}
+                    {% include 'components/ui/table-empty.twig' with {
+                        colspan: 6,
+                        title: 'Tidak ada peserta yang cocok',
+                        message: 'Coba ubah filter atau reset.',
+                        resetUrl: filter.resetUrl()
+                    } %}
+                {% else %}
+                    {% include 'components/ui/table-empty.twig' with {
+                        colspan: 6,
+                        title: 'Belum ada peserta di session ini',
+                        message: 'Tambah dari daftar global atau buat peserta baru.',
+                        actionUrl: '/sessions/' ~ session.id ~ '/participants/assign',
+                        actionLabel: 'Tambah dari Global'
+                    } %}
+                {% endif %}
             {% endfor %}
         </tbody>
     </table>
 </div>
+
+{% if paginator.total|default(0) > 0 %}
+    {% include 'components/ui/list-footer.twig' with {
+        paginator: paginator,
+        baseUrl: '/sessions/' ~ session.id ~ '/participants',
+        queryString: filter.paginationQueryString()
+    } %}
+{% endif %}
 {% endblock %}

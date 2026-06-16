@@ -1,17 +1,46 @@
 <div class="bulk-format-card card mb-6">
-    <h2 class="flex items-center gap-2 font-bold text-navy-900">
-        {% include 'components/ui/icon.twig' with { name: 'ri-information-line', class: 'text-gold-600' } %}
-        Format yang didukung
-    </h2>
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <h2 class="flex items-center gap-2 font-bold text-navy-900">
+            {% include 'components/ui/icon.twig' with { name: 'ri-information-line', class: 'text-gold-600' } %}
+            Format yang didukung
+        </h2>
+        <a href="/participants/bulk/template" class="btn-secondary inline-flex shrink-0 justify-center text-sm">
+            {% include 'components/ui/icon.twig' with { name: 'ri-download-2-line', class: 'mr-1.5', size: 'sm' } %}
+            Unduh Template CSV
+        </a>
+    </div>
+
+    <p class="mt-3 text-sm text-navy-600">
+        Kolom lengkap (disarankan): <strong>Nama, Rank, Gender, Telepon, GMS</strong>.
+        Paste dari Excel/Google Sheets (tab otomatis) atau upload file CSV.
+        Kolom Gender, Telepon, dan GMS boleh dikosongkan.
+    </p>
+
     <ul class="bulk-format-list mt-3 space-y-2 text-sm text-navy-600">
-        <li><strong>Nama + Rank</strong> — paste 2 kolom: <code>Calvin,C</code> atau tab dari Excel</li>
-        <li><strong>No + Nama + Rank</strong> — <code>1,Calvin,C</code> (header otomatis dilewati)</li>
-        <li><strong>No + Nama</strong> — rank pakai default di bawah</li>
+        <li><strong>Header otomatis</strong> — baris pertama <code>Nama,Rank,Gender,Telepon,GMS</code> dikenali & dilewati</li>
+        <li><strong>Format singkat</strong> — <code>Calvin,C</code> (rank wajib; gender/telp/GMS opsional)</li>
+        <li><strong>No + Nama + Rank</strong> — <code>1,Calvin,C</code> (kolom nomor opsional)</li>
         <li><strong>Duplikat</strong> — nama yang sudah ada di daftar global (atau sudah di session) otomatis dilewati</li>
     </ul>
-    <pre class="bulk-format-example mt-4">Nama,Rank
-Calvin,C
-Yosua,B+
-Pat,B
-Kevin,A-</pre>
+
+    <pre class="bulk-format-example mt-4">Nama,Rank,Gender,Telepon,GMS
+Calvin,C,Male,081234567890,GMS
+Yosua,B+,Female,081298765432,VIP
+Pat,B,Male,,CP
+Kevin,A-,Male,08111222333,PURI</pre>
+
+    <div class="bulk-format-values mt-4 grid gap-3 sm:grid-cols-3">
+        <div class="rounded-xl border border-border bg-navy-50/50 p-3">
+            <p class="text-xs font-semibold uppercase tracking-wide text-navy-500">Rank</p>
+            <p class="mt-1 text-sm text-navy-700">{{ ranks|keys|join(', ') }}</p>
+        </div>
+        <div class="rounded-xl border border-border bg-navy-50/50 p-3">
+            <p class="text-xs font-semibold uppercase tracking-wide text-navy-500">Gender</p>
+            <p class="mt-1 text-sm text-navy-700">Male, Female, Other<br><span class="text-xs text-navy-500">Juga: M, F, Pria, Wanita</span></p>
+        </div>
+        <div class="rounded-xl border border-border bg-navy-50/50 p-3">
+            <p class="text-xs font-semibold uppercase tracking-wide text-navy-500">GMS</p>
+            <p class="mt-1 text-sm text-navy-700">{{ gmsSources|keys|join(', ') }}</p>
+        </div>
+    </div>
 </div>

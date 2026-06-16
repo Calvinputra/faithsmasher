@@ -8,16 +8,16 @@
     </a>
 
     <nav class="sidebar-nav flex-1 overflow-y-auto" aria-label="Main navigation">
-        <a href="/dashboard" class="sidebar-link{% if active|default('') == 'dashboard' %} sidebar-link-active{% endif %}">
+        <a href="/dashboard" class="sidebar-link{% if active|default('') == 'dashboard' %} sidebar-link-active{% endif %}"{% if active|default('') == 'dashboard' %} aria-current="page"{% endif %}>
             {% include 'components/ui/icon.twig' with { name: 'ri-home-4-line', class: 'sidebar-link-icon' } %}
             <span>Dashboard</span>
         </a>
-        <a href="/participants" class="sidebar-link{% if active|default('') == 'participants-global' %} sidebar-link-active{% endif %}">
+        <a href="/participants" class="sidebar-link{% if active|default('') == 'participants-global' %} sidebar-link-active{% endif %}"{% if active|default('') == 'participants-global' %} aria-current="page"{% endif %}>
             {% include 'components/ui/icon.twig' with { name: 'ri-group-line', class: 'sidebar-link-icon' } %}
             <span>Peserta</span>
         </a>
         {% if currentUser.isSuperadmin %}
-            <a href="/admin/users" class="sidebar-link{% if active|default('') == 'admin-users' %} sidebar-link-active{% endif %}">
+            <a href="/admin/users" class="sidebar-link{% if active|default('') == 'admin-users' %} sidebar-link-active{% endif %}"{% if active|default('') == 'admin-users' %} aria-current="page"{% endif %}>
                 {% include 'components/ui/icon.twig' with { name: 'ri-shield-user-line', class: 'sidebar-link-icon' } %}
                 <span>Kelola User</span>
             </a>

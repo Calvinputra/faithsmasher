@@ -1,4 +1,4 @@
-<a href="{{ href }}" class="sidebar-link{% if active|default(false) %} sidebar-link-active{% endif %}">
+<a href="{{ href }}" class="sidebar-link{% if active|default(false) %} sidebar-link-active{% endif %}"{% if active|default(false) %} aria-current="page"{% endif %}>
     {% include 'components/ui/icon.twig' with { name: icon, class: 'sidebar-link-icon' } %}
     <span>{{ label }}</span>
 </a>

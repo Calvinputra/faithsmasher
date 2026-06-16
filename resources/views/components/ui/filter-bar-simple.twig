@@ -1,4 +1,8 @@
 {# Simple search + submit (+ optional reset). Expects: action, query, placeholder, resetUrl (optional) #}
+{% set resetHref = resetUrl|default('') %}
+{% if not resetHref and query|default('') %}
+    {% set resetHref = action %}
+{% endif %}
 <form method="get" action="{{ action }}" class="filter-bar {{ class|default('mb-4') }}" role="search">
     <div class="filter-bar-row filter-bar-row--simple">
         <div class="search-input-wrap filter-bar-search">
@@ -18,8 +22,8 @@
                 {% include 'components/ui/icon.twig' with { name: 'ri-search-line', class: 'mr-1 sm:mr-1.5', size: 'sm' } %}
                 Cari
             </button>
-            {% if resetUrl|default('') %}
-                <a href="{{ resetUrl }}" class="btn-ghost search-clear filter-bar-btn">
+            {% if resetHref %}
+                <a href="{{ resetHref }}" class="btn-ghost search-clear filter-bar-btn">
                     {% include 'components/ui/icon.twig' with { name: 'ri-close-circle-line', class: 'mr-1 sm:mr-1.5', size: 'sm' } %}
                     Reset
                 </a>

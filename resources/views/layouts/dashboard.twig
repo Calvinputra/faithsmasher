@@ -82,20 +82,20 @@
             </button>
         </div>
         <nav class="mobile-drawer-nav flex-1 overflow-y-auto">
-            <a href="/dashboard" class="sidebar-link{% if active|default('') == 'dashboard' %} sidebar-link-active{% endif %}">Dashboard</a>
-            <a href="/participants" class="sidebar-link{% if active|default('') == 'participants-global' %} sidebar-link-active{% endif %}">Peserta</a>
+            <a href="/dashboard" class="sidebar-link{% if active|default('') == 'dashboard' %} sidebar-link-active{% endif %}"{% if active|default('') == 'dashboard' %} aria-current="page"{% endif %}>Dashboard</a>
+            <a href="/participants" class="sidebar-link{% if active|default('') == 'participants-global' %} sidebar-link-active{% endif %}"{% if active|default('') == 'participants-global' %} aria-current="page"{% endif %}>Peserta</a>
             {% if currentUser.isSuperadmin %}
-                <a href="/admin/users" class="sidebar-link{% if active|default('') == 'admin-users' %} sidebar-link-active{% endif %}">Kelola User</a>
+                <a href="/admin/users" class="sidebar-link{% if active|default('') == 'admin-users' %} sidebar-link-active{% endif %}"{% if active|default('') == 'admin-users' %} aria-current="page"{% endif %}>Kelola User</a>
             {% endif %}
             {% if sidebar_session is defined %}
-                {% include 'components/sidebar.twig' with { session: sidebar_session } %}
+                {% include 'components/sidebar.twig' with { session: sidebar_session, active: active|default('') } %}
             {% endif %}
         </nav>
         {% include 'components/dashboard/sidebar-footer.twig' %}
     </aside>
 
     {% if sidebar_session is defined %}
-        {% include 'components/mobile-nav.twig' with { session: sidebar_session } %}
+        {% include 'components/mobile-nav.twig' with { session: sidebar_session, active: active|default('') } %}
     {% endif %}
 
     {% include 'components/ui/toast-container.twig' %}

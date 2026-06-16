@@ -233,6 +233,8 @@ final class ParticipantController extends BaseController
         return $view->render($response, 'pages/participants/session/bulk.twig', [
             'session' => $session,
             'ranks' => Rank::options(),
+            'genders' => Gender::labels(),
+            'gmsSources' => GmsSource::options(),
             'errors' => [],
             'rowErrors' => [],
             'old' => [],
@@ -268,6 +270,8 @@ final class ParticipantController extends BaseController
             return $view->render($response, 'pages/participants/session/bulk.twig', [
                 'session' => $session,
                 'ranks' => Rank::options(),
+                'genders' => Gender::labels(),
+                'gmsSources' => GmsSource::options(),
                 'errors' => $result['errors'],
                 'rowErrors' => $result['errors'],
                 'old' => $data,

@@ -1,18 +1,17 @@
 {% extends 'layouts/dashboard.twig' %}
 {% block title %}Import Peserta — {{ session.name }}{% endblock %}
 {% set sidebar_session = session %}
-{% block sidebar_nav %}{% include 'components/sidebar.twig' with { session: session, active: 'participants' } %}{% endblock %}
+{% set active = 'participants' %}
+{% block sidebar_nav %}{% include 'components/sidebar.twig' with { session: session, active: active } %}{% endblock %}
 
 {% block content %}
 <div class="mx-auto max-w-3xl">
-    <div class="mb-6">
-        <a href="/sessions/{{ session.id }}/participants" class="inline-flex items-center gap-1 text-sm font-medium text-navy-600 hover:text-navy-900">
-            {% include 'components/ui/icon.twig' with { name: 'ri-arrow-left-s-line', size: 'sm' } %}
-            Kembali ke Peserta Session
-        </a>
-        <h1 class="mt-3 text-2xl font-bold text-navy-900 sm:text-3xl">Import ke Session</h1>
-        <p class="mt-1 text-sm text-navy-600">{{ session.name }} — simpan ke global & langsung assign ke session</p>
-    </div>
+    {% include 'components/ui/form-page-shell.twig' with {
+        backHref: '/sessions/' ~ session.id ~ '/participants',
+        backLabel: 'Kembali ke Peserta Session',
+        title: 'Import ke Session',
+        subtitle: session.name ~ ' — simpan ke global & langsung assign ke session'
+    } %}
 
     {% include 'components/participants/bulk-format.twig' %}
 

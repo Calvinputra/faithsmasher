@@ -1,10 +1,16 @@
 {% extends 'layouts/dashboard.twig' %}
 {% block title %}{% if rule %}Edit{% else %}Add{% endif %} Rule — {{ session.name }}{% endblock %}
 {% set sidebar_session = session %}
-{% block sidebar_nav %}{% include 'components/sidebar.twig' with { session: session } %}{% endblock %}
+{% set active = 'rules' %}
+{% block sidebar_nav %}{% include 'components/sidebar.twig' with { session: session, active: active } %}{% endblock %}
 {% block content %}
-<div class="max-w-xl">
-    <h1 class="text-2xl font-bold text-navy-900">{% if rule %}Edit Game Rule{% else %}Add Game Rule{% endif %}</h1>
+<div class="mx-auto max-w-xl">
+    {% include 'components/ui/form-page-shell.twig' with {
+        backHref: '/sessions/' ~ session.id ~ '/rules',
+        backLabel: 'Kembali ke Game Rules',
+        title: rule is defined and rule ? 'Edit Game Rule' : 'Add Game Rule',
+        subtitle: session.name
+    } %}
     <form method="post" action="{% if rule %}/sessions/{{ session.id }}/rules/{{ rule.id }}{% else %}/sessions/{{ session.id }}/rules{% endif %}" class="card mt-6 space-y-4">
         <div>
             <label for="name" class="mb-1.5 block text-sm font-medium text-navy-700">Rule Name *</label>
