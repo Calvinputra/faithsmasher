@@ -41,7 +41,7 @@ try {
     http_response_code(500);
     header('Content-Type: text/html; charset=utf-8');
     echo '<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><title>Error</title></head><body style="font-family:system-ui,sans-serif;max-width:36rem;margin:3rem auto;padding:0 1rem;">';
-    echo '<h1>Aplikasi belum siap</h1>';
+    echo '<h1>Aplikasi belum siap hehe</h1>';
     echo '<p>Periksa <code>.env</code>, koneksi database, dan import <code>database/schema.sql</code>.</p>';
 
     if ($debug) {
