@@ -1,13 +1,13 @@
 <form
     method="get"
     action="{{ action|default('/dashboard') }}"
-    class="session-filter"
+    class="session-filter filter-bar"
     id="dashboard-filter-form"
     role="search"
     data-session-dates="{{ sessionDates|default([])|json_encode|e('html_attr') }}"
 >
-    <div class="session-filter-row">
-        <div class="search-input-wrap session-filter-search">
+    <div class="filter-bar-row filter-bar-row--session session-filter-row">
+        <div class="search-input-wrap filter-bar-search session-filter-search">
             {% include 'components/ui/icon.twig' with { name: 'ri-search-line', class: 'search-icon' } %}
             <input
                 type="search"
@@ -20,7 +20,7 @@
             >
         </div>
 
-        <div class="date-filter-wrap">
+        <div class="filter-bar-field date-filter-wrap">
             <label for="filter_date_picker" class="sr-only">Filter tanggal session</label>
             <div class="date-filter-input-wrap" id="date-filter-trigger">
                 {% include 'components/ui/icon.twig' with { name: 'ri-calendar-line', class: 'date-filter-icon' } %}
@@ -48,13 +48,13 @@
             {% endif %}
         </div>
 
-        <div class="session-filter-submit">
-            <button type="submit" class="btn-secondary search-submit h-full px-4 py-2.5 text-sm whitespace-nowrap">
+        <div class="filter-bar-submit session-filter-submit">
+            <button type="submit" class="btn-secondary search-submit filter-bar-btn">
                 {% include 'components/ui/icon.twig' with { name: 'ri-search-line', class: 'mr-1.5', size: 'sm' } %}
                 Cari
             </button>
             {% if query|default('') or date|default('') %}
-                <a href="{{ action|default('/dashboard') }}" class="btn-ghost search-clear h-full px-4 py-2.5 text-sm whitespace-nowrap">
+                <a href="{{ action|default('/dashboard') }}" class="btn-ghost search-clear filter-bar-btn">
                     {% include 'components/ui/icon.twig' with { name: 'ri-close-circle-line', class: 'mr-1.5', size: 'sm' } %}
                     Reset
                 </a>

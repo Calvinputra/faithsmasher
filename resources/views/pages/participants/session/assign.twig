@@ -31,13 +31,11 @@
 
 {% include 'components/participants/assign-paste.twig' %}
 
-<form method="get" action="/sessions/{{ session.id }}/participants/assign" class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-stretch" role="search">
-    <div class="search-input-wrap min-w-0 flex-1">
-        {% include 'components/ui/icon.twig' with { name: 'ri-search-line', class: 'search-icon' } %}
-        <input type="search" name="q" value="{{ search|default('') }}" placeholder="Cari peserta global..." class="search-input">
-    </div>
-    <button type="submit" class="btn-secondary px-4 py-2.5 text-sm">Cari</button>
-</form>
+{% include 'components/ui/filter-bar-simple.twig' with {
+    action: '/sessions/' ~ session.id ~ '/participants/assign',
+    query: search|default(''),
+    placeholder: 'Cari peserta global...'
+} %}
 
 {% if available is empty %}
     <div class="empty-state">

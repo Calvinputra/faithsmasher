@@ -18,23 +18,26 @@
     </div>
 {% endif %}
 
-<div class="card overflow-x-auto">
-    <table class="w-full text-sm">
+<div class="card data-table-card overflow-x-auto">
+    <table class="w-full text-sm data-table">
         <thead>
             <tr class="border-b border-border text-left text-navy-500">
                 <th class="pb-3 pr-4">Nama</th>
-                <th class="pb-3 pr-4">Email</th>
+                <th class="col-hide-sm pb-3 pr-4">Email</th>
                 <th class="pb-3 pr-4">Role</th>
                 <th class="pb-3 pr-4">Status</th>
-                <th class="pb-3 pr-4">Daftar</th>
+                <th class="col-hide-md pb-3 pr-4">Daftar</th>
                 <th class="pb-3">Aksi</th>
             </tr>
         </thead>
         <tbody>
             {% for u in users %}
                 <tr class="border-b border-border/60">
-                    <td class="py-3 pr-4 font-medium text-navy-900">{{ u.name }}</td>
-                    <td class="py-3 pr-4 text-navy-600">{{ u.email }}</td>
+                    <td class="py-3 pr-4 font-medium text-navy-900">
+                        {{ u.name }}
+                        <div class="col-show-sm-only mt-0.5 text-xs text-navy-500">{{ u.email }}</div>
+                    </td>
+                    <td class="col-hide-sm py-3 pr-4 text-navy-600">{{ u.email }}</td>
                     <td class="py-3 pr-4">
                         {% if u.isSuperadmin %}
                             <span class="rounded-full bg-navy-100 px-2 py-0.5 text-xs font-bold text-navy-800">Superadmin</span>
@@ -51,7 +54,7 @@
                             <span class="rounded-full bg-green-100 px-2 py-0.5 text-xs font-bold text-green-700">Aktif</span>
                         {% endif %}
                     </td>
-                    <td class="py-3 pr-4 text-navy-500">{{ u.createdAt|date('d M Y') }}</td>
+                    <td class="col-hide-md py-3 pr-4 text-navy-500">{{ u.createdAt|date('d M Y') }}</td>
                     <td class="py-3">
                         {% if u.isPending and u.id != currentUser.id %}
                             <div class="flex flex-wrap gap-2">

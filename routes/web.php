@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Controllers\BaganShareController;
 use App\Controllers\AuthController;
 use App\Controllers\DashboardController;
 use App\Controllers\GameRuleController;
@@ -25,9 +26,11 @@ return function (App $app, AuthService $auth): void {
     $globalParticipantController = new GlobalParticipantController($auth);
     $gameRuleController = new GameRuleController($auth);
     $matchController = new MatchController($auth);
+    $baganShareController = new BaganShareController();
     $userAdminController = new UserAdminController($auth);
 
     $app->get('/', [$homeController, 'index']);
+    $app->get('/share/bagan/{token}', [$baganShareController, 'show']);
 
     $app->get('/login', [$authController, 'showLogin']);
     $app->post('/login', [$authController, 'login']);

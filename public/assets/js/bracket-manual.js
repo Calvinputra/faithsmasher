@@ -13,7 +13,14 @@ document.addEventListener('DOMContentLoaded', () => {
         new Sortable(slot, {
             group: 'players',
             animation: 150,
-            onAdd: enforceSingleChip,
+            draggable: '.player-chip',
+            onAdd: (evt) => {
+                removePlaceholder(slot);
+                enforceSingleChip(evt);
+            },
+            onRemove: () => {
+                ensurePlaceholder(slot);
+            },
             onUpdate: enforceSingleChip,
         });
     });
@@ -21,8 +28,26 @@ document.addEventListener('DOMContentLoaded', () => {
     new Sortable(pool, {
         group: 'players',
         animation: 150,
-        sort: false,
+        sort: true,
+        draggable: '.player-chip',
     });
+
+    function removePlaceholder(slot) {
+        slot.querySelector('.drop-slot-placeholder')?.remove();
+    }
+
+    function ensurePlaceholder(slot) {
+        if (slot.querySelector('.player-chip') || slot.querySelector('.drop-slot-bye')) {
+            return;
+        }
+
+        if (!slot.querySelector('.drop-slot-placeholder')) {
+            const placeholder = document.createElement('span');
+            placeholder.className = 'drop-slot-placeholder';
+            placeholder.textContent = 'Geser pemain…';
+            slot.appendChild(placeholder);
+        }
+    }
 
     function enforceSingleChip(evt) {
         const slot = evt.to;
@@ -33,6 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
             pool.appendChild(extra);
         }
 
+        slots.forEach((dropSlot) => ensurePlaceholder(dropSlot));
         updateWarnings();
     }
 
@@ -46,6 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         document.querySelectorAll('.player-chip').forEach((chip) => {
             const badge = chip.querySelector('.match-count');
+
             if (!badge) {
                 return;
             }
@@ -55,19 +82,22 @@ document.addEventListener('DOMContentLoaded', () => {
             if (count > 2) {
                 badge.textContent = `${count}x`;
                 badge.classList.remove('hidden');
+                chip.classList.add('player-chip-warn');
             } else {
+                badge.textContent = '';
                 badge.classList.add('hidden');
+                chip.classList.remove('player-chip-warn');
             }
         });
     }
 
-    form.addEventListener('submit', (event) => {
+    form.addEventListener('submit', () => {
         const pairings = {};
 
-        document.querySelectorAll('[data-match-id]').forEach((card) => {
-            const matchId = card.dataset.matchId;
-            const p1Slot = card.querySelector('[data-slot="p1"] .player-chip');
-            const p2Slot = card.querySelector('[data-slot="p2"] .player-chip');
+        document.querySelectorAll('tr[data-match-id]').forEach((row) => {
+            const matchId = row.dataset.matchId;
+            const p1Slot = row.querySelector('[data-slot="p1"] .player-chip');
+            const p2Slot = row.querySelector('[data-slot="p2"] .player-chip');
 
             pairings[matchId] = {
                 p1: p1Slot ? p1Slot.dataset.id : '',
@@ -78,5 +108,6 @@ document.addEventListener('DOMContentLoaded', () => {
         pairingsInput.value = JSON.stringify(pairings);
     });
 
+    slots.forEach((slot) => ensurePlaceholder(slot));
     updateWarnings();
 });

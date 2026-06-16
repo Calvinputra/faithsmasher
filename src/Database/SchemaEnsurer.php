@@ -22,6 +22,8 @@ final class SchemaEnsurer
         self::ensureUserRoleStatus($pdo);
         self::ensureGlobalParticipants($pdo);
         self::ensureAuditTrail($pdo);
+        self::ensureBaganSettings($pdo);
+        self::ensureBaganShareToken($pdo);
     }
 
     private static function ensureSessionsCourtCount(PDO $pdo): void
@@ -169,6 +171,59 @@ final class SchemaEnsurer
                 }
             } catch (PDOException) {
             }
+        }
+    }
+
+    private static function ensureBaganSettings(PDO $pdo): void
+    {
+        $sessionColumns = [
+            'bagan_count' => 'TINYINT UNSIGNED NOT NULL DEFAULT 1',
+            'bagan_pairing_scope' => "ENUM('global', 'per_bagan') NOT NULL DEFAULT 'global'",
+            'bagan_pairing_mode' => "ENUM('rank', 'gender') NOT NULL DEFAULT 'rank'",
+            'bagan_pairing_modes' => 'JSON NULL DEFAULT NULL',
+        ];
+
+        foreach ($sessionColumns as $column => $definition) {
+            try {
+                $statement = $pdo->query("SHOW COLUMNS FROM sessions LIKE '{$column}'");
+
+                if ($statement !== false && $statement->rowCount() === 0) {
+                    $after = $column === 'bagan_count' ? ' AFTER court_count' : '';
+                    $pdo->exec("ALTER TABLE sessions ADD COLUMN {$column} {$definition}{$after}");
+                }
+            } catch (PDOException) {
+            }
+        }
+
+        try {
+            $statement = $pdo->query("SHOW COLUMNS FROM matches LIKE 'court_number'");
+
+            if ($statement !== false && $statement->rowCount() === 0) {
+                $pdo->exec(
+                    'ALTER TABLE matches ADD COLUMN court_number TINYINT UNSIGNED NULL DEFAULT NULL AFTER match_order'
+                );
+            }
+        } catch (PDOException) {
+        }
+    }
+
+    private static function ensureBaganShareToken(PDO $pdo): void
+    {
+        try {
+            $statement = $pdo->query("SHOW COLUMNS FROM sessions LIKE 'bagan_share_token'");
+
+            if ($statement !== false && $statement->rowCount() === 0) {
+                $pdo->exec(
+                    'ALTER TABLE sessions
+                     ADD COLUMN bagan_share_token VARCHAR(32) NULL DEFAULT NULL AFTER bagan_pairing_modes'
+                );
+            }
+
+            try {
+                $pdo->exec('ALTER TABLE sessions ADD UNIQUE KEY sessions_bagan_share_token_unique (bagan_share_token)');
+            } catch (PDOException) {
+            }
+        } catch (PDOException) {
         }
     }
 

@@ -13,7 +13,22 @@ final class ParticipantFilter
         public readonly ?string $rank = null,
         public readonly ?string $gender = null,
         public readonly ?string $gmsSource = null,
+        public readonly string $basePath = '/participants',
     ) {
+    }
+
+    /** @param array<string, mixed> $params */
+    public static function forSession(int $sessionId, array $params): self
+    {
+        $filter = self::fromQueryParams($params);
+
+        return new self(
+            $filter->search,
+            $filter->rank,
+            $filter->gender,
+            $filter->gmsSource,
+            '/sessions/' . $sessionId . '/participants',
+        );
     }
 
     /** @param array<string, mixed> $params */
@@ -94,7 +109,12 @@ final class ParticipantFilter
 
         $query = http_build_query($params);
 
-        return '/participants' . ($query !== '' ? '?' . $query : '');
+        return $this->basePath . ($query !== '' ? '?' . $query : '');
+    }
+
+    public function resetUrl(): string
+    {
+        return $this->basePath;
     }
 
     public function toggleUrl(string $dimension, string $value): string
@@ -117,7 +137,7 @@ final class ParticipantFilter
 
         $query = http_build_query($current);
 
-        return '/participants' . ($query !== '' ? '?' . $query : '');
+        return $this->basePath . ($query !== '' ? '?' . $query : '');
     }
 
     public function isActive(string $dimension, string $value): bool

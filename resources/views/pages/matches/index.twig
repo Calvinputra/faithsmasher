@@ -1,11 +1,12 @@
 {% extends 'layouts/dashboard.twig' %}
 {% block title %}Match Hub — {{ session.name }}{% endblock %}
 {% set sidebar_session = session %}
-{% block sidebar_nav %}{% include 'components/sidebar.twig' with { session: session } %}{% endblock %}
+{% block sidebar_nav %}{% include 'components/sidebar.twig' with { session: session, active: 'matches' } %}{% endblock %}
+
 {% block page_header %}
 <div class="min-w-0">
     <h1 class="page-title text-xl sm:text-2xl">Match Hub</h1>
-    <p class="hidden text-xs text-navy-500 sm:block">{{ participantCount }} peserta · {{ matchCount }} match</p>
+    <p class="hidden text-xs text-navy-500 sm:block">{{ participantCount }} peserta · {{ matchCount }} match · {{ baganSettings.baganCount }} bagan (setting)</p>
 </div>
 {% endblock %}
 
@@ -13,27 +14,31 @@
 <p class="mb-4 text-sm text-navy-600 sm:hidden">{{ participantCount }} peserta · {{ matchCount }} match</p>
 
 <div class="grid gap-3 sm:gap-4 md:grid-cols-2">
+    {% include 'components/matches/bagan-setup-form.twig' with {
+        session: session,
+        participantCount: participantCount,
+        baganSettings: baganSettings,
+        pairingModes: pairingModes
+    } %}
+
     <article class="card">
-        <h2 class="font-semibold text-navy-900">Auto Generate</h2>
-        <p class="mt-2 text-sm text-navy-600">Pair players by similar rank skill (C- → A+).</p>
-        <form method="post" action="/sessions/{{ session.id }}/matches/generate" class="mt-4">
-            <button type="submit" class="btn-primary" {% if participantCount < 2 %}disabled{% endif %}>Generate Matches</button>
-        </form>
+        <h2 class="font-semibold text-navy-900">Preview Bagan</h2>
+        <p class="mt-2 text-sm text-navy-600">Lihat tabel bagan: pemain, lapangan, urutan main.</p>
+        <a href="/sessions/{{ session.id }}/matches/preview" class="btn-secondary mt-4 inline-flex">Buka Preview</a>
     </article>
     <article class="card">
         <h2 class="font-semibold text-navy-900">Manual Setup</h2>
-        <p class="mt-2 text-sm text-navy-600">Drag & drop players into bracket slots. Warns if player plays &gt;2x.</p>
-        <a href="/sessions/{{ session.id }}/matches/manual" class="btn-secondary mt-4 inline-flex">Open Manual Setup</a>
-    </article>
-    <article class="card">
-        <h2 class="font-semibold text-navy-900">Preview Bracket</h2>
-        <p class="mt-2 text-sm text-navy-600">View generated or manual bracket layout.</p>
-        <a href="/sessions/{{ session.id }}/matches/preview" class="btn-secondary mt-4 inline-flex">Preview</a>
+        <p class="mt-2 text-sm text-navy-600">Drag & drop peserta ke slot match setelah generate.</p>
+        <a href="/sessions/{{ session.id }}/matches/manual" class="btn-secondary mt-4 inline-flex">Manual Setup</a>
     </article>
     <article class="card">
         <h2 class="font-semibold text-navy-900">Player Counter</h2>
-        <p class="mt-2 text-sm text-navy-600">Track how many matches each player is assigned.</p>
+        <p class="mt-2 text-sm text-navy-600">Cek berapa kali setiap pemain main di semua bagan.</p>
         <a href="/sessions/{{ session.id }}/matches/counter" class="btn-secondary mt-4 inline-flex">View Counter</a>
     </article>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ asset('assets/js/bagan-setup.js') }}" defer></script>
 {% endblock %}

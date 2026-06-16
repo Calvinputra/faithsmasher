@@ -21,7 +21,7 @@ final class MatchRepository
     public function allBySession(int $sessionId): array
     {
         $statement = $this->db->prepare(
-            'SELECT id, session_id, round_number, match_order, participant1_id, participant2_id,
+            'SELECT id, session_id, round_number, match_order, court_number, participant1_id, participant2_id,
                     status, score1, score2, winner_id, is_manual
              FROM matches WHERE session_id = :session_id
              ORDER BY round_number ASC, match_order ASC'
@@ -48,15 +48,17 @@ final class MatchRepository
         ?int $participant2Id,
         bool $isManual = false,
         string $status = 'pending',
+        ?int $courtNumber = null,
     ): TournamentMatch {
         $statement = $this->db->prepare(
-            'INSERT INTO matches (session_id, round_number, match_order, participant1_id, participant2_id, is_manual, status)
-             VALUES (:session_id, :round_number, :match_order, :p1, :p2, :is_manual, :status)'
+            'INSERT INTO matches (session_id, round_number, match_order, court_number, participant1_id, participant2_id, is_manual, status)
+             VALUES (:session_id, :round_number, :match_order, :court_number, :p1, :p2, :is_manual, :status)'
         );
         $statement->execute([
             'session_id' => $sessionId,
             'round_number' => $roundNumber,
             'match_order' => $matchOrder,
+            'court_number' => $courtNumber,
             'p1' => $participant1Id,
             'p2' => $participant2Id,
             'is_manual' => $isManual ? 1 : 0,
@@ -119,10 +121,10 @@ final class MatchRepository
     public function allWithParticipants(int $sessionId): array
     {
         $statement = $this->db->prepare(
-            'SELECT m.id, m.session_id, m.round_number, m.match_order, m.participant1_id, m.participant2_id,
+            'SELECT m.id, m.session_id, m.round_number, m.match_order, m.court_number, m.participant1_id, m.participant2_id,
                     m.status, m.score1, m.score2, m.winner_id, m.is_manual,
-                    p1.name AS p1_name, p1.`rank` AS p1_rank,
-                    p2.name AS p2_name, p2.`rank` AS p2_rank
+                    p1.name AS p1_name, p1.`rank` AS p1_rank, p1.gender AS p1_gender,
+                    p2.name AS p2_name, p2.`rank` AS p2_rank, p2.gender AS p2_gender
              FROM matches m
              LEFT JOIN participants p1 ON p1.id = m.participant1_id
              LEFT JOIN participants p2 ON p2.id = m.participant2_id
@@ -137,8 +139,8 @@ final class MatchRepository
             $match = TournamentMatch::fromRow($row);
             $result[] = [
                 'match' => $match,
-                'p1' => $row['p1_name'] ? ['name' => $row['p1_name'], 'rank' => $row['p1_rank']] : null,
-                'p2' => $row['p2_name'] ? ['name' => $row['p2_name'], 'rank' => $row['p2_rank']] : null,
+                'p1' => $row['p1_name'] ? ['name' => $row['p1_name'], 'rank' => $row['p1_rank'], 'gender' => $row['p1_gender']] : null,
+                'p2' => $row['p2_name'] ? ['name' => $row['p2_name'], 'rank' => $row['p2_rank'], 'gender' => $row['p2_gender']] : null,
             ];
         }
 

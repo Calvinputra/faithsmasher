@@ -31,25 +31,33 @@
 
         <div class="flex min-w-0 flex-1 flex-col">
             <header class="dashboard-topbar">
-                <div class="flex items-center gap-3 min-w-0">
-                    <button type="button" class="mobile-menu-btn lg:hidden" id="mobile-menu-btn" aria-label="Open menu">
-                        {% include 'components/ui/icon.twig' with { name: 'ri-menu-line', class: 'text-navy-800', size: 'lg' } %}
-                    </button>
+                <a href="/dashboard" class="mobile-topbar-brand lg:hidden" aria-label="Kembali ke Dashboard">
+                    <img src="{{ asset('assets/images/logo.png') }}" alt="" class="mobile-topbar-logo" width="32" height="32" decoding="async">
+                    <span class="mobile-topbar-name">{{ app.name }}</span>
+                </a>
+
+                <div class="dashboard-topbar-main min-w-0 flex-1">
                     {% block page_header %}{% endblock %}
                 </div>
-                {% if sidebar_session is not defined %}
-                <button
-                    type="button"
-                    class="btn-primary hidden sm:inline-flex px-4 py-2 text-sm"
-                    data-form-open="session-form-modal"
-                    data-form-type="session"
-                    data-form-mode="create"
-                >
-                    + New Session
-                </button>
-                {% else %}
-                    {% block topbar_action %}{% endblock %}
-                {% endif %}
+
+                <div class="dashboard-topbar-end">
+                    {% if sidebar_session is not defined %}
+                    <button
+                        type="button"
+                        class="btn-primary hidden sm:inline-flex px-4 py-2 text-sm lg:inline-flex"
+                        data-form-open="session-form-modal"
+                        data-form-type="session"
+                        data-form-mode="create"
+                    >
+                        + New Session
+                    </button>
+                    {% else %}
+                        {% block topbar_action %}{% endblock %}
+                    {% endif %}
+                    <button type="button" class="mobile-menu-btn lg:hidden" id="mobile-menu-btn" aria-label="Buka menu">
+                        {% include 'components/ui/icon.twig' with { name: 'ri-menu-line', class: 'text-navy-800', size: 'lg' } %}
+                    </button>
+                </div>
             </header>
 
             <main class="dashboard-main">

@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Controllers\BaganShareController;
 use App\Repositories\MatchRepository;
 use App\Repositories\ParticipantRepository;
 use App\Services\AuthService;
 use App\Services\MatchGeneratorService;
+use App\Support\BaganMatchGrouper;
+use App\Support\BaganSettings;
 use App\Support\FlashType;
+use App\Support\MatchPairingMode;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Slim\Views\Twig;
@@ -35,6 +39,8 @@ final class MatchController extends BaseController
             'session' => $session,
             'participantCount' => $this->participants->countBySession($session->id),
             'matchCount' => count($this->matches->allBySession($session->id)),
+            'baganSettings' => BaganSettings::fromSession($session),
+            'pairingModes' => MatchPairingMode::options(),
         ]);
     }
 
@@ -42,9 +48,13 @@ final class MatchController extends BaseController
     {
         $sessionId = (int) $args['sessionId'];
         $this->requireSession($sessionId);
+        $data = (array) $request->getParsedBody();
+        $settings = BaganSettings::fromRequest($data);
+
+        $this->sessions->updateBaganSettings($sessionId, $settings, $this->userId());
 
         try {
-            $count = $this->generator->autoGenerate($sessionId);
+            $count = $this->generator->autoGenerate($sessionId, $settings);
         } catch (\InvalidArgumentException $exception) {
             return $this->flashRedirect(
                 $response,
@@ -54,12 +64,16 @@ final class MatchController extends BaseController
             );
         }
 
+        $modeLabel = $settings->scope === BaganSettings::SCOPE_GLOBAL
+            ? MatchPairingMode::options()[$settings->globalMode]
+            : 'campuran per bagan';
+
         return $this->flashRedirect(
             $response,
             '/sessions/' . $sessionId . '/matches/preview',
-            "{$count} match berhasil digenerate berdasarkan rank.",
+            "{$count} match · {$settings->baganCount} bagan · {$modeLabel}",
             FlashType::CREATE,
-            'Match digenerate',
+            'Bagan digenerate',
         );
     }
 
@@ -70,6 +84,7 @@ final class MatchController extends BaseController
         $participants = $this->participants->allBySession($sessionId);
         $matchRows = $this->matches->allWithParticipants($sessionId);
         $matchCounts = $this->matches->playerMatchCounts($sessionId);
+        $matchesByBagan = BaganMatchGrouper::byRound($matchRows);
 
         /** @var Twig $view */
         $view = $request->getAttribute('view');
@@ -78,7 +93,10 @@ final class MatchController extends BaseController
             'session' => $session,
             'participants' => $participants,
             'matches' => $matchRows,
+            'matchesByBagan' => $matchesByBagan,
             'matchCounts' => $matchCounts,
+            'baganSettings' => BaganSettings::fromSession($session),
+            'pairingModes' => MatchPairingMode::options(),
         ]);
     }
 
@@ -159,10 +177,24 @@ final class MatchController extends BaseController
         /** @var Twig $view */
         $view = $request->getAttribute('view');
 
+        $matchRows = $this->matches->allWithParticipants($session->id);
+        $matchesByBagan = BaganMatchGrouper::byRound($matchRows);
+        $shareToken = null;
+        $exportFilename = BaganShareController::exportFilename($session->name);
+
+        if ($matchRows !== []) {
+            $shareToken = $this->sessions->ensureShareToken($session->id);
+        }
+
         return $view->render($response, 'pages/matches/preview.twig', [
             'session' => $session,
-            'matches' => $this->matches->allWithParticipants($session->id),
+            'matches' => $matchRows,
+            'matchesByBagan' => $matchesByBagan,
             'matchCounts' => $this->matches->playerMatchCounts($session->id),
+            'baganSettings' => BaganSettings::fromSession($session),
+            'pairingModes' => MatchPairingMode::options(),
+            'shareToken' => $shareToken,
+            'exportFilename' => $exportFilename,
         ]);
     }
 

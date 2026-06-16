@@ -1,0 +1,10 @@
+<header class="bagan-export-header">
+    <h1 class="bagan-export-title">{{ session.name }}</h1>
+    <p class="bagan-export-meta">
+        {{ session.sessionDate|date('d M Y') }}
+        {% if session.location %}
+            · {{ session.location }}
+        {% endif %}
+        · {{ baganSettings.baganCount }} bagan
+    </p>
+</header>

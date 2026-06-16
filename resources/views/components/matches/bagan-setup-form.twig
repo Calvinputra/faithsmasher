@@ -1,0 +1,102 @@
+{% set settings = baganSettings|default(null) %}
+{% set baganCount = settings.baganCount|default(1) %}
+{% set scope = settings.scope|default(constant('App\\Support\\BaganSettings::SCOPE_GLOBAL')) %}
+{% set globalMode = settings.globalMode|default('rank') %}
+{% set perModes = settings.perBaganModes|default([globalMode]) %}
+
+<article class="card bagan-setup-card md:col-span-2">
+    <div class="bagan-setup-header">
+        <div>
+            <h2 class="font-semibold text-navy-900">Setup & Generate Bagan</h2>
+            <p class="mt-1 text-sm text-navy-600">
+                Setiap bagan = 1 kesempatan main untuk semua peserta. Urutan main & lapangan dirotasi otomatis.
+            </p>
+        </div>
+        <span class="bagan-setup-badge">{{ session.courtCount }} lapangan</span>
+    </div>
+
+    <form
+        method="post"
+        action="/sessions/{{ session.id }}/matches/generate"
+        class="bagan-setup-form mt-4"
+        id="bagan-setup-form"
+        data-no-nav
+    >
+        <div class="bagan-setup-grid">
+            <div class="form-group">
+                <label for="bagan_count" class="form-label">Jumlah bagan</label>
+                <input
+                    type="number"
+                    id="bagan_count"
+                    name="bagan_count"
+                    class="input-field"
+                    min="1"
+                    max="20"
+                    value="{{ baganCount }}"
+                    required
+                >
+                <p class="form-hint">Contoh: 6 bagan = setiap pemain main 6 kali (pairing berbeda tiap bagan).</p>
+            </div>
+
+            <div class="form-group">
+                <span class="form-label">Mode pairing</span>
+                <div class="bagan-scope-options">
+                    <label class="bagan-scope-option">
+                        <input
+                            type="radio"
+                            name="bagan_pairing_scope"
+                            value="{{ constant('App\\Support\\BaganSettings::SCOPE_GLOBAL') }}"
+                            {% if scope == constant('App\\Support\\BaganSettings::SCOPE_GLOBAL') %}checked{% endif %}
+                            data-bagan-scope-toggle
+                        >
+                        <span>Global — semua bagan sama</span>
+                    </label>
+                    <label class="bagan-scope-option">
+                        <input
+                            type="radio"
+                            name="bagan_pairing_scope"
+                            value="{{ constant('App\\Support\\BaganSettings::SCOPE_PER_BAGAN') }}"
+                            {% if scope == constant('App\\Support\\BaganSettings::SCOPE_PER_BAGAN') %}checked{% endif %}
+                            data-bagan-scope-toggle
+                        >
+                        <span>Per bagan — beda tiap bagan</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="bagan-global-mode mt-4{% if scope != constant('App\\Support\\BaganSettings::SCOPE_GLOBAL') %} hidden{% endif %}" data-bagan-global-panel>
+            <label for="bagan_pairing_mode" class="form-label">Pairing global</label>
+            <select id="bagan_pairing_mode" name="bagan_pairing_mode" class="input-field" data-search-select>
+                {% for value, label in pairingModes %}
+                    <option value="{{ value }}"{% if globalMode == value %} selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="bagan-per-mode mt-4{% if scope != constant('App\\Support\\BaganSettings::SCOPE_PER_BAGAN') %} hidden{% endif %}" data-bagan-per-panel>
+            <p class="form-label mb-2">Pairing per bagan</p>
+            <div class="bagan-per-grid" id="bagan-per-grid" data-pairing-modes="{{ pairingModes|json_encode|e('html_attr') }}">
+                {% for i in 1..baganCount %}
+                    <div class="bagan-per-row" data-bagan-per-row>
+                        <span class="bagan-per-label">Bagan {{ i }}</span>
+                        <select name="bagan_modes[{{ i }}]" class="input-field bagan-per-select" data-search-select>
+                            {% for value, label in pairingModes %}
+                                <option value="{{ value }}"{% if (perModes[i - 1]|default(globalMode)) == value %} selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="mt-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <p class="text-xs text-navy-500">
+                {{ participantCount }} peserta · tiap bagan ≈ {{ (participantCount / 2)|round(0, 'ceil') }} match
+            </p>
+            <button type="submit" class="btn-primary" {% if participantCount < 2 %}disabled{% endif %}>
+                Generate Bagan
+            </button>
+        </div>
+    </form>
+</article>

@@ -163,20 +163,104 @@ final class ParticipantRepository
     }
 
     /** @return list<Participant> */
-    public function allBySession(int $sessionId): array
+    public function allBySession(int $sessionId, array $filters = []): array
     {
-        $statement = $this->db->prepare(
-            'SELECT ' . self::SELECT_FIELDS . self::AUDIT_NAMES . '
+        $sql = 'SELECT ' . self::SELECT_FIELDS . self::AUDIT_NAMES . '
              FROM participants p' . self::AUDIT_JOINS . '
              INNER JOIN session_participants sp ON sp.participant_id = p.id AND sp.session_id = :session_id
-             ORDER BY ' . self::ORDER_BY_RANK
-        );
-        $statement->execute(['session_id' => $sessionId]);
+             WHERE 1=1';
+        $bindings = ['session_id' => $sessionId];
+        $this->applyGlobalFilters($sql, $bindings, $filters);
+        $sql .= ' ORDER BY ' . self::ORDER_BY_RANK;
+
+        $statement = $this->db->prepare($sql);
+        $statement->bindValue('session_id', $sessionId, PDO::PARAM_INT);
+
+        foreach ($bindings as $key => $value) {
+            if ($key === 'session_id') {
+                continue;
+            }
+
+            $statement->bindValue($key, $value);
+        }
+
+        $statement->execute();
 
         return array_map(
             static fn (array $row): Participant => Participant::fromRow($row),
             $statement->fetchAll(),
         );
+    }
+
+    /**
+     * @param array{search?: string, rank?: ?string, gender?: ?string, gmsSource?: ?string} $filters
+     * @return array{participants: list<Participant>, paginator: Paginator}
+     */
+    public function paginateBySession(int $sessionId, array $filters, int $page, int $perPage): array
+    {
+        $total = $this->countBySessionFiltered($sessionId, $filters);
+        $totalPages = (int) max(1, ceil($total / max(1, $perPage)));
+        $page = min(max(1, $page), $totalPages);
+        $paginator = Paginator::fromTotal($total, $page, $perPage);
+
+        $sql = 'SELECT ' . self::SELECT_FIELDS . self::AUDIT_NAMES . '
+             FROM participants p' . self::AUDIT_JOINS . '
+             INNER JOIN session_participants sp ON sp.participant_id = p.id AND sp.session_id = :session_id
+             WHERE 1=1';
+        $bindings = ['session_id' => $sessionId];
+        $this->applyGlobalFilters($sql, $bindings, $filters);
+        $sql .= ' ORDER BY ' . self::ORDER_BY_RANK . ' LIMIT :limit OFFSET :offset';
+
+        $statement = $this->db->prepare($sql);
+        $statement->bindValue('session_id', $sessionId, PDO::PARAM_INT);
+
+        foreach ($bindings as $key => $value) {
+            if ($key === 'session_id') {
+                continue;
+            }
+
+            $statement->bindValue($key, $value);
+        }
+
+        $statement->bindValue('limit', $paginator->perPage, PDO::PARAM_INT);
+        $statement->bindValue('offset', $paginator->offset(), PDO::PARAM_INT);
+        $statement->execute();
+
+        return [
+            'participants' => array_map(
+                static fn (array $row): Participant => Participant::fromRow($row),
+                $statement->fetchAll(),
+            ),
+            'paginator' => $paginator,
+        ];
+    }
+
+    /**
+     * @param array{search?: string, rank?: ?string, gender?: ?string, gmsSource?: ?string} $filters
+     */
+    public function countBySessionFiltered(int $sessionId, array $filters = []): int
+    {
+        $sql = 'SELECT COUNT(*)
+             FROM participants p
+             INNER JOIN session_participants sp ON sp.participant_id = p.id AND sp.session_id = :session_id
+             WHERE 1=1';
+        $bindings = ['session_id' => $sessionId];
+        $this->applyGlobalFilters($sql, $bindings, $filters);
+
+        $statement = $this->db->prepare($sql);
+        $statement->bindValue('session_id', $sessionId, PDO::PARAM_INT);
+
+        foreach ($bindings as $key => $value) {
+            if ($key === 'session_id') {
+                continue;
+            }
+
+            $statement->bindValue($key, $value);
+        }
+
+        $statement->execute();
+
+        return (int) $statement->fetchColumn();
     }
 
     /** @return list<Participant> */
@@ -499,6 +583,72 @@ final class ParticipantRepository
 
         foreach ($statement->fetchAll() as $row) {
             $counts[$row['rank']] = (int) $row['total'];
+        }
+
+        return $counts;
+    }
+
+    /** @return array<string, int> */
+    public function countByGender(int $sessionId): array
+    {
+        $counts = [
+            'male' => 0,
+            'female' => 0,
+            ParticipantFilter::UNSET => 0,
+        ];
+
+        $statement = $this->db->prepare(
+            'SELECT p.gender, COUNT(*) AS total
+             FROM participants p
+             INNER JOIN session_participants sp ON sp.participant_id = p.id AND sp.session_id = :session_id
+             GROUP BY p.gender'
+        );
+        $statement->execute(['session_id' => $sessionId]);
+
+        foreach ($statement->fetchAll() as $row) {
+            $key = $row['gender'] === null || $row['gender'] === ''
+                ? ParticipantFilter::UNSET
+                : (string) $row['gender'];
+
+            if (!array_key_exists($key, $counts)) {
+                $counts[$key] = 0;
+            }
+
+            $counts[$key] = (int) $row['total'];
+        }
+
+        return $counts;
+    }
+
+    /** @return array<string, int> */
+    public function countByGmsSource(int $sessionId): array
+    {
+        $counts = [];
+
+        foreach (GmsSource::OPTIONS as $option) {
+            $counts[$option] = 0;
+        }
+
+        $counts[ParticipantFilter::UNSET] = 0;
+
+        $statement = $this->db->prepare(
+            'SELECT p.gms_source, COUNT(*) AS total
+             FROM participants p
+             INNER JOIN session_participants sp ON sp.participant_id = p.id AND sp.session_id = :session_id
+             GROUP BY p.gms_source'
+        );
+        $statement->execute(['session_id' => $sessionId]);
+
+        foreach ($statement->fetchAll() as $row) {
+            $key = $row['gms_source'] === null || $row['gms_source'] === ''
+                ? ParticipantFilter::UNSET
+                : (string) $row['gms_source'];
+
+            if (!array_key_exists($key, $counts)) {
+                $counts[$key] = 0;
+            }
+
+            $counts[$key] = (int) $row['total'];
         }
 
         return $counts;

@@ -25,14 +25,16 @@
 {% endblock %}
 
 {% block content %}
-<div class="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:justify-end sm:hidden">
-    <button
-        type="button"
-        class="btn-primary justify-center"
-        data-form-open="rule-form-modal"
-        data-form-type="rule"
-        data-form-mode="create"
-    >+ Add Rule</button>
+<div class="page-toolbar mb-4 sm:hidden">
+    <div class="page-toolbar-actions w-full">
+        <button
+            type="button"
+            class="btn-primary page-toolbar-btn w-full justify-center"
+            data-form-open="rule-form-modal"
+            data-form-type="rule"
+            data-form-mode="create"
+        >+ Add Rule</button>
+    </div>
 </div>
 
 {% if editRule %}

@@ -1,71 +1,130 @@
 {% extends 'layouts/dashboard.twig' %}
 {% block title %}Manual Setup — {{ session.name }}{% endblock %}
 {% set sidebar_session = session %}
-{% block sidebar_nav %}{% include 'components/sidebar.twig' with { session: session } %}{% endblock %}
+{% block sidebar_nav %}{% include 'components/sidebar.twig' with { session: session, active: 'manual' } %}{% endblock %}
+
 {% block head %}
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
 {% endblock %}
+
+{% block page_header %}
+<div class="min-w-0">
+    <h1 class="page-title text-xl sm:text-2xl">Manual Setup Bagan</h1>
+    <p class="hidden text-xs text-navy-500 sm:block">Geser pemain ke Pemain 1 / Pemain 2 · badge merah = main &gt;2x</p>
+</div>
+{% endblock %}
+
 {% block content %}
-<div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-    <div>
-        <h1 class="text-2xl font-bold text-navy-900">Manual Match Setup</h1>
-        <p class="text-sm text-navy-600">Drag players into slots. Red badge = plays more than 2x in bracket.</p>
+<div class="page-toolbar mb-4 sm:mb-6">
+    <p class="page-toolbar-meta text-xs text-navy-600 sm:hidden">Tarik pemain ke tabel bagan</p>
+    <div class="page-toolbar-actions">
+        <a href="/sessions/{{ session.id }}/matches" class="btn-secondary page-toolbar-btn justify-center">Setup Bagan</a>
+        <a href="/sessions/{{ session.id }}/matches/preview" class="btn-secondary page-toolbar-btn justify-center">Preview</a>
     </div>
-    <a href="/sessions/{{ session.id }}/matches/preview" class="btn-secondary">Preview Bracket</a>
 </div>
 
+{% if matches is empty %}
+    <div class="card py-12 text-center text-navy-500">
+        <p>Belum ada bagan. Generate dulu dari Match Hub.</p>
+        <a href="/sessions/{{ session.id }}/matches" class="btn-primary mt-4 inline-flex">Ke Match Hub</a>
+    </div>
+{% else %}
 <form id="manual-form" method="post" action="/sessions/{{ session.id }}/matches/manual">
     <input type="hidden" name="pairings" id="pairings-input">
 
-    <div class="grid gap-6 xl:grid-cols-3">
-        <section class="card xl:col-span-1">
-            <h2 class="font-semibold text-navy-900 mb-3">Players</h2>
-            <div id="player-pool" class="min-h-[120px] space-y-2 rounded-xl border border-dashed border-border p-3">
+    <div class="bagan-manual-layout">
+        <aside class="bagan-manual-pool card">
+            <h2 class="font-semibold text-navy-900">Peserta</h2>
+            <p class="mt-1 text-xs text-navy-500">Tarik ke tabel bagan di kanan</p>
+            <div id="player-pool" class="bagan-manual-pool-list">
                 {% for p in participants %}
                     <div
-                        class="player-chip cursor-grab rounded-lg border border-border bg-navy-50 px-3 py-2 text-sm font-medium text-navy-800"
+                        class="player-chip"
                         data-id="{{ p.id }}"
                         data-name="{{ p.name }}"
                         data-rank="{{ p.rank }}"
                     >
-                        {{ p.name }} <span class="text-xs text-gold-700">({{ p.rank }})</span>
-                        <span class="match-count ml-1 hidden rounded bg-red-100 px-1.5 text-xs text-red-700"></span>
+                        <span class="player-chip-label">{{ p.name }} <span class="bagan-meta">({{ p.rank }})</span></span>
+                        <span class="match-count hidden" aria-hidden="true"></span>
                     </div>
                 {% endfor %}
             </div>
-        </section>
+        </aside>
 
-        <section class="xl:col-span-2 space-y-4">
-            {% for row in matches %}
-                {% set m = row.match %}
-                <div class="card" data-match-id="{{ m.id }}">
-                    <p class="text-xs font-semibold uppercase text-navy-400 mb-3">Match {{ m.matchOrder }} · Round {{ m.roundNumber }}</p>
-                    <div class="grid gap-3 sm:grid-cols-2">
-                        <div class="drop-slot min-h-[52px] rounded-xl border-2 border-dashed border-border p-2" data-slot="p1" data-match="{{ m.id }}">
-                            {% if row.p1 %}
-                                <div class="player-chip rounded-lg bg-gold-50 px-3 py-2 text-sm font-medium" data-id="{{ m.participant1Id }}">{{ row.p1.name }} ({{ row.p1.rank }})</div>
-                            {% endif %}
-                        </div>
-                        <div class="drop-slot min-h-[52px] rounded-xl border-2 border-dashed border-border p-2" data-slot="p2" data-match="{{ m.id }}">
-                            {% if row.p2 %}
-                                <div class="player-chip rounded-lg bg-gold-50 px-3 py-2 text-sm font-medium" data-id="{{ m.participant2Id }}">{{ row.p2.name }} ({{ row.p2.rank }})</div>
-                            {% endif %}
-                        </div>
+        <div class="bagan-manual-sheets">
+            {% for baganNum, baganMatches in matchesByBagan %}
+                {% if baganSettings.scope == constant('App\\Support\\BaganSettings::SCOPE_GLOBAL') %}
+                    {% set baganMode = baganSettings.globalMode %}
+                {% else %}
+                    {% set baganMode = baganSettings.perBaganModes[baganNum - 1]|default(baganSettings.globalMode) %}
+                {% endif %}
+                <section class="bagan-preview-section card overflow-hidden p-0">
+                    <header class="bagan-preview-section-header">
+                        <h2 class="bagan-preview-title">Bagan {{ baganNum }}</h2>
+                        <span class="bagan-preview-mode">{{ pairingModes[baganMode]|default(baganMode) }}</span>
+                    </header>
+                    <div class="overflow-x-auto">
+                        <table class="bagan-preview-table bagan-manual-table w-full text-sm">
+                            <thead>
+                                <tr>
+                                    <th>Group</th>
+                                    <th>Pemain 1</th>
+                                    <th>Pemain 2</th>
+                                    <th>Lapangan</th>
+                                    <th>Urutan Main</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in baganMatches %}
+                                    {% set m = row.match %}
+                                    <tr data-match-id="{{ m.id }}" class="{% if m.status == 'bye' %}bagan-row-bye{% endif %}">
+                                        <td class="bagan-manual-group">Group {{ loop.index }}</td>
+                                        <td>
+                                            <div class="drop-slot" data-slot="p1" data-match="{{ m.id }}">
+                                                {% if row.p1 %}
+                                                    <div class="player-chip" data-id="{{ m.participant1Id }}">
+                                                        <span class="player-chip-label">{{ row.p1.name }} <span class="bagan-meta">({{ row.p1.rank }})</span></span>
+                                                        <span class="match-count hidden" aria-hidden="true"></span>
+                                                    </div>
+                                                {% else %}
+                                                    <span class="drop-slot-placeholder">Geser pemain…</span>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="drop-slot" data-slot="p2" data-match="{{ m.id }}">
+                                                {% if row.p2 %}
+                                                    <div class="player-chip" data-id="{{ m.participant2Id }}">
+                                                        <span class="player-chip-label">{{ row.p2.name }} <span class="bagan-meta">({{ row.p2.rank }})</span></span>
+                                                        <span class="match-count hidden" aria-hidden="true"></span>
+                                                    </div>
+                                                {% elseif m.status == 'bye' %}
+                                                    <span class="drop-slot-bye">BYE</span>
+                                                {% else %}
+                                                    <span class="drop-slot-placeholder">Geser pemain…</span>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        <td class="bagan-manual-static">Lapangan {{ m.courtNumber|default('—') }}</td>
+                                        <td class="bagan-manual-static"><span class="bagan-order-badge">{{ m.matchOrder }}</span></td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
-                </div>
-            {% else %}
-                <div class="card text-center text-navy-500 py-8">Generate matches first or add more participants.</div>
+                </section>
             {% endfor %}
-        </section>
+        </div>
     </div>
 
-    {% if matches is not empty %}
-        <div class="mt-6">
-            <button type="submit" class="btn-primary">Save Manual Bracket</button>
-        </div>
-    {% endif %}
+    <div class="bagan-manual-actions">
+        <p class="text-xs text-navy-500">Perubahan disimpan ke semua bagan sekaligus.</p>
+        <button type="submit" class="btn-primary">Simpan Manual Bagan</button>
+    </div>
 </form>
+{% endif %}
 {% endblock %}
+
 {% block scripts %}
-<script src="/assets/js/bracket-manual.js"></script>
+<script src="{{ asset('assets/js/bracket-manual.js') }}" defer></script>
 {% endblock %}

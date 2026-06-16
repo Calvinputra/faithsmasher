@@ -7,12 +7,14 @@ namespace App\Repositories;
 use App\Database\Connection;
 use App\Models\Session;
 use App\Models\SessionSummary;
+use App\Support\BaganSettings;
+use App\Support\MatchPairingMode;
 use App\Support\Paginator;
 use PDO;
 
 final class SessionRepository
 {
-    private const SELECT_FIELDS = 's.id, s.user_id, s.name, s.session_date, s.location, s.court_count, s.created_at, s.updated_at, s.updated_by_user_id';
+    private const SELECT_FIELDS = 's.id, s.user_id, s.name, s.session_date, s.location, s.court_count, s.bagan_count, s.bagan_pairing_scope, s.bagan_pairing_mode, s.bagan_pairing_modes, s.bagan_share_token, s.created_at, s.updated_at, s.updated_by_user_id';
 
     private const AUDIT_JOINS = ' LEFT JOIN users uc ON uc.id = s.user_id LEFT JOIN users uu ON uu.id = s.updated_by_user_id ';
 
@@ -168,6 +170,59 @@ final class SessionRepository
         return $row ? Session::fromRow($row) : null;
     }
 
+    public function findByShareToken(string $token): ?Session
+    {
+        if (!preg_match('/^[a-f0-9]{32}$/', $token)) {
+            return null;
+        }
+
+        $statement = $this->db->prepare(
+            'SELECT ' . self::SELECT_FIELDS . self::AUDIT_NAMES . ' FROM sessions s' . self::AUDIT_JOINS . ' WHERE s.bagan_share_token = :token LIMIT 1'
+        );
+        $statement->execute(['token' => $token]);
+
+        $row = $statement->fetch();
+
+        return $row ? Session::fromRow($row) : null;
+    }
+
+    public function ensureShareToken(int $id): string
+    {
+        $session = $this->find($id);
+
+        if ($session === null) {
+            throw new \RuntimeException('Session not found.');
+        }
+
+        if ($session->baganShareToken !== null && $session->baganShareToken !== '') {
+            return $session->baganShareToken;
+        }
+
+        for ($attempt = 0; $attempt < 5; $attempt++) {
+            $token = bin2hex(random_bytes(16));
+
+            try {
+                $statement = $this->db->prepare(
+                    'UPDATE sessions SET bagan_share_token = :token WHERE id = :id AND bagan_share_token IS NULL'
+                );
+                $statement->execute(['token' => $token, 'id' => $id]);
+
+                if ($statement->rowCount() > 0) {
+                    return $token;
+                }
+
+                $refreshed = $this->find($id);
+
+                if ($refreshed?->baganShareToken !== null && $refreshed->baganShareToken !== '') {
+                    return $refreshed->baganShareToken;
+                }
+            } catch (\PDOException) {
+            }
+        }
+
+        throw new \RuntimeException('Failed to create share token.');
+    }
+
     public function create(
         int $userId,
         string $name,
@@ -211,6 +266,29 @@ final class SessionRepository
             'session_date' => $sessionDate,
             'location' => $location,
             'court_count' => $courtCount,
+            'updated_by_user_id' => $updatedByUserId,
+        ]);
+    }
+
+    public function updateBaganSettings(int $id, BaganSettings $settings, int $updatedByUserId): bool
+    {
+        $columns = $settings->toSessionColumns();
+        $statement = $this->db->prepare(
+            'UPDATE sessions SET
+                bagan_count = :bagan_count,
+                bagan_pairing_scope = :bagan_pairing_scope,
+                bagan_pairing_mode = :bagan_pairing_mode,
+                bagan_pairing_modes = :bagan_pairing_modes,
+                updated_by_user_id = :updated_by_user_id
+             WHERE id = :id'
+        );
+
+        return $statement->execute([
+            'id' => $id,
+            'bagan_count' => $columns['bagan_count'],
+            'bagan_pairing_scope' => $columns['bagan_pairing_scope'],
+            'bagan_pairing_mode' => $columns['bagan_pairing_mode'],
+            'bagan_pairing_modes' => $columns['bagan_pairing_modes'],
             'updated_by_user_id' => $updatedByUserId,
         ]);
     }

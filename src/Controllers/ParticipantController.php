@@ -11,6 +11,8 @@ use App\Services\ParticipantAssignFromPasteService;
 use App\Services\ParticipantBulkImportService;
 use App\Support\FlashType;
 use App\Support\Gender;
+use App\Support\GmsSource;
+use App\Support\ParticipantFilter;
 use App\Support\Rank;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -19,6 +21,8 @@ use Slim\Views\Twig;
 
 final class ParticipantController extends BaseController
 {
+    private const PER_PAGE = 25;
+
     public function __construct(
         AuthService $auth,
         private readonly ParticipantRepository $participants = new ParticipantRepository(),
@@ -31,15 +35,31 @@ final class ParticipantController extends BaseController
     public function index(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
         $session = $this->requireSession((int) $args['sessionId']);
+        $params = $request->getQueryParams();
+        $filter = ParticipantFilter::forSession($session->id, $params);
+        $page = max(1, (int) ($params['page'] ?? 1));
+        $result = $this->participants->paginateBySession(
+            $session->id,
+            $filter->repositoryFilters(),
+            $page,
+            self::PER_PAGE,
+        );
 
         /** @var Twig $view */
         $view = $request->getAttribute('view');
 
         return $view->render($response, 'pages/participants/session/index.twig', [
             'session' => $session,
-            'participants' => $this->participants->allBySession($session->id),
+            'participants' => $result['participants'],
+            'paginator' => $result['paginator'],
+            'filter' => $filter,
             'rankCounts' => $this->participants->countByRank($session->id),
+            'genderCounts' => $this->participants->countByGender($session->id),
+            'gmsCounts' => $this->participants->countByGmsSource($session->id),
             'genders' => Gender::labels(),
+            'ranks' => Rank::options(),
+            'gmsSources' => GmsSource::options(),
+            'totalCount' => $this->participants->countBySession($session->id),
             'availableCount' => $this->participants->countAvailableForSession($session->id),
         ]);
     }

@@ -1,0 +1,30 @@
+{% extends 'layouts/share.twig' %}
+{% block title %}Bagan — {{ session.name }}{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="bagan-share-page">
+    <div class="bagan-share-toolbar">
+        <button type="button" id="bagan-download-btn" class="btn-secondary bagan-share-btn">
+            <i class="ri-download-2-line" aria-hidden="true"></i>
+            Unduh Gambar
+        </button>
+    </div>
+
+    <div
+        id="bagan-export-root"
+        class="bagan-export-root"
+        data-filename="{{ exportFilename }}"
+    >
+        {% include 'components/matches/bagan-export-header.twig' %}
+        {% include 'components/matches/bagan-sheets.twig' %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ asset('assets/js/bagan-share.js') }}" defer></script>
+{% endblock %}

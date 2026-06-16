@@ -1,24 +1,28 @@
-<form method="get" action="{{ action|default('/dashboard') }}" class="search-bar" role="search">
-    <div class="search-input-wrap">
-        {% include 'components/ui/icon.twig' with { name: 'ri-search-line', class: 'search-icon' } %}
-        <input
-            type="search"
-            name="q"
-            value="{{ query|default('') }}"
-            placeholder="{{ placeholder|default('Cari session, lokasi...') }}"
-            class="search-input"
-            autocomplete="off"
-            aria-label="{{ placeholder|default('Search sessions') }}"
-        >
+<form method="get" action="{{ action|default('/dashboard') }}" class="filter-bar search-bar" role="search">
+    <div class="filter-bar-row filter-bar-row--simple">
+        <div class="search-input-wrap filter-bar-search">
+            {% include 'components/ui/icon.twig' with { name: 'ri-search-line', class: 'search-icon' } %}
+            <input
+                type="search"
+                name="q"
+                value="{{ query|default('') }}"
+                placeholder="{{ placeholder|default('Cari session, lokasi...') }}"
+                class="search-input"
+                autocomplete="off"
+                aria-label="{{ placeholder|default('Search sessions') }}"
+            >
+        </div>
+        <div class="filter-bar-submit">
+            <button type="submit" class="btn-secondary search-submit filter-bar-btn">
+                {% include 'components/ui/icon.twig' with { name: 'ri-search-line', class: 'mr-1.5', size: 'sm' } %}
+                Cari
+            </button>
+            {% if query|default('') %}
+                <a href="{{ action|default('/dashboard') }}" class="btn-ghost search-clear filter-bar-btn">
+                    {% include 'components/ui/icon.twig' with { name: 'ri-close-circle-line', class: 'mr-1.5', size: 'sm' } %}
+                    Reset
+                </a>
+            {% endif %}
+        </div>
     </div>
-    <button type="submit" class="btn-secondary search-submit px-4 py-2.5 text-sm">
-        {% include 'components/ui/icon.twig' with { name: 'ri-search-line', class: 'mr-1.5', size: 'sm' } %}
-        Cari
-    </button>
-    {% if query|default('') %}
-        <a href="{{ action|default('/dashboard') }}" class="btn-ghost search-clear px-4 py-2.5 text-sm">
-            {% include 'components/ui/icon.twig' with { name: 'ri-close-circle-line', class: 'mr-1.5', size: 'sm' } %}
-            Reset
-        </a>
-    {% endif %}
 </form>

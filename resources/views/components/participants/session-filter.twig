@@ -1,4 +1,4 @@
-<form method="get" action="/participants" class="filter-bar participant-filter mb-3 sm:mb-6" role="search">
+<form method="get" action="/sessions/{{ session.id }}/participants" class="filter-bar participant-filter mb-3 sm:mb-6" role="search">
     <div class="filter-bar-row filter-bar-row--participants participant-filter-row">
         <div class="search-input-wrap filter-bar-search participant-filter-search">
             {% include 'components/ui/icon.twig' with { name: 'ri-search-line', class: 'search-icon' } %}
@@ -6,17 +6,17 @@
                 type="search"
                 name="q"
                 value="{{ filter.search|default('') }}"
-                placeholder="Cari nama, telp..."
+                placeholder="Cari nama, telp, GMS..."
                 class="search-input"
                 autocomplete="off"
-                aria-label="Cari peserta"
+                aria-label="Cari peserta session"
             >
         </div>
 
         <div class="filter-bar-fields filter-bar-fields--3 participant-filter-fields">
             <div class="filter-bar-field participant-filter-select-wrap">
-                <label for="filter_rank" class="sr-only">Filter rank</label>
-                <select id="filter_rank" name="rank" class="input-field participant-filter-select" data-search-select>
+                <label for="session_filter_rank" class="sr-only">Filter rank</label>
+                <select id="session_filter_rank" name="rank" class="input-field participant-filter-select" data-search-select>
                     <option value="">Semua rank</option>
                     {% for value, label in ranks %}
                         <option value="{{ value }}"{% if filter.rank == value %} selected{% endif %}>{{ label }}</option>
@@ -25,8 +25,8 @@
             </div>
 
             <div class="filter-bar-field participant-filter-select-wrap">
-                <label for="filter_gender" class="sr-only">Filter gender</label>
-                <select id="filter_gender" name="gender" class="input-field participant-filter-select" data-search-select>
+                <label for="session_filter_gender" class="sr-only">Filter gender</label>
+                <select id="session_filter_gender" name="gender" class="input-field participant-filter-select" data-search-select>
                     <option value="">Semua gender</option>
                     <option value="male"{% if filter.gender == 'male' %} selected{% endif %}>Male</option>
                     <option value="female"{% if filter.gender == 'female' %} selected{% endif %}>Female</option>
@@ -35,8 +35,8 @@
             </div>
 
             <div class="filter-bar-field participant-filter-select-wrap">
-                <label for="filter_gms" class="sr-only">Filter gereja lokal</label>
-                <select id="filter_gms" name="gms" class="input-field participant-filter-select" data-search-select>
+                <label for="session_filter_gms" class="sr-only">Filter GMS</label>
+                <select id="session_filter_gms" name="gms" class="input-field participant-filter-select" data-search-select>
                     <option value="">Semua GMS</option>
                     {% for value, label in gmsSources %}
                         <option value="{{ value }}"{% if filter.gmsSource == value %} selected{% endif %}>{{ label }}</option>
@@ -52,7 +52,7 @@
                 Cari
             </button>
             {% if filter.hasActiveFilters %}
-                <a href="/participants" class="btn-ghost search-clear filter-bar-btn participant-filter-btn">
+                <a href="{{ filter.resetUrl() }}" class="btn-ghost search-clear filter-bar-btn participant-filter-btn">
                     {% include 'components/ui/icon.twig' with { name: 'ri-close-circle-line', class: 'mr-1 sm:mr-1.5', size: 'sm' } %}
                     Reset
                 </a>
@@ -64,13 +64,20 @@
         <p class="filter-bar-meta participant-filter-meta">
             Menampilkan {{ paginator.from() }}–{{ paginator.to() }} dari {{ paginator.total }} peserta
             {% if filter.hasActiveFilters and paginator.total != totalCount %}
-                (dari {{ totalCount }} total)
+                (dari {{ totalCount }} di session)
             {% endif %}
         </p>
     {% endif %}
 </form>
 
 <div class="participant-stats mb-3 sm:mb-6">
+    <p class="participant-stats-summary">
+        <strong>{{ totalCount }}</strong> peserta di session
+        {% if availableCount|default(0) > 0 %}
+            · <strong>{{ availableCount }}</strong> belum ditambahkan dari global
+        {% endif %}
+    </p>
+
     <div class="participant-stats-group">
         <span class="participant-stats-label">Rank</span>
         <div class="participant-stats-chips">
