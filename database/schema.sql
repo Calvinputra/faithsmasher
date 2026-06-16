@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS sessions (
 
 CREATE TABLE IF NOT EXISTS participants (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    session_id INT UNSIGNED NOT NULL,
+    user_id INT UNSIGNED NOT NULL,
     name VARCHAR(100) NOT NULL,
     `rank` ENUM('C-','C','C+','B-','B','B+','A-','A','A+') NOT NULL,
     gender ENUM('male','female','other') NULL DEFAULT NULL,
@@ -36,9 +36,19 @@ CREATE TABLE IF NOT EXISTS participants (
     gms_source VARCHAR(150) NULL DEFAULT NULL COMMENT 'Where participant knows GMS from',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    KEY participants_session_id_index (session_id),
+    KEY participants_user_id_index (user_id),
     KEY participants_rank_index (`rank`),
-    CONSTRAINT participants_session_id_foreign FOREIGN KEY (session_id) REFERENCES sessions (id) ON DELETE CASCADE
+    CONSTRAINT participants_user_id_foreign FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS session_participants (
+    session_id INT UNSIGNED NOT NULL,
+    participant_id INT UNSIGNED NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (session_id, participant_id),
+    KEY session_participants_participant_id_index (participant_id),
+    CONSTRAINT session_participants_session_id_foreign FOREIGN KEY (session_id) REFERENCES sessions (id) ON DELETE CASCADE,
+    CONSTRAINT session_participants_participant_id_foreign FOREIGN KEY (participant_id) REFERENCES participants (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS game_rules (

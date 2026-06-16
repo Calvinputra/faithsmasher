@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Controllers\AuthController;
 use App\Controllers\DashboardController;
 use App\Controllers\GameRuleController;
+use App\Controllers\GlobalParticipantController;
 use App\Controllers\HomeController;
 use App\Controllers\MatchController;
 use App\Controllers\ParticipantController;
@@ -21,6 +22,7 @@ return function (App $app, AuthService $auth): void {
     $dashboardController = new DashboardController($auth);
     $sessionController = new SessionController($auth);
     $participantController = new ParticipantController($auth);
+    $globalParticipantController = new GlobalParticipantController($auth);
     $gameRuleController = new GameRuleController($auth);
     $matchController = new MatchController($auth);
     $userAdminController = new UserAdminController($auth);
@@ -40,6 +42,7 @@ return function (App $app, AuthService $auth): void {
         $gameRuleController,
         $matchController,
         $userAdminController,
+        $globalParticipantController,
     ) {
         $group->get('/dashboard', [$dashboardController, 'index']);
         $group->get('/dashboard/{id}', [$dashboardController, 'show']);
@@ -54,14 +57,21 @@ return function (App $app, AuthService $auth): void {
         $group->post('/sessions/{id}', [$sessionController, 'update']);
         $group->post('/sessions/{id}/delete', [$sessionController, 'destroy']);
 
+        $group->get('/participants', [$globalParticipantController, 'index']);
+        $group->get('/participants/create', [$globalParticipantController, 'create']);
+        $group->post('/participants', [$globalParticipantController, 'store']);
+        $group->get('/participants/bulk', [$globalParticipantController, 'bulk']);
+        $group->post('/participants/bulk', [$globalParticipantController, 'bulkStore']);
+        $group->get('/participants/{id}/edit', [$globalParticipantController, 'edit']);
+        $group->post('/participants/{id}', [$globalParticipantController, 'update']);
+        $group->post('/participants/{id}/delete', [$globalParticipantController, 'destroy']);
+
         $group->get('/sessions/{sessionId}/participants/bulk', [$participantController, 'bulk']);
         $group->post('/sessions/{sessionId}/participants/bulk', [$participantController, 'bulkStore']);
+        $group->get('/sessions/{sessionId}/participants/assign', [$participantController, 'assign']);
+        $group->post('/sessions/{sessionId}/participants/assign', [$participantController, 'assignStore']);
         $group->get('/sessions/{sessionId}/participants', [$participantController, 'index']);
-        $group->get('/sessions/{sessionId}/participants/create', [$participantController, 'create']);
-        $group->post('/sessions/{sessionId}/participants', [$participantController, 'store']);
-        $group->get('/sessions/{sessionId}/participants/{id}/edit', [$participantController, 'edit']);
-        $group->post('/sessions/{sessionId}/participants/{id}', [$participantController, 'update']);
-        $group->post('/sessions/{sessionId}/participants/{id}/delete', [$participantController, 'destroy']);
+        $group->post('/sessions/{sessionId}/participants/{id}/remove', [$participantController, 'unassign']);
 
         $group->get('/sessions/{sessionId}/rules', [$gameRuleController, 'index']);
         $group->get('/sessions/{sessionId}/rules/create', [$gameRuleController, 'create']);

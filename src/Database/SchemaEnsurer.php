@@ -20,6 +20,7 @@ final class SchemaEnsurer
         self::ensureSessionsLocation($pdo);
         self::ensureSessionsCourtCount($pdo);
         self::ensureUserRoleStatus($pdo);
+        self::ensureGlobalParticipants($pdo);
     }
 
     private static function ensureSessionsCourtCount(PDO $pdo): void
@@ -65,6 +66,87 @@ final class SchemaEnsurer
                 $pdo->exec("UPDATE users SET role = 'superadmin', status = 'approved'");
             }
         } catch (PDOException) {
+        }
+    }
+
+    private static function ensureGlobalParticipants(PDO $pdo): void
+    {
+        try {
+            $pdo->exec(
+                'CREATE TABLE IF NOT EXISTS session_participants (
+                    session_id INT UNSIGNED NOT NULL,
+                    participant_id INT UNSIGNED NOT NULL,
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (session_id, participant_id),
+                    KEY session_participants_participant_id_index (participant_id),
+                    CONSTRAINT session_participants_session_id_foreign FOREIGN KEY (session_id) REFERENCES sessions (id) ON DELETE CASCADE,
+                    CONSTRAINT session_participants_participant_id_foreign FOREIGN KEY (participant_id) REFERENCES participants (id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+            );
+        } catch (PDOException) {
+            return;
+        }
+
+        if (self::participantsUsesGlobalSchema($pdo)) {
+            return;
+        }
+
+        $sessionColumn = $pdo->query("SHOW COLUMNS FROM participants LIKE 'session_id'");
+
+        if ($sessionColumn === false || $sessionColumn->rowCount() === 0) {
+            return;
+        }
+
+        try {
+            $userColumn = $pdo->query("SHOW COLUMNS FROM participants LIKE 'user_id'");
+
+            if ($userColumn !== false && $userColumn->rowCount() === 0) {
+                $pdo->exec('ALTER TABLE participants ADD COLUMN user_id INT UNSIGNED NULL AFTER id');
+            }
+
+            $pdo->exec(
+                'UPDATE participants p
+                 INNER JOIN sessions s ON s.id = p.session_id
+                 SET p.user_id = s.user_id
+                 WHERE p.user_id IS NULL'
+            );
+
+            $pdo->exec(
+                'INSERT IGNORE INTO session_participants (session_id, participant_id)
+                 SELECT session_id, id FROM participants WHERE session_id IS NOT NULL'
+            );
+
+            try {
+                $pdo->exec('ALTER TABLE participants DROP FOREIGN KEY participants_session_id_foreign');
+            } catch (PDOException) {
+            }
+
+            $pdo->exec('ALTER TABLE participants DROP COLUMN session_id');
+            $pdo->exec('ALTER TABLE participants MODIFY user_id INT UNSIGNED NOT NULL');
+
+            try {
+                $pdo->exec(
+                    'ALTER TABLE participants
+                     ADD CONSTRAINT participants_user_id_foreign
+                     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE'
+                );
+            } catch (PDOException) {
+            }
+        } catch (PDOException) {
+        }
+    }
+
+    private static function participantsUsesGlobalSchema(PDO $pdo): bool
+    {
+        try {
+            $userColumn = $pdo->query("SHOW COLUMNS FROM participants LIKE 'user_id'");
+            $sessionColumn = $pdo->query("SHOW COLUMNS FROM participants LIKE 'session_id'");
+
+            return $userColumn !== false
+                && $userColumn->rowCount() > 0
+                && ($sessionColumn === false || $sessionColumn->rowCount() === 0);
+        } catch (PDOException) {
+            return false;
         }
     }
 }

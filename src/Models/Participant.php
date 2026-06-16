@@ -8,7 +8,7 @@ final class Participant
 {
     public function __construct(
         public readonly int $id,
-        public readonly int $sessionId,
+        public readonly int $userId,
         public readonly string $name,
         public readonly string $rank,
         public readonly ?string $gender,
@@ -23,7 +23,7 @@ final class Participant
     {
         return new self(
             (int) $row['id'],
-            (int) $row['session_id'],
+            (int) $row['user_id'],
             $row['name'],
             $row['rank'],
             $row['gender'] ?? null,

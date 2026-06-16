@@ -1,0 +1,66 @@
+<div class="form-group">
+    <label for="bulk_data" class="form-label">Paste data peserta</label>
+    <textarea
+        id="bulk_data"
+        name="bulk_data"
+        rows="14"
+        class="bulk-textarea input-field font-mono text-sm"
+        placeholder="Paste dari Excel/Google Sheets di sini..."
+    >{{ old.bulk_data|default('') }}</textarea>
+    <p class="form-hint">Copy kolom Nama & Rank dari spreadsheet. Baris header otomatis diabaikan.</p>
+</div>
+
+<div class="form-group">
+    <label for="bulk_file" class="form-label">Atau upload file CSV</label>
+    <input type="file" id="bulk_file" name="bulk_file" accept=".csv,.txt,text/csv" class="bulk-file-input">
+    <p class="form-hint">File .csv atau .txt, maks. 1 MB.</p>
+</div>
+
+<div class="grid gap-4 sm:grid-cols-2">
+    <div class="form-group">
+        <label for="default_rank" class="form-label">Default rank (jika kolom rank kosong)</label>
+        <select id="default_rank" name="default_rank" class="input-field">
+            {% for value, label in ranks %}
+                <option value="{{ value }}" {% if (old.default_rank|default('C')) == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+
+{% if rowErrors is defined and rowErrors is not empty %}
+    <div class="bulk-errors rounded-xl border border-red-200 bg-red-50 p-4">
+        <p class="flex items-center gap-2 font-semibold text-red-800">
+            {% include 'components/ui/icon.twig' with { name: 'ri-error-warning-line', class: 'text-red-500' } %}
+            Perbaiki error berikut:
+        </p>
+        <ul class="mt-2 list-inside list-disc space-y-1 text-sm text-red-700">
+            {% for error in rowErrors %}
+                <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endif %}
+
+{% if preview is defined and preview is not empty and rowErrors is defined and rowErrors is not empty %}
+    <div class="bulk-preview">
+        <p class="mb-2 text-sm font-semibold text-navy-700">Preview baris valid ({{ preview|length }})</p>
+        <div class="overflow-x-auto rounded-xl border border-border">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b border-border bg-navy-50 text-left text-navy-500">
+                        <th class="px-4 py-2">Nama</th>
+                        <th class="px-4 py-2">Rank</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in preview %}
+                        <tr class="border-b border-border/60">
+                            <td class="px-4 py-2 font-medium text-navy-900">{{ row.name }}</td>
+                            <td class="px-4 py-2"><span class="rounded bg-gold-100 px-2 py-0.5 text-xs font-bold">{{ row.rank }}</span></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endif %}

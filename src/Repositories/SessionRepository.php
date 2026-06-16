@@ -30,9 +30,9 @@ final class SessionRepository
         $paginator = Paginator::fromTotal($this->countByUser($userId, $search, $date), $page, $perPage);
 
         $sql = 'SELECT ' . self::SELECT_FIELDS . ',
-                       COUNT(p.id) AS participant_count
+                       COUNT(sp.participant_id) AS participant_count
                 FROM sessions s
-                LEFT JOIN participants p ON p.session_id = s.id
+                LEFT JOIN session_participants sp ON sp.session_id = s.id
                 WHERE ' . $filters['sql'] . '
                 GROUP BY s.id
                 ORDER BY s.created_at DESC, s.id DESC
@@ -76,15 +76,12 @@ final class SessionRepository
         $params = $filters['params'];
 
         $sessionSql = "SELECT COUNT(*) FROM sessions s WHERE {$filter}";
-        $participantSql = "SELECT COUNT(p.id)
-                           FROM participants p
-                           INNER JOIN sessions s ON s.id = p.session_id
-                           WHERE {$filter}";
+        $participantSql = 'SELECT COUNT(*) FROM participants p WHERE p.user_id = :user_id';
         $courtSql = "SELECT COALESCE(SUM(s.court_count), 0) FROM sessions s WHERE {$filter}";
 
         return [
             'sessionCount' => $this->fetchInt($sessionSql, $params),
-            'participantCount' => $this->fetchInt($participantSql, $params),
+            'participantCount' => $this->fetchInt($participantSql, ['user_id' => $userId]),
             'courtCount' => $this->fetchInt($courtSql, $params),
         ];
     }

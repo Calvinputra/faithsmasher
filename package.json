@@ -3,15 +3,17 @@
   "private": true,
   "scripts": {
     "icons": "mkdir -p public/assets/vendor/remixicon && cp node_modules/remixicon/fonts/remixicon.css node_modules/remixicon/fonts/remixicon.woff2 node_modules/remixicon/fonts/remixicon.woff node_modules/remixicon/fonts/remixicon.ttf public/assets/vendor/remixicon/",
-    "postinstall": "npm run icons",
-    "dev": "npm run icons && tailwindcss -i ./resources/css/app.css -o ./public/assets/css/app.css --watch",
-    "build": "npm run icons && tailwindcss -i ./resources/css/app.css -o ./public/assets/css/app.css --minify"
+    "vendor": "npm run icons && mkdir -p public/assets/vendor/flatpickr && cp node_modules/flatpickr/dist/flatpickr.min.css node_modules/flatpickr/dist/flatpickr.min.js public/assets/vendor/flatpickr/",
+    "postinstall": "npm run vendor",
+    "dev": "npm run vendor && tailwindcss -i ./resources/css/app.css -o ./public/assets/css/app.css --watch",
+    "build": "npm run vendor && tailwindcss -i ./resources/css/app.css -o ./public/assets/css/app.css --minify"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.1.11",
     "tailwindcss": "^4.1.11"
   },
   "dependencies": {
+    "flatpickr": "^4.6.13",
     "remixicon": "^4.9.1"
   }
 }

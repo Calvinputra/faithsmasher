@@ -55,6 +55,7 @@
         </div>
         <nav class="mobile-drawer-nav flex-1 overflow-y-auto">
             <a href="/dashboard" class="sidebar-link{% if active|default('') == 'dashboard' %} sidebar-link-active{% endif %}">Dashboard</a>
+            <a href="/participants" class="sidebar-link{% if active|default('') == 'participants-global' %} sidebar-link-active{% endif %}">Peserta</a>
             {% if currentUser.isSuperadmin %}
                 <a href="/admin/users" class="sidebar-link{% if active|default('') == 'admin-users' %} sidebar-link-active{% endif %}">Kelola User</a>
             {% endif %}

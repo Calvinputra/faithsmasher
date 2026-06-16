@@ -12,6 +12,10 @@
             {% include 'components/ui/icon.twig' with { name: 'ri-home-4-line', class: 'sidebar-link-icon' } %}
             <span>Dashboard</span>
         </a>
+        <a href="/participants" class="sidebar-link{% if active|default('') == 'participants-global' %} sidebar-link-active{% endif %}">
+            {% include 'components/ui/icon.twig' with { name: 'ri-group-line', class: 'sidebar-link-icon' } %}
+            <span>Peserta</span>
+        </a>
         {% if currentUser.isSuperadmin %}
             <a href="/admin/users" class="sidebar-link{% if active|default('') == 'admin-users' %} sidebar-link-active{% endif %}">
                 {% include 'components/ui/icon.twig' with { name: 'ri-shield-user-line', class: 'sidebar-link-icon' } %}

@@ -165,7 +165,7 @@
   }
 
   .modal {
-    @apply fixed inset-0 z-50 hidden items-center justify-center p-4;
+    @apply fixed inset-0 z-[100] hidden items-center justify-center p-4;
   }
 
   .modal-open {
@@ -173,7 +173,7 @@
   }
 
   .modal-backdrop {
-    @apply absolute inset-0 bg-navy-900/40 backdrop-blur-sm;
+    @apply absolute inset-0 bg-navy-900/55 backdrop-blur-md;
   }
 
   .modal-panel {
@@ -695,10 +695,10 @@
   }
 
   .session-filter {
-    @apply flex flex-col gap-3;
+    @apply flex flex-col gap-2;
   }
 
-  .session-filter-fields {
+  .session-filter-row {
     @apply flex flex-col gap-2 sm:flex-row sm:items-stretch;
   }
 
@@ -707,11 +707,11 @@
   }
 
   .date-filter-wrap {
-    @apply relative flex shrink-0 items-stretch sm:w-56;
+    @apply relative flex shrink-0 items-stretch sm:w-44 lg:w-48;
   }
 
   .date-filter-input-wrap {
-    @apply relative min-w-0 flex-1;
+    @apply relative min-w-0 flex-1 cursor-pointer;
   }
 
   .date-filter-icon {
@@ -728,8 +728,8 @@
     @apply ml-1.5 flex shrink-0 items-center justify-center rounded-xl border border-navy-100 bg-surface px-2.5 text-navy-500 transition hover:border-navy-200 hover:bg-navy-50 hover:text-navy-800;
   }
 
-  .session-filter-actions {
-    @apply flex flex-wrap items-center gap-2;
+  .session-filter-submit {
+    @apply flex shrink-0 items-stretch gap-2;
   }
 
   .date-filter-legend {
@@ -1002,6 +1002,7 @@
 
 .fs-flatpickr-filter.flatpickr-calendar {
   margin-top: 0.35rem;
+  z-index: 9999;
 }
 
 .fs-flatpickr span.flatpickr-weekday {

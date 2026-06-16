@@ -47,7 +47,8 @@
             <h2 class="font-bold text-navy-900">Setup Game</h2>
         </div>
         <ul class="action-list">
-            <li>{% include 'components/ui/action-link.twig' with { href: '/sessions/' ~ session.id ~ '/participants', label: 'Participants' } %}</li>
+            <li>{% include 'components/ui/action-link.twig' with { href: '/sessions/' ~ session.id ~ '/participants', label: 'Peserta Session' } %}</li>
+            <li>{% include 'components/ui/action-link.twig' with { href: '/participants', label: 'Kelola Peserta Global' } %}</li>
             <li>{% include 'components/ui/action-link.twig' with { href: '/sessions/' ~ session.id ~ '/rules', label: 'Game Rules' } %}</li>
             <li>{% include 'components/ui/action-link.twig' with { href: '/sessions/' ~ session.id ~ '/edit', label: 'Edit Session' } %}</li>
         </ul>

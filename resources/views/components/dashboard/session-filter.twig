@@ -6,7 +6,7 @@
     role="search"
     data-session-dates="{{ sessionDates|default([])|json_encode|e('html_attr') }}"
 >
-    <div class="session-filter-fields">
+    <div class="session-filter-row">
         <div class="search-input-wrap session-filter-search">
             {% include 'components/ui/icon.twig' with { name: 'ri-search-line', class: 'search-icon' } %}
             <input
@@ -22,7 +22,7 @@
 
         <div class="date-filter-wrap">
             <label for="filter_date_picker" class="sr-only">Filter tanggal session</label>
-            <div class="date-filter-input-wrap">
+            <div class="date-filter-input-wrap" id="date-filter-trigger">
                 {% include 'components/ui/icon.twig' with { name: 'ri-calendar-line', class: 'date-filter-icon' } %}
                 <input
                     type="text"
@@ -47,19 +47,19 @@
                 </a>
             {% endif %}
         </div>
-    </div>
 
-    <div class="session-filter-actions">
-        <button type="submit" class="btn-secondary search-submit px-4 py-2.5 text-sm">
-            {% include 'components/ui/icon.twig' with { name: 'ri-search-line', class: 'mr-1.5', size: 'sm' } %}
-            Cari
-        </button>
-        {% if query|default('') or date|default('') %}
-            <a href="{{ action|default('/dashboard') }}" class="btn-ghost search-clear px-4 py-2.5 text-sm">
-                {% include 'components/ui/icon.twig' with { name: 'ri-close-circle-line', class: 'mr-1.5', size: 'sm' } %}
-                Reset
-            </a>
-        {% endif %}
+        <div class="session-filter-submit">
+            <button type="submit" class="btn-secondary search-submit h-full px-4 py-2.5 text-sm whitespace-nowrap">
+                {% include 'components/ui/icon.twig' with { name: 'ri-search-line', class: 'mr-1.5', size: 'sm' } %}
+                Cari
+            </button>
+            {% if query|default('') or date|default('') %}
+                <a href="{{ action|default('/dashboard') }}" class="btn-ghost search-clear h-full px-4 py-2.5 text-sm whitespace-nowrap">
+                    {% include 'components/ui/icon.twig' with { name: 'ri-close-circle-line', class: 'mr-1.5', size: 'sm' } %}
+                    Reset
+                </a>
+            {% endif %}
+        </div>
     </div>
 
     <p class="date-filter-legend">

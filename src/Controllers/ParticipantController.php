@@ -32,142 +32,80 @@ final class ParticipantController extends BaseController
         /** @var Twig $view */
         $view = $request->getAttribute('view');
 
-        return $view->render($response, 'pages/participants/index.twig', [
+        return $view->render($response, 'pages/participants/session/index.twig', [
             'session' => $session,
             'participants' => $this->participants->allBySession($session->id),
             'rankCounts' => $this->participants->countByRank($session->id),
             'genders' => Gender::labels(),
+            'globalCount' => $this->participants->countByUser($this->userId()),
         ]);
     }
 
-    public function create(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    public function assign(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
         $session = $this->requireSession((int) $args['sessionId']);
+        $search = trim((string) ($request->getQueryParams()['q'] ?? ''));
 
         /** @var Twig $view */
         $view = $request->getAttribute('view');
 
-        return $view->render($response, 'pages/participants/form.twig', [
+        return $view->render($response, 'pages/participants/session/assign.twig', [
             'session' => $session,
-            'participant' => null,
-            'ranks' => Rank::options(),
-            'genders' => Gender::labels(),
-            'errors' => [],
-            'old' => [],
+            'available' => $this->participants->availableForSession($session->id, $this->userId(), $search),
+            'search' => $search,
         ]);
     }
 
-    public function store(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    public function assignStore(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
         $sessionId = (int) $args['sessionId'];
-        $session = $this->requireSession($sessionId);
+        $this->requireSession($sessionId);
         $data = (array) $request->getParsedBody();
-        $errors = $this->validate($data);
+        $ids = $data['participant_ids'] ?? [];
 
-        if ($errors !== []) {
-            /** @var Twig $view */
-            $view = $request->getAttribute('view');
-
-            return $view->render($response, 'pages/participants/form.twig', [
-                'session' => $session,
-                'participant' => null,
-                'ranks' => Rank::options(),
-                'genders' => Gender::labels(),
-                'errors' => $errors,
-                'old' => $data,
-            ]);
+        if (!is_array($ids)) {
+            $ids = [];
         }
 
-        $this->participants->create(
-            $sessionId,
-            trim((string) $data['name']),
-            (string) $data['rank'],
-            $this->nullableString($data['gender'] ?? null),
-            $this->nullableString($data['phone'] ?? null),
-            $this->nullableString($data['gms_source'] ?? null),
-        );
+        $participantIds = array_values(array_filter(array_map('intval', $ids), static fn (int $id): bool => $id > 0));
+        $userId = $this->userId();
+        $validIds = [];
+
+        foreach ($participantIds as $participantId) {
+            if ($this->participants->find($participantId, $userId) !== null) {
+                $validIds[] = $participantId;
+            }
+        }
+
+        if ($validIds === []) {
+            return $this->flashRedirect(
+                $response,
+                '/sessions/' . $sessionId . '/participants/assign',
+                'Pilih minimal satu peserta dari daftar global.',
+                FlashType::WARNING,
+            );
+        }
+
+        $assigned = $this->participants->assignManyToSession($sessionId, $validIds);
 
         return $this->flashRedirect(
             $response,
             '/sessions/' . $sessionId . '/participants',
-            'Peserta baru berhasil ditambahkan.',
+            "{$assigned} peserta ditambahkan ke session ini.",
             FlashType::CREATE,
         );
     }
 
-    public function edit(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    public function unassign(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
         $sessionId = (int) $args['sessionId'];
-        $session = $this->requireSession($sessionId);
-        $participant = $this->participants->find((int) $args['id'], $sessionId);
-
-        if ($participant === null) {
-            return $this->redirect($response, '/sessions/' . $sessionId . '/participants');
-        }
-
-        /** @var Twig $view */
-        $view = $request->getAttribute('view');
-
-        return $view->render($response, 'pages/participants/form.twig', [
-            'session' => $session,
-            'participant' => $participant,
-            'ranks' => Rank::options(),
-            'genders' => Gender::labels(),
-            'errors' => [],
-            'old' => [],
-        ]);
-    }
-
-    public function update(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
-    {
-        $sessionId = (int) $args['sessionId'];
-        $session = $this->requireSession($sessionId);
-        $participantId = (int) $args['id'];
-        $data = (array) $request->getParsedBody();
-        $errors = $this->validate($data);
-
-        if ($errors !== []) {
-            /** @var Twig $view */
-            $view = $request->getAttribute('view');
-
-            return $view->render($response, 'pages/participants/form.twig', [
-                'session' => $session,
-                'participant' => $this->participants->find($participantId, $sessionId),
-                'ranks' => Rank::options(),
-                'genders' => Gender::labels(),
-                'errors' => $errors,
-                'old' => $data,
-            ]);
-        }
-
-        $this->participants->update(
-            $participantId,
-            $sessionId,
-            trim((string) $data['name']),
-            (string) $data['rank'],
-            $this->nullableString($data['gender'] ?? null),
-            $this->nullableString($data['phone'] ?? null),
-            $this->nullableString($data['gms_source'] ?? null),
-        );
+        $this->requireSession($sessionId);
+        $this->participants->unassignFromSession($sessionId, (int) $args['id']);
 
         return $this->flashRedirect(
             $response,
             '/sessions/' . $sessionId . '/participants',
-            'Data peserta berhasil diperbarui.',
-            FlashType::UPDATE,
-        );
-    }
-
-    public function destroy(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
-    {
-        $this->assertCanDelete();
-        $sessionId = (int) $args['sessionId'];
-        $this->participants->delete((int) $args['id'], $sessionId);
-
-        return $this->flashRedirect(
-            $response,
-            '/sessions/' . $sessionId . '/participants',
-            'Peserta berhasil dihapus dari session.',
+            'Peserta dihapus dari session (data global tetap ada).',
             FlashType::DELETE,
         );
     }
@@ -179,7 +117,7 @@ final class ParticipantController extends BaseController
         /** @var Twig $view */
         $view = $request->getAttribute('view');
 
-        return $view->render($response, 'pages/participants/bulk.twig', [
+        return $view->render($response, 'pages/participants/session/bulk.twig', [
             'session' => $session,
             'ranks' => Rank::options(),
             'errors' => [],
@@ -201,23 +139,20 @@ final class ParticipantController extends BaseController
             $rawInput = $fileContent;
         }
 
-        $defaultRank = (string) ($data['default_rank'] ?? 'C');
-        $replaceExisting = isset($data['replace_existing']) && $this->auth->canDelete();
-        $generateMatches = isset($data['generate_matches']);
-
-        $result = $this->bulkImport->import(
+        $result = $this->bulkImport->importToSession(
+            $this->userId(),
             $sessionId,
             $rawInput,
-            $defaultRank,
-            $replaceExisting,
-            $generateMatches,
+            (string) ($data['default_rank'] ?? 'C'),
+            isset($data['replace_existing']) && $this->auth->canDelete(),
+            isset($data['generate_matches']),
         );
 
         if (!$result['success']) {
             /** @var Twig $view */
             $view = $request->getAttribute('view');
 
-            return $view->render($response, 'pages/participants/bulk.twig', [
+            return $view->render($response, 'pages/participants/session/bulk.twig', [
                 'session' => $session,
                 'ranks' => Rank::options(),
                 'errors' => $result['errors'],
@@ -227,13 +162,13 @@ final class ParticipantController extends BaseController
             ]);
         }
 
-        $message = "{$result['imported']} peserta berhasil diimport.";
+        $message = "{$result['imported']} peserta diimport ke global & ditambahkan ke session.";
 
         if ($result['skipped'] > 0) {
             $message .= " ({$result['skipped']} baris header/kosong dilewati)";
         }
 
-        if ($generateMatches) {
+        if (isset($data['generate_matches'])) {
             if ($result['matchesGenerated'] !== null && $result['matchesGenerated'] > 0) {
                 return $this->flashRedirect(
                     $response,
@@ -256,37 +191,6 @@ final class ParticipantController extends BaseController
             FlashType::CREATE,
             'Import peserta',
         );
-    }
-
-    /** @param array<string, mixed> $data @return array<string, string> */
-    private function validate(array $data): array
-    {
-        $errors = [];
-
-        if (trim((string) ($data['name'] ?? '')) === '') {
-            $errors['name'] = 'Name is required.';
-        }
-
-        $rank = (string) ($data['rank'] ?? '');
-        if (!Rank::isValid($rank)) {
-            $errors['rank'] = 'Rank is required.';
-        }
-
-        $gender = $this->nullableString($data['gender'] ?? null);
-        if (!Gender::isValid($gender)) {
-            $errors['gender'] = 'Invalid gender value.';
-        }
-
-        return $errors;
-    }
-
-    private function nullableString(mixed $value): ?string
-    {
-        if ($value === null || $value === '') {
-            return null;
-        }
-
-        return trim((string) $value);
     }
 
     private function readUploadedText(?UploadedFileInterface $file): ?string

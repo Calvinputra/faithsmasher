@@ -1,0 +1,16 @@
+<div class="bulk-format-card card mb-6">
+    <h2 class="flex items-center gap-2 font-bold text-navy-900">
+        {% include 'components/ui/icon.twig' with { name: 'ri-information-line', class: 'text-gold-600' } %}
+        Format yang didukung
+    </h2>
+    <ul class="bulk-format-list mt-3 space-y-2 text-sm text-navy-600">
+        <li><strong>Nama + Rank</strong> — paste 2 kolom: <code>Calvin,C</code> atau tab dari Excel</li>
+        <li><strong>No + Nama + Rank</strong> — <code>1,Calvin,C</code> (header otomatis dilewati)</li>
+        <li><strong>No + Nama</strong> — rank pakai default di bawah</li>
+    </ul>
+    <pre class="bulk-format-example mt-4">Nama,Rank
+Calvin,C
+Yosua,B+
+Pat,B
+Kevin,A-</pre>
+</div>

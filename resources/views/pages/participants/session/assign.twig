@@ -1,0 +1,67 @@
+{% extends 'layouts/dashboard.twig' %}
+{% block title %}Tambah Peserta — {{ session.name }}{% endblock %}
+{% set sidebar_session = session %}
+{% block sidebar_nav %}{% include 'components/sidebar.twig' with { session: session, active: 'participants' } %}{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <a href="/sessions/{{ session.id }}/participants" class="inline-flex items-center gap-1 text-sm font-medium text-navy-600 hover:text-navy-900">
+        {% include 'components/ui/icon.twig' with { name: 'ri-arrow-left-s-line', size: 'sm' } %}
+        Kembali ke Peserta Session
+    </a>
+    <h1 class="mt-3 text-2xl font-bold text-navy-900">Tambah dari Daftar Global</h1>
+    <p class="mt-1 text-sm text-navy-600">{{ session.name }} — centang peserta yang ikut session ini</p>
+</div>
+
+<form method="get" action="/sessions/{{ session.id }}/participants/assign" class="mb-6 flex flex-col gap-2 sm:flex-row sm:items-stretch" role="search">
+    <div class="search-input-wrap min-w-0 flex-1">
+        {% include 'components/ui/icon.twig' with { name: 'ri-search-line', class: 'search-icon' } %}
+        <input type="search" name="q" value="{{ search|default('') }}" placeholder="Cari peserta global..." class="search-input">
+    </div>
+    <button type="submit" class="btn-secondary px-4 py-2.5 text-sm">Cari</button>
+</form>
+
+{% if available is empty %}
+    <div class="empty-state">
+        <p class="text-navy-600">Semua peserta global sudah ada di session ini, atau belum ada peserta global.</p>
+        <div class="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-center">
+            <a href="/participants/create" class="btn-primary justify-center">Buat Peserta Global</a>
+            <a href="/participants/bulk" class="btn-secondary justify-center">Bulk Upload Global</a>
+        </div>
+    </div>
+{% else %}
+    <form method="post" action="/sessions/{{ session.id }}/participants/assign" class="card overflow-hidden">
+        <div class="flex items-center justify-between border-b border-border bg-navy-50/60 px-4 py-3">
+            <p class="text-sm font-semibold text-navy-800">{{ available|length }} peserta tersedia</p>
+            <button type="submit" class="btn-primary px-4 py-2 text-sm">Tambahkan ke Session</button>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b border-border text-left text-navy-500">
+                        <th class="px-4 py-3 w-10"></th>
+                        <th class="px-4 py-3">Nama</th>
+                        <th class="px-4 py-3">Rank</th>
+                        <th class="px-4 py-3">Telepon</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in available %}
+                        <tr class="border-b border-border/60 hover:bg-navy-50/40">
+                            <td class="px-4 py-3">
+                                <input type="checkbox" name="participant_ids[]" value="{{ p.id }}" class="h-4 w-4 rounded border-navy-200 text-gold-500 focus:ring-gold-400">
+                            </td>
+                            <td class="px-4 py-3 font-medium text-navy-900">{{ p.name }}</td>
+                            <td class="px-4 py-3"><span class="rounded bg-gold-100 px-2 py-0.5 text-xs font-bold">{{ p.rank }}</span></td>
+                            <td class="px-4 py-3 text-navy-600">{{ p.phone|default('—') }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="border-t border-border px-4 py-3">
+            <button type="submit" class="btn-primary w-full justify-center sm:w-auto">Tambahkan ke Session</button>
+        </div>
+    </form>
+{% endif %}
+{% endblock %}

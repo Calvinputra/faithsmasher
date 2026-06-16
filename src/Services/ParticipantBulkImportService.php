@@ -20,6 +20,18 @@ final class ParticipantBulkImportService
     }
 
     /**
+     * Import ke daftar peserta global (user).
+     *
+     * @return array{success: bool, imported: int, skipped: int, errors: list<string>, preview: list<array{name: string, rank: string}>}
+     */
+    public function importGlobal(int $userId, string $rawInput, string $defaultRank = 'C'): array
+    {
+        return $this->importRows($userId, null, $rawInput, $defaultRank, false, false);
+    }
+
+    /**
+     * Import ke global + assign ke session.
+     *
      * @return array{
      *     success: bool,
      *     imported: int,
@@ -29,47 +41,62 @@ final class ParticipantBulkImportService
      *     matchesGenerated: int|null
      * }
      */
-    public function import(
+    public function importToSession(
+        int $userId,
         int $sessionId,
         string $rawInput,
         string $defaultRank = 'C',
         bool $replaceExisting = false,
         bool $generateMatches = false,
     ): array {
+        $result = $this->importRows($userId, $sessionId, $rawInput, $defaultRank, $replaceExisting, $generateMatches);
+
+        return $result;
+    }
+
+    /**
+     * @return array{
+     *     success: bool,
+     *     imported: int,
+     *     skipped: int,
+     *     errors: list<string>,
+     *     preview: list<array{name: string, rank: string}>,
+     *     matchesGenerated: int|null
+     * }
+     */
+    private function importRows(
+        int $userId,
+        ?int $sessionId,
+        string $rawInput,
+        string $defaultRank,
+        bool $replaceExisting,
+        bool $generateMatches,
+    ): array {
         $defaultRank = Rank::normalize($defaultRank) ?? 'C';
         $parsed = $this->parser->parse($rawInput, $defaultRank);
 
         if ($parsed['errors'] !== []) {
-            return [
-                'success' => false,
-                'imported' => 0,
-                'skipped' => $parsed['skipped'],
-                'errors' => $parsed['errors'],
-                'preview' => $parsed['rows'],
-                'matchesGenerated' => null,
-            ];
+            return $this->failure($parsed['errors'], $parsed['skipped'], $parsed['rows']);
         }
 
         if ($parsed['rows'] === []) {
-            return [
-                'success' => false,
-                'imported' => 0,
-                'skipped' => $parsed['skipped'],
-                'errors' => ['Tidak ada peserta untuk diimport.'],
-                'preview' => [],
-                'matchesGenerated' => null,
-            ];
+            return $this->failure(['Tidak ada peserta untuk diimport.'], $parsed['skipped'], []);
         }
 
-        if ($replaceExisting) {
+        if ($sessionId !== null && $replaceExisting) {
             $this->matches->deleteBySession($sessionId);
-            $this->participants->deleteAllBySession($sessionId);
+            $this->participants->unassignAllFromSession($sessionId);
         }
 
-        $imported = $this->participants->createMany($sessionId, $parsed['rows']);
+        $ids = $this->participants->createMany($userId, $parsed['rows']);
+
+        if ($sessionId !== null) {
+            $this->participants->assignManyToSession($sessionId, $ids);
+        }
+
         $matchesGenerated = null;
 
-        if ($generateMatches && $imported >= 2) {
+        if ($sessionId !== null && $generateMatches && count($ids) >= 2) {
             try {
                 $matchesGenerated = $this->matchGenerator->autoGenerate($sessionId);
             } catch (\InvalidArgumentException) {
@@ -79,11 +106,28 @@ final class ParticipantBulkImportService
 
         return [
             'success' => true,
-            'imported' => $imported,
+            'imported' => count($ids),
             'skipped' => $parsed['skipped'],
             'errors' => [],
             'preview' => $parsed['rows'],
             'matchesGenerated' => $matchesGenerated,
+        ];
+    }
+
+    /**
+     * @param list<string> $errors
+     * @param list<array{name: string, rank: string}> $preview
+     * @return array{success: bool, imported: int, skipped: int, errors: list<string>, preview: list<array{name: string, rank: string}>, matchesGenerated: null}
+     */
+    private function failure(array $errors, int $skipped, array $preview): array
+    {
+        return [
+            'success' => false,
+            'imported' => 0,
+            'skipped' => $skipped,
+            'errors' => $errors,
+            'preview' => $preview,
+            'matchesGenerated' => null,
         ];
     }
 }

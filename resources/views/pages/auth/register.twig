@@ -44,7 +44,9 @@
     Already have an account?
     <a href="/login" class="font-bold text-navy-800 hover:underline">Sign In</a>
 </p>
+{% endblock %}
 
+{% block overlays %}
 {% if pending|default(false) %}
     {% embed 'components/ui/modal.twig' with {
         id: 'pending-modal',
