@@ -123,10 +123,28 @@ $app->get('/about', [$aboutController, 'index']);
 2. Deploy ke root `public_html` (direktori kosong)
 3. Setelah deploy, jalankan di **Terminal hPanel**:
    ```bash
+   cd ~/domains/skyblue-donkey-768625.hostingersite.com/public_html
    composer install --no-dev --optimize-autoloader
+   cp .env.hostinger.example .env
+   # edit .env — isi DB_PASSWORD
+   php bin/check-server.php
+   php bin/setup-database.php
+   php bin/create-admin.php "Calvin" calvin@gmail.com "password-login"
+   chmod -R 755 storage
    ```
-4. Salin `.env.example` ke `.env` dan sesuaikan `APP_URL`
+4. Salin `.env.hostinger.example` ke `.env` dan sesuaikan `APP_URL` + `DB_PASSWORD`
 5. Pastikan folder `storage/` writable (chmod 755)
+
+### HTTP 500?
+
+| Penyebab | Solusi |
+|---|---|
+| `vendor/` belum ada | `composer install --no-dev` |
+| `.env` belum ada / salah | Copy `.env.hostinger.example`, isi password MySQL |
+| Database kosong | Import `database/schema.sql` atau `php bin/setup-database.php` |
+| DB_HOST salah | Pakai `localhost` (bukan IP), port `3306` |
+
+Cek otomatis: `php bin/check-server.php`
 
 File `index.php` dan `.htaccess` di root repo sudah disiapkan agar Hostinger
 tidak 403 — Apache akan meneruskan request ke folder `public/`.

@@ -28,7 +28,13 @@ final class AuthService
             return null;
         }
 
-        $user = $this->users->findById((int) $userId);
+        try {
+            $user = $this->users->findById((int) $userId);
+        } catch (\Throwable) {
+            unset($_SESSION[self::SESSION_KEY]);
+
+            return null;
+        }
 
         if ($user === null || !$user->isApproved()) {
             unset($_SESSION[self::SESSION_KEY]);
