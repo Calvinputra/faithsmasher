@@ -71,12 +71,6 @@ final class MatchController extends BaseController
         $matchRows = $this->matches->allWithParticipants($sessionId);
         $matchCounts = $this->matches->playerMatchCounts($sessionId);
 
-        if ($matchRows === [] && count($participants) >= 2) {
-            $this->generator->autoGenerate($sessionId);
-            $matchRows = $this->matches->allWithParticipants($sessionId);
-            $matchCounts = $this->matches->playerMatchCounts($sessionId);
-        }
-
         /** @var Twig $view */
         $view = $request->getAttribute('view');
 
@@ -108,15 +102,46 @@ final class MatchController extends BaseController
             );
         }
 
+        $sessionParticipantIds = array_map(
+            static fn ($participant) => $participant->id,
+            $this->participants->allBySession($sessionId),
+        );
+        $sessionParticipantSet = array_flip($sessionParticipantIds);
+        $sessionMatchIds = array_map(
+            static fn (array $row) => $row['match']->id,
+            $this->matches->allWithParticipants($sessionId),
+        );
+        $sessionMatchSet = array_flip($sessionMatchIds);
+        $updated = 0;
+
         foreach ($pairings as $matchId => $slots) {
-            if (!is_array($slots)) {
+            if (!is_array($slots) || !isset($sessionMatchSet[(int) $matchId])) {
                 continue;
             }
 
             $p1 = isset($slots['p1']) && $slots['p1'] !== '' ? (int) $slots['p1'] : null;
             $p2 = isset($slots['p2']) && $slots['p2'] !== '' ? (int) $slots['p2'] : null;
 
-            $this->matches->updatePairing((int) $matchId, $sessionId, $p1, $p2);
+            if ($p1 !== null && !isset($sessionParticipantSet[$p1])) {
+                continue;
+            }
+
+            if ($p2 !== null && !isset($sessionParticipantSet[$p2])) {
+                continue;
+            }
+
+            if ($this->matches->updatePairing((int) $matchId, $sessionId, $p1, $p2)) {
+                $updated++;
+            }
+        }
+
+        if ($updated === 0 && $pairings !== []) {
+            return $this->flashRedirect(
+                $response,
+                '/sessions/' . $sessionId . '/matches/manual',
+                'Tidak ada pairing valid yang disimpan. Periksa peserta dan slot match.',
+                FlashType::WARNING,
+            );
         }
 
         return $this->flashRedirect(

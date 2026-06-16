@@ -37,7 +37,7 @@ final class ParticipantController extends BaseController
             'participants' => $this->participants->allBySession($session->id),
             'rankCounts' => $this->participants->countByRank($session->id),
             'genders' => Gender::labels(),
-            'globalCount' => $this->participants->countByUser($this->userId()),
+            'availableCount' => $this->participants->countAvailableForSession($session->id, $this->userId()),
         ]);
     }
 
@@ -99,8 +99,26 @@ final class ParticipantController extends BaseController
     public function unassign(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
         $sessionId = (int) $args['sessionId'];
+        $participantId = (int) $args['id'];
         $this->requireSession($sessionId);
-        $this->participants->unassignFromSession($sessionId, (int) $args['id']);
+
+        if ($this->participants->findInSession($participantId, $sessionId) === null) {
+            return $this->flashRedirect(
+                $response,
+                '/sessions/' . $sessionId . '/participants',
+                'Peserta tidak ada di session ini.',
+                FlashType::WARNING,
+            );
+        }
+
+        if (!$this->participants->unassignFromSession($sessionId, $participantId)) {
+            return $this->flashRedirect(
+                $response,
+                '/sessions/' . $sessionId . '/participants',
+                'Gagal menghapus peserta dari session.',
+                FlashType::ERROR,
+            );
+        }
 
         return $this->flashRedirect(
             $response,

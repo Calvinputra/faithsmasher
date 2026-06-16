@@ -1,0 +1,14 @@
+<button
+    type="button"
+    class="inline-edit-btn"
+    data-inline-edit
+    data-participant-id="{{ participantId }}"
+    data-field="{{ field }}"
+    data-value="{{ value|default('') }}"
+    aria-haspopup="listbox"
+    aria-expanded="false"
+    aria-label="Ubah {{ label }}"
+>
+    <span class="inline-edit-pill {{ pillClass|default('inline-pill-empty') }}" data-inline-pill>{{ display|default('—') }}</span>
+    <i class="ri-arrow-down-s-line inline-edit-caret" aria-hidden="true"></i>
+</button>

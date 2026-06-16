@@ -30,7 +30,7 @@
 
     {% block overlays %}{% endblock %}
     {% include 'components/ui/toast-container.twig' %}
-    <script src="/assets/js/toast.js"></script>
+    <script src="{{ asset('assets/js/toast.js') }}"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

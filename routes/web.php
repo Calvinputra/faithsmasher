@@ -63,6 +63,7 @@ return function (App $app, AuthService $auth): void {
         $group->get('/participants/bulk', [$globalParticipantController, 'bulk']);
         $group->post('/participants/bulk', [$globalParticipantController, 'bulkStore']);
         $group->get('/participants/{id}/edit', [$globalParticipantController, 'edit']);
+        $group->post('/participants/{id}/inline', [$globalParticipantController, 'inlineUpdate']);
         $group->post('/participants/{id}', [$globalParticipantController, 'update']);
         $group->post('/participants/{id}/delete', [$globalParticipantController, 'destroy']);
 

@@ -35,6 +35,7 @@
                     <option value="{{ value }}" {% if (old.gender|default(participant.gender|default(''))) == value %}selected{% endif %}>{{ label }}</option>
                 {% endfor %}
             </select>
+            {% if errors.gender is defined %}<p class="mt-1 text-xs text-red-600">{{ errors.gender }}</p>{% endif %}
         </div>
         <div>
             <label for="phone" class="mb-1.5 block text-sm font-medium text-navy-700">Telepon</label>
@@ -42,7 +43,13 @@
         </div>
         <div>
             <label for="gms_source" class="mb-1.5 block text-sm font-medium text-navy-700">GMS From</label>
-            <input type="text" id="gms_source" name="gms_source" placeholder="Dari mana kenal GMS" class="input-field" value="{{ old.gms_source|default(participant.gmsSource|default('')) }}">
+            <select id="gms_source" name="gms_source" class="input-field">
+                <option value="">— Opsional —</option>
+                {% for value, label in gmsSources|default({}) %}
+                    <option value="{{ value }}" {% if (old.gms_source|default(participant.gmsSource|default(''))) == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            {% if errors.gms_source is defined %}<p class="mt-1 text-xs text-red-600">{{ errors.gms_source }}</p>{% endif %}
         </div>
         <div class="flex gap-3">
             <button type="submit" class="btn-primary">Simpan</button>

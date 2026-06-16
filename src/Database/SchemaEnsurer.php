@@ -132,7 +132,8 @@ final class SchemaEnsurer
                 );
             } catch (PDOException) {
             }
-        } catch (PDOException) {
+        } catch (PDOException $exception) {
+            error_log('[faithsmasher] Schema migration failed (global participants): ' . $exception->getMessage());
         }
     }
 

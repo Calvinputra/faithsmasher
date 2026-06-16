@@ -71,9 +71,9 @@
     {% endif %}
 
     {% include 'components/ui/toast-container.twig' %}
-    <script src="/assets/js/app.js"></script>
-    <script src="/assets/js/toast.js"></script>
-    <script src="/assets/js/dashboard.js"></script>
+    <script src="{{ asset('assets/js/app.js') }}"></script>
+    <script src="{{ asset('assets/js/toast.js') }}"></script>
+    <script src="{{ asset('assets/js/dashboard.js') }}"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

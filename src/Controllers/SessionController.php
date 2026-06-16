@@ -113,7 +113,17 @@ final class SessionController extends BaseController
     public function destroy(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
         $this->assertCanDelete();
-        $this->sessions->delete((int) $args['id'], $this->userId());
+        $sessionId = (int) $args['id'];
+        $this->requireSession($sessionId);
+
+        if (!$this->sessions->delete($sessionId, $this->userId())) {
+            return $this->flashRedirect(
+                $response,
+                '/dashboard',
+                'Session tidak ditemukan atau sudah dihapus.',
+                FlashType::WARNING,
+            );
+        }
 
         return $this->flashRedirect(
             $response,

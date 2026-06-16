@@ -1,0 +1,15 @@
+<form
+    method="post"
+    action="{{ action }}"
+    class="icon-action-form{% if class|default('') %} {{ class }}{% endif %}"
+    {% if confirm|default('') %}onsubmit="return confirm('{{ confirm|e('js') }}')"{% endif %}
+>
+    <button
+        type="submit"
+        class="icon-action icon-action-delete"
+        aria-label="{{ label|default('Hapus') }}"
+        title="{{ label|default('Hapus') }}"
+    >
+        {% include 'components/ui/icon.twig' with { name: 'ri-delete-bin-line', size: 'sm' } %}
+    </button>
+</form>

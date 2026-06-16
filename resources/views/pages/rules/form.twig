@@ -15,10 +15,12 @@
             <div>
                 <label for="win_points" class="mb-1.5 block text-sm font-medium text-navy-700">Win Points *</label>
                 <input type="number" id="win_points" name="win_points" min="0" required class="input-field" value="{{ old.win_points|default(rule.winPoints|default(21)) }}">
+                {% if errors.win_points is defined %}<p class="mt-1 text-xs text-red-600">{{ errors.win_points }}</p>{% endif %}
             </div>
             <div>
                 <label for="lose_points" class="mb-1.5 block text-sm font-medium text-navy-700">Lose Points *</label>
                 <input type="number" id="lose_points" name="lose_points" min="0" required class="input-field" value="{{ old.lose_points|default(rule.losePoints|default(0)) }}">
+                {% if errors.lose_points is defined %}<p class="mt-1 text-xs text-red-600">{{ errors.lose_points }}</p>{% endif %}
             </div>
         </div>
         <div class="flex gap-3">

@@ -12,7 +12,6 @@ use App\Support\FlashBag;
 use App\Support\FlashType;
 use Slim\Exception\HttpForbiddenException;
 use Slim\Exception\HttpNotFoundException;
-use Slim\Psr7\Response;
 
 abstract class BaseController
 {
@@ -66,6 +65,16 @@ abstract class BaseController
         FlashBag::set($message, $type, $title);
 
         return $this->redirect($response, $path);
+    }
+
+    /** @param array<string, mixed> $data */
+    protected function json(ResponseInterface $response, array $data, int $status = 200): ResponseInterface
+    {
+        $response->getBody()->write((string) json_encode($data, JSON_THROW_ON_ERROR));
+
+        return $response
+            ->withHeader('Content-Type', 'application/json')
+            ->withStatus($status);
     }
 
     /** @deprecated Flash is injected globally via FlashMiddleware */

@@ -1,0 +1,15 @@
+<form
+    method="post"
+    action="{{ action }}"
+    class="icon-action-form{% if class|default('') %} {{ class }}{% endif %}"
+    {% if confirm|default('') %}onsubmit="return confirm('{{ confirm|e('js') }}')"{% endif %}
+>
+    <button
+        type="submit"
+        class="icon-action icon-action-remove"
+        aria-label="{{ label|default('Keluarkan') }}"
+        title="{{ label|default('Keluarkan') }}"
+    >
+        {% include 'components/ui/icon.twig' with { name: icon|default('ri-user-unfollow-line'), size: 'sm' } %}
+    </button>
+</form>

@@ -49,4 +49,9 @@ final class Rank
 
         return $options;
     }
+
+    public static function pillClass(string $rank): string
+    {
+        return 'inline-pill-rank';
+    }
 }

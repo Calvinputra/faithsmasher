@@ -237,11 +237,12 @@ final class ParticipantRepository
         $statement = $this->db->prepare(
             'DELETE FROM session_participants WHERE session_id = :session_id AND participant_id = :participant_id'
         );
-
-        return $statement->execute([
+        $statement->execute([
             'session_id' => $sessionId,
             'participant_id' => $participantId,
         ]);
+
+        return $statement->rowCount() > 0;
     }
 
     public function unassignAllFromSession(int $sessionId): void
@@ -278,8 +279,48 @@ final class ParticipantRepository
     public function delete(int $id, int $userId): bool
     {
         $statement = $this->db->prepare('DELETE FROM participants WHERE id = :id AND user_id = :user_id');
+        $statement->execute(['id' => $id, 'user_id' => $userId]);
 
-        return $statement->execute(['id' => $id, 'user_id' => $userId]);
+        return $statement->rowCount() > 0;
+    }
+
+    public function updateInlineField(int $id, int $userId, string $field, ?string $value): bool
+    {
+        $columns = [
+            'rank' => '`rank`',
+            'gender' => 'gender',
+            'gms_source' => 'gms_source',
+        ];
+
+        if (!isset($columns[$field])) {
+            return false;
+        }
+
+        $statement = $this->db->prepare(
+            'UPDATE participants SET ' . $columns[$field] . ' = :value WHERE id = :id AND user_id = :user_id'
+        );
+        $statement->bindValue('id', $id, PDO::PARAM_INT);
+        $statement->bindValue('user_id', $userId, PDO::PARAM_INT);
+        $statement->bindValue('value', $value);
+        $statement->execute();
+
+        return $statement->rowCount() > 0;
+    }
+
+    public function countAvailableForSession(int $sessionId, int $userId): int
+    {
+        $statement = $this->db->prepare(
+            'SELECT COUNT(*)
+             FROM participants p
+             WHERE p.user_id = :user_id
+               AND NOT EXISTS (
+                   SELECT 1 FROM session_participants sp
+                   WHERE sp.participant_id = p.id AND sp.session_id = :session_id
+               )'
+        );
+        $statement->execute(['user_id' => $userId, 'session_id' => $sessionId]);
+
+        return (int) $statement->fetchColumn();
     }
 
     public function countByUser(int $userId): int

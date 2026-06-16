@@ -5,7 +5,7 @@
 {% block page_header %}
 <div class="min-w-0">
     <h1 class="page-title text-xl sm:text-2xl">Peserta Global</h1>
-    <p class="hidden text-xs text-navy-500 sm:block">Daftar peserta untuk semua session turnamen</p>
+    <p class="hidden text-xs text-navy-500 sm:block">Daftar peserta untuk semua session turnamen · klik Rank/Gender/GMS untuk edit cepat</p>
 </div>
 {% endblock %}
 
@@ -45,7 +45,7 @@
 </div>
 
 <div class="card overflow-x-auto">
-    <table class="w-full text-sm">
+    <table class="w-full text-sm participants-inline-table">
         <thead>
             <tr class="border-b border-border text-left text-navy-500">
                 <th class="pb-3 pr-4">Nama *</th>
@@ -58,19 +58,54 @@
         </thead>
         <tbody>
             {% for p in participants %}
-                <tr class="border-b border-border/60">
+                <tr class="border-b border-border/60" data-participant-row="{{ p.id }}">
                     <td class="py-3 pr-4 font-medium text-navy-900">{{ p.name }}</td>
-                    <td class="py-3 pr-4"><span class="rounded bg-gold-100 px-2 py-0.5 text-xs font-bold text-navy-800">{{ p.rank }}</span></td>
-                    <td class="py-3 pr-4 text-navy-600">{{ p.gender ? genders[p.gender]|default(p.gender) : '—' }}</td>
+                    <td class="py-3 pr-4">
+                        {% include 'components/participants/inline-field.twig' with {
+                            participantId: p.id,
+                            field: 'rank',
+                            label: 'rank',
+                            value: p.rank,
+                            display: p.rank,
+                            pillClass: 'inline-pill-rank'
+                        } %}
+                    </td>
+                    <td class="py-3 pr-4">
+                        {% include 'components/participants/inline-field.twig' with {
+                            participantId: p.id,
+                            field: 'gender',
+                            label: 'gender',
+                            value: p.gender|default(''),
+                            display: p.gender ? genders[p.gender]|default(p.gender) : '—',
+                            pillClass: p.gender == 'male' ? 'inline-pill-male' : (p.gender == 'female' ? 'inline-pill-female' : 'inline-pill-empty')
+                        } %}
+                    </td>
                     <td class="py-3 pr-4 text-navy-600">{{ p.phone|default('—') }}</td>
-                    <td class="py-3 pr-4 text-navy-600">{{ p.gmsSource|default('—') }}</td>
-                    <td class="py-3 space-x-2 whitespace-nowrap">
-                        <a href="/participants/{{ p.id }}/edit" class="text-navy-700 hover:underline">Edit</a>
-                        {% if currentUser.canDelete %}
-                            <form method="post" action="/participants/{{ p.id }}/delete" class="inline" onsubmit="return confirm('Hapus peserta dari daftar global?')">
-                                <button type="submit" class="text-red-600 hover:underline">Hapus</button>
-                            </form>
-                        {% endif %}
+                    <td class="py-3 pr-4">
+                        {% set gmsPill = p.gmsSource ? 'inline-pill-' ~ p.gmsSource|lower : 'inline-pill-empty' %}
+                        {% include 'components/participants/inline-field.twig' with {
+                            participantId: p.id,
+                            field: 'gms_source',
+                            label: 'GMS From',
+                            value: p.gmsSource|default(''),
+                            display: p.gmsSource|default('—'),
+                            pillClass: gmsPill
+                        } %}
+                    </td>
+                    <td class="py-3">
+                        <div class="icon-action-group">
+                            {% include 'components/ui/icon-action-edit.twig' with {
+                                href: '/participants/' ~ p.id ~ '/edit',
+                                label: 'Edit peserta'
+                            } %}
+                            {% if currentUser.canDelete %}
+                                {% include 'components/ui/icon-action-delete.twig' with {
+                                    action: '/participants/' ~ p.id ~ '/delete',
+                                    confirm: 'Hapus peserta dari daftar global?',
+                                    label: 'Hapus peserta'
+                                } %}
+                            {% endif %}
+                        </div>
                     </td>
                 </tr>
             {% else %}
@@ -87,4 +122,18 @@
         </tbody>
     </table>
 </div>
+
+<div id="inline-edit-menu" class="inline-edit-menu hidden" role="listbox" aria-label="Pilih nilai"></div>
+
+<script type="application/json" id="inline-edit-config">
+{{ {
+    rank: { options: ranks, allowClear: false },
+    gender: { options: { male: 'Male', female: 'Female' }, allowClear: true, clearLabel: '— Kosongkan' },
+    gms_source: { options: gmsSources, allowClear: true, clearLabel: '— Kosongkan' }
+}|json_encode|raw }}
+</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ asset('assets/js/participants-inline.js') }}"></script>
 {% endblock %}

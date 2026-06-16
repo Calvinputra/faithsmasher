@@ -48,7 +48,23 @@ document.addEventListener('DOMContentLoaded', () => {
         sessionDates = [];
     }
 
-    const sessionDateSet = new Set(sessionDates);
+    const sessionDateSet = new Set(
+        sessionDates.map((value) => String(value).slice(0, 10)),
+    );
+
+    const markSessionDays = (instance) => {
+        instance.calendarContainer
+            .querySelectorAll('.flatpickr-day:not(.flatpickr-disabled)')
+            .forEach((dayElem) => {
+                const date = dayElem.dateObj;
+                if (!(date instanceof Date)) {
+                    return;
+                }
+
+                const key = instance.formatDate(date, 'Y-m-d');
+                dayElem.classList.toggle('has-session', sessionDateSet.has(key));
+            });
+    };
 
     let picker;
 
@@ -66,20 +82,29 @@ document.addEventListener('DOMContentLoaded', () => {
             locale: { firstDayOfWeek: 1 },
             onReady(_selectedDates, _dateStr, instance) {
                 instance.calendarContainer.classList.add('fs-flatpickr', 'fs-flatpickr-filter');
+                markSessionDays(instance);
             },
-            onDayCreate(dObj, _dStr, fp, dayElem) {
-                try {
-                    const key = fp.formatDate(dObj, 'Y-m-d');
-                    if (sessionDateSet.has(key)) {
-                        dayElem.classList.add('has-session');
-                    }
-                } catch {
-                    // ignore invalid day nodes
+            onDayCreate(_selectedDates, _dateStr, instance, dayElem) {
+                const date = dayElem.dateObj;
+                if (!(date instanceof Date)) {
+                    return;
                 }
+
+                const key = instance.formatDate(date, 'Y-m-d');
+                if (sessionDateSet.has(key)) {
+                    dayElem.classList.add('has-session');
+                }
+            },
+            onMonthChange(_selectedDates, _dateStr, instance) {
+                markSessionDays(instance);
+            },
+            onYearChange(_selectedDates, _dateStr, instance) {
+                markSessionDays(instance);
             },
             onChange(selectedDates, _dateStr, instance) {
                 if (selectedDates.length === 0) {
                     hiddenInput.value = '';
+                    submitForm();
                     return;
                 }
 

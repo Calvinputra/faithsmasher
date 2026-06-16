@@ -208,7 +208,8 @@ final class SessionRepository
     public function delete(int $id, int $userId): bool
     {
         $statement = $this->db->prepare('DELETE FROM sessions WHERE id = :id AND user_id = :user_id');
+        $statement->execute(['id' => $id, 'user_id' => $userId]);
 
-        return $statement->execute(['id' => $id, 'user_id' => $userId]);
+        return $statement->rowCount() > 0;
     }
 }

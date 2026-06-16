@@ -143,7 +143,17 @@ final class GameRuleController extends BaseController
     {
         $this->assertCanDelete();
         $sessionId = (int) $args['sessionId'];
-        $this->rules->delete((int) $args['id'], $sessionId);
+        $this->requireSession($sessionId);
+        $ruleId = (int) $args['id'];
+
+        if (!$this->rules->delete($ruleId, $sessionId)) {
+            return $this->flashRedirect(
+                $response,
+                '/sessions/' . $sessionId . '/rules',
+                'Aturan tidak ditemukan atau sudah dihapus.',
+                FlashType::WARNING,
+            );
+        }
 
         return $this->flashRedirect(
             $response,

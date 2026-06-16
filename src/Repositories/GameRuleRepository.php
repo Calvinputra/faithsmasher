@@ -80,7 +80,8 @@ final class GameRuleRepository
     public function delete(int $id, int $sessionId): bool
     {
         $statement = $this->db->prepare('DELETE FROM game_rules WHERE id = :id AND session_id = :session_id');
+        $statement->execute(['id' => $id, 'session_id' => $sessionId]);
 
-        return $statement->execute(['id' => $id, 'session_id' => $sessionId]);
+        return $statement->rowCount() > 0;
     }
 }

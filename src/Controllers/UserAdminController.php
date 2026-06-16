@@ -46,7 +46,13 @@ final class UserAdminController
             return $this->flashRedirect($response, '/admin/users', 'Tidak bisa mengubah akun sendiri.', FlashType::WARNING);
         }
 
-        $this->users->updateStatus($userId, UserStatus::APPROVED);
+        if ($this->users->findById($userId) === null) {
+            return $this->flashRedirect($response, '/admin/users', 'User tidak ditemukan.', FlashType::WARNING);
+        }
+
+        if (!$this->users->updateStatus($userId, UserStatus::APPROVED)) {
+            return $this->flashRedirect($response, '/admin/users', 'Gagal menyetujui user.', FlashType::ERROR);
+        }
 
         return $this->flashRedirect(
             $response,
@@ -68,7 +74,13 @@ final class UserAdminController
             return $this->flashRedirect($response, '/admin/users', 'Tidak bisa mengubah akun sendiri.', FlashType::WARNING);
         }
 
-        $this->users->updateStatus($userId, UserStatus::REJECTED);
+        if ($this->users->findById($userId) === null) {
+            return $this->flashRedirect($response, '/admin/users', 'User tidak ditemukan.', FlashType::WARNING);
+        }
+
+        if (!$this->users->updateStatus($userId, UserStatus::REJECTED)) {
+            return $this->flashRedirect($response, '/admin/users', 'Gagal menolak user.', FlashType::ERROR);
+        }
 
         return $this->flashRedirect(
             $response,

@@ -122,7 +122,8 @@ final class UserRepository
         }
 
         $statement = $this->db()->prepare('UPDATE users SET status = :status WHERE id = :id');
+        $statement->execute(['id' => $id, 'status' => $status]);
 
-        return $statement->execute(['id' => $id, 'status' => $status]);
+        return $statement->rowCount() > 0;
     }
 }

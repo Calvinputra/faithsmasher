@@ -15,7 +15,7 @@
     <div class="app-bg"></div>
     {% block content %}{% endblock %}
     {% include 'components/ui/toast-container.twig' %}
-    <script src="/assets/js/app.js"></script>
-    <script src="/assets/js/toast.js"></script>
+    <script src="{{ asset('assets/js/app.js') }}"></script>
+    <script src="{{ asset('assets/js/toast.js') }}"></script>
 </body>
 </html>

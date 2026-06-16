@@ -7,7 +7,7 @@
 <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
     <div>
         <h1 class="text-2xl font-bold text-navy-900">Peserta Session</h1>
-        <p class="text-sm text-navy-600">{{ session.name }} — pilih dari daftar global ({{ globalCount }} tersedia)</p>
+        <p class="text-sm text-navy-600">{{ session.name }} — {{ availableCount|default(0) }} peserta global belum ditambahkan ke session ini</p>
     </div>
     <div class="flex flex-col gap-2 sm:flex-row">
         <a href="/participants" class="btn-ghost justify-center text-sm">Kelola Global</a>
@@ -45,11 +45,18 @@
                     <td class="py-3 pr-4"><span class="rounded bg-gold-100 px-2 py-0.5 text-xs font-bold text-navy-800">{{ p.rank }}</span></td>
                     <td class="py-3 pr-4 text-navy-600">{{ p.gender ? genders[p.gender]|default(p.gender) : '—' }}</td>
                     <td class="py-3 pr-4 text-navy-600">{{ p.phone|default('—') }}</td>
-                    <td class="py-3 space-x-2 whitespace-nowrap">
-                        <a href="/participants/{{ p.id }}/edit" class="text-navy-700 hover:underline">Edit</a>
-                        <form method="post" action="/sessions/{{ session.id }}/participants/{{ p.id }}/remove" class="inline" onsubmit="return confirm('Keluarkan peserta dari session ini?')">
-                            <button type="submit" class="text-red-600 hover:underline">Keluarkan</button>
-                        </form>
+                    <td class="py-3">
+                        <div class="icon-action-group">
+                            {% include 'components/ui/icon-action-edit.twig' with {
+                                href: '/participants/' ~ p.id ~ '/edit',
+                                label: 'Edit peserta'
+                            } %}
+                            {% include 'components/ui/icon-action-remove.twig' with {
+                                action: '/sessions/' ~ session.id ~ '/participants/' ~ p.id ~ '/remove',
+                                confirm: 'Keluarkan peserta dari session ini?',
+                                label: 'Keluarkan dari session'
+                            } %}
+                        </div>
                     </td>
                 </tr>
             {% else %}

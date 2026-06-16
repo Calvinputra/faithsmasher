@@ -9,6 +9,7 @@ use App\Services\AuthService;
 use App\Services\ParticipantBulkImportService;
 use App\Support\FlashType;
 use App\Support\Gender;
+use App\Support\GmsSource;
 use App\Support\Rank;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -37,8 +38,59 @@ final class GlobalParticipantController extends BaseController
             'participants' => $this->participants->allByUser($userId, $search),
             'rankCounts' => $this->participants->countByRankForUser($userId),
             'genders' => Gender::labels(),
+            'ranks' => Rank::options(),
+            'gmsSources' => GmsSource::options(),
             'search' => $search,
             'totalCount' => $this->participants->countByUser($userId),
+        ]);
+    }
+
+    public function inlineUpdate(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $userId = $this->userId();
+        $participantId = (int) $args['id'];
+        $participant = $this->participants->find($participantId, $userId);
+
+        if ($participant === null) {
+            return $this->json($response, ['ok' => false, 'error' => 'Peserta tidak ditemukan.'], 404);
+        }
+
+        $data = (array) $request->getParsedBody();
+        $field = (string) ($data['field'] ?? '');
+        $rawValue = array_key_exists('value', $data) ? trim((string) $data['value']) : null;
+
+        $normalized = $this->normalizeInlineValue($field, $rawValue);
+        if ($normalized === false) {
+            return $this->json($response, ['ok' => false, 'error' => 'Nilai tidak valid.'], 422);
+        }
+
+        $currentValue = match ($field) {
+            'rank' => $participant->rank,
+            'gender' => $participant->gender,
+            'gms_source' => $participant->gmsSource,
+            default => null,
+        };
+
+        if ($this->inlineValuesEqual($currentValue, $normalized)) {
+            return $this->json($response, [
+                'ok' => true,
+                'field' => $field,
+                'value' => $normalized ?? '',
+                'label' => $this->inlineLabel($field, $normalized),
+                'pillClass' => $this->inlinePillClass($field, $normalized),
+            ]);
+        }
+
+        if (!$this->participants->updateInlineField($participantId, $userId, $field, $normalized)) {
+            return $this->json($response, ['ok' => false, 'error' => 'Gagal menyimpan perubahan.'], 500);
+        }
+
+        return $this->json($response, [
+            'ok' => true,
+            'field' => $field,
+            'value' => $normalized ?? '',
+            'label' => $this->inlineLabel($field, $normalized),
+            'pillClass' => $this->inlinePillClass($field, $normalized),
         ]);
     }
 
@@ -51,6 +103,7 @@ final class GlobalParticipantController extends BaseController
             'participant' => null,
             'ranks' => Rank::options(),
             'genders' => Gender::labels(),
+            'gmsSources' => GmsSource::options(),
             'errors' => [],
             'old' => [],
         ]);
@@ -70,6 +123,7 @@ final class GlobalParticipantController extends BaseController
                 'participant' => null,
                 'ranks' => Rank::options(),
                 'genders' => Gender::labels(),
+                'gmsSources' => GmsSource::options(),
                 'errors' => $errors,
                 'old' => $data,
             ]);
@@ -81,7 +135,7 @@ final class GlobalParticipantController extends BaseController
             (string) $data['rank'],
             $this->nullableString($data['gender'] ?? null),
             $this->nullableString($data['phone'] ?? null),
-            $this->nullableString($data['gms_source'] ?? null),
+            GmsSource::normalize($this->nullableString($data['gms_source'] ?? null)),
         );
 
         return $this->flashRedirect(
@@ -97,7 +151,12 @@ final class GlobalParticipantController extends BaseController
         $participant = $this->participants->find((int) $args['id'], $this->userId());
 
         if ($participant === null) {
-            return $this->redirect($response, '/participants');
+            return $this->flashRedirect(
+                $response,
+                '/participants',
+                'Peserta tidak ditemukan.',
+                FlashType::WARNING,
+            );
         }
 
         /** @var Twig $view */
@@ -107,6 +166,7 @@ final class GlobalParticipantController extends BaseController
             'participant' => $participant,
             'ranks' => Rank::options(),
             'genders' => Gender::labels(),
+            'gmsSources' => GmsSource::options(),
             'errors' => [],
             'old' => [],
         ]);
@@ -119,7 +179,12 @@ final class GlobalParticipantController extends BaseController
         $participant = $this->participants->find($participantId, $userId);
 
         if ($participant === null) {
-            return $this->redirect($response, '/participants');
+            return $this->flashRedirect(
+                $response,
+                '/participants',
+                'Peserta tidak ditemukan.',
+                FlashType::WARNING,
+            );
         }
 
         $data = (array) $request->getParsedBody();
@@ -133,6 +198,7 @@ final class GlobalParticipantController extends BaseController
                 'participant' => $participant,
                 'ranks' => Rank::options(),
                 'genders' => Gender::labels(),
+                'gmsSources' => GmsSource::options(),
                 'errors' => $errors,
                 'old' => $data,
             ]);
@@ -145,7 +211,7 @@ final class GlobalParticipantController extends BaseController
             (string) $data['rank'],
             $this->nullableString($data['gender'] ?? null),
             $this->nullableString($data['phone'] ?? null),
-            $this->nullableString($data['gms_source'] ?? null),
+            GmsSource::normalize($this->nullableString($data['gms_source'] ?? null)),
         );
 
         return $this->flashRedirect(
@@ -159,7 +225,15 @@ final class GlobalParticipantController extends BaseController
     public function destroy(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
     {
         $this->assertCanDelete();
-        $this->participants->delete((int) $args['id'], $this->userId());
+
+        if (!$this->participants->delete((int) $args['id'], $this->userId())) {
+            return $this->flashRedirect(
+                $response,
+                '/participants',
+                'Peserta tidak ditemukan atau sudah dihapus.',
+                FlashType::WARNING,
+            );
+        }
 
         return $this->flashRedirect(
             $response,
@@ -246,7 +320,65 @@ final class GlobalParticipantController extends BaseController
             $errors['gender'] = 'Gender tidak valid.';
         }
 
+        $gmsSource = GmsSource::normalize($this->nullableString($data['gms_source'] ?? null));
+        if ($this->nullableString($data['gms_source'] ?? null) !== null && $gmsSource === null) {
+            $errors['gms_source'] = 'GMS From tidak valid.';
+        }
+
         return $errors;
+    }
+
+    /** @return string|null|false false = invalid */
+    private function normalizeInlineValue(string $field, ?string $value): string|null|false
+    {
+        if ($field === 'rank') {
+            $rank = Rank::normalize((string) $value);
+
+            return $rank ?? false;
+        }
+
+        if ($field === 'gender') {
+            if ($value === null || $value === '') {
+                return null;
+            }
+
+            return in_array($value, ['male', 'female'], true) ? $value : false;
+        }
+
+        if ($field === 'gms_source') {
+            if ($value === null || $value === '') {
+                return null;
+            }
+
+            return GmsSource::normalize($value) ?? false;
+        }
+
+        return false;
+    }
+
+    private function inlineLabel(string $field, ?string $value): string
+    {
+        return match ($field) {
+            'rank' => $value ?? '—',
+            'gender' => Gender::label($value),
+            'gms_source' => $value ?? '—',
+            default => $value ?? '—',
+        };
+    }
+
+    private function inlinePillClass(string $field, ?string $value): string
+    {
+        return match ($field) {
+            'rank' => Rank::pillClass($value ?? ''),
+            'gender' => Gender::pillClass($value),
+            'gms_source' => GmsSource::pillClass($value),
+            default => 'inline-pill-empty',
+        };
+    }
+
+    private function inlineValuesEqual(?string $current, ?string $next): bool
+    {
+        return ($current ?? '') === ($next ?? '');
     }
 
     private function nullableString(mixed $value): ?string

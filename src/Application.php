@@ -47,13 +47,9 @@ final class Application
             'auto_reload' => $config['debug'],
         ]);
 
-        $twig->getEnvironment()->addGlobal('app', $config);
-
-        $basePath = $this->basePath;
-        $twig->getEnvironment()->addFunction(new \Twig\TwigFunction(
-            'asset',
-            static fn (string $path): string => \App\Support\AssetVersion::url($basePath, $path),
-        ));
+        $environment = $twig->getEnvironment();
+        $environment->addGlobal('app', $config);
+        $environment->addExtension(new \App\Twig\AssetExtension($this->basePath));
 
         $auth = new \App\Services\AuthService();
         $twig->getEnvironment()->addGlobal('currentUser', $auth->user());
