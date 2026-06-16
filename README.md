@@ -1,38 +1,87 @@
 # Faith Smasher
 
-Project PHP sederhana dengan struktur modern.
+PHP application dengan struktur MVC modern, siap dikembangkan dan di-deploy ke Hostinger.
 
-## Persyaratan
+## Tech Stack
 
-- PHP 8.2+
-- Composer
+| Layer | Library |
+|---|---|
+| Routing | [Slim Framework 4](https://www.slimframework.com/) |
+| Templates | [Twig 3](https://twig.symfony.com/) |
+| Config | [vlucas/phpdotenv](https://github.com/vlucas/phpdotenv) |
+| Logging | [Monolog 3](https://github.com/Seldaek/monolog) |
+| UI | [Tailwind CSS 4](https://tailwindcss.com/) — tanpa Bootstrap |
+
+## Struktur Project
+
+```
+faithsmasher/
+├── config/              # Konfigurasi aplikasi
+├── public/              # Document root (index.php, .htaccess, assets)
+│   ├── assets/
+│   └── index.php
+├── resources/views/     # Template Twig
+│   ├── components/
+│   ├── layouts/
+│   └── pages/
+├── routes/              # Definisi route
+├── src/
+│   └── Controllers/     # Controller layer
+└── storage/             # Log & cache template
+```
 
 ## Instalasi
 
 ```bash
 composer install
+cp .env.example .env
 ```
 
-## Menjalankan Development Server
+## Development
 
 ```bash
-composer start
+composer install
+npm install
+npm run dev        # watch Tailwind CSS
+composer start     # PHP server di terminal lain
 ```
 
-Atau:
+Build CSS untuk production / deploy:
 
 ```bash
-php -S localhost:8000 -t public
+npm run build
 ```
 
-Buka [http://localhost:8000](http://localhost:8000) di browser.
+Buka [http://localhost:8000](http://localhost:8000)
 
-## Struktur Folder
+## Menambah Route Baru
 
+1. Buat controller di `src/Controllers/`
+2. Daftarkan route di `routes/web.php`
+3. Buat view di `resources/views/pages/`
+
+Contoh:
+
+```php
+// routes/web.php
+$app->get('/about', [$aboutController, 'index']);
 ```
-faithsmasher/
-├── public/          # Entry point (index.php)
-├── src/             # Kode aplikasi (PSR-4)
-├── composer.json
-└── README.md
+
+## Deploy Hostinger
+
+1. Set **branch** ke `master`
+2. Arahkan **document root** domain ke folder `public/`
+3. Atau deploy seluruh repo lalu ubah document root di hPanel
+
+Webhook auto-deploy: push ke branch `master` akan trigger deploy otomatis.
+
+## Environment
+
+Salin `.env.example` ke `.env` dan sesuaikan:
+
+```env
+APP_NAME="Faith Smasher"
+APP_ENV=production
+APP_DEBUG=false
+APP_URL=https://domain-kamu.com
 ```

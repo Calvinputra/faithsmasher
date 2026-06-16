@@ -4,66 +4,97 @@ declare(strict_types=1);
 
 namespace App;
 
+use Dotenv\Dotenv;
+use Monolog\Handler\StreamHandler;
+use Monolog\Level;
+use Monolog\Logger;
+use Slim\App;
+use Slim\Exception\HttpNotFoundException;
+use Slim\Factory\AppFactory;
+use Slim\Psr7\Response;
+use Slim\Views\Twig;
+use Slim\Views\TwigMiddleware;
+
 final class Application
 {
-    public function run(): void
-    {
-        header('Content-Type: text/html; charset=utf-8');
+    private string $basePath;
 
-        echo <<<HTML
-        <!DOCTYPE html>
-        <html lang="id">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Faith Smasher</title>
-            <style>
-                * { box-sizing: border-box; margin: 0; padding: 0; }
-                body {
-                    min-height: 100vh;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-family: system-ui, -apple-system, sans-serif;
-                    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-                    color: #f8fafc;
-                }
-                .card {
-                    text-align: center;
-                    padding: 3rem 2.5rem;
-                    border-radius: 1rem;
-                    background: rgba(255, 255, 255, 0.05);
-                    border: 1px solid rgba(255, 255, 255, 0.1);
-                    backdrop-filter: blur(10px);
-                    max-width: 480px;
-                }
-                h1 { font-size: 2rem; margin-bottom: 0.75rem; }
-                p { color: #94a3b8; line-height: 1.6; }
-                .badge {
-                    display: inline-block;
-                    margin-top: 1.5rem;
-                    padding: 0.35rem 0.85rem;
-                    border-radius: 999px;
-                    background: #22c55e;
-                    color: #052e16;
-                    font-size: 0.875rem;
-                    font-weight: 600;
-                }
-            </style>
-        </head>
-        <body>
-            <main class="card">
-                <h1>Faith Smasher</h1>
-                <p>Project PHP berhasil dibuat dan siap dikembangkan.</p>
-                <span class="badge">PHP {$this->phpVersion()}</span>
-            </main>
-        </body>
-        </html>
-        HTML;
+    public function __construct(?string $basePath = null)
+    {
+        $this->basePath = $basePath ?? dirname(__DIR__);
     }
 
-    private function phpVersion(): string
+    public function run(): void
     {
-        return PHP_VERSION;
+        $this->loadEnvironment();
+        $this->ensureStorageDirectories();
+        $this->createApp()->run();
+    }
+
+    private function createApp(): App
+    {
+        $config = require $this->basePath . '/config/app.php';
+
+        $logger = new Logger('app');
+        $logger->pushHandler(new StreamHandler(
+            $this->basePath . '/storage/logs/app.log',
+            $config['debug'] ? Level::Debug : Level::Error
+        ));
+
+        $twig = Twig::create($this->basePath . '/resources/views', [
+            'cache' => $config['debug'] ? false : $this->basePath . '/storage/cache/views',
+            'auto_reload' => $config['debug'],
+        ]);
+
+        $twig->getEnvironment()->addGlobal('app', $config);
+
+        $app = AppFactory::create();
+        $app->add(TwigMiddleware::create($app, $twig));
+        $app->addBodyParsingMiddleware();
+        $app->addRoutingMiddleware();
+
+        $errorMiddleware = $app->addErrorMiddleware(
+            $config['debug'],
+            true,
+            true,
+            $logger
+        );
+
+        $errorMiddleware->setErrorHandler(
+            HttpNotFoundException::class,
+            function ($request, $exception, $displayErrorDetails) use ($twig) {
+                $response = new Response();
+
+                return $twig->render($response->withStatus(404), 'pages/errors/404.twig');
+            }
+        );
+
+        $registerRoutes = require $this->basePath . '/routes/web.php';
+        $registerRoutes($app);
+
+        return $app;
+    }
+
+    private function loadEnvironment(): void
+    {
+        $envFile = $this->basePath . '/.env';
+
+        if (is_file($envFile)) {
+            Dotenv::createImmutable($this->basePath)->safeLoad();
+        }
+    }
+
+    private function ensureStorageDirectories(): void
+    {
+        $directories = [
+            $this->basePath . '/storage/logs',
+            $this->basePath . '/storage/cache/views',
+        ];
+
+        foreach ($directories as $directory) {
+            if (!is_dir($directory)) {
+                mkdir($directory, 0755, true);
+            }
+        }
     }
 }

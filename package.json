@@ -1,0 +1,12 @@
+{
+  "name": "faithsmasher",
+  "private": true,
+  "scripts": {
+    "dev": "tailwindcss -i ./resources/css/app.css -o ./public/assets/css/app.css --watch",
+    "build": "tailwindcss -i ./resources/css/app.css -o ./public/assets/css/app.css --minify"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.1.11",
+    "tailwindcss": "^4.1.11"
+  }
+}

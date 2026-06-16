@@ -1,6 +1,11 @@
 /vendor/
+/node_modules/
 /.env
 /.idea/
 /.vscode/
 *.log
 .DS_Store
+/storage/cache/*
+!/storage/cache/.gitkeep
+/storage/logs/*
+!/storage/logs/.gitkeep
