@@ -1,0 +1,10 @@
+RewriteEngine On
+
+# Arahkan file statis (css, js, gambar) ke folder public/
+RewriteCond %{DOCUMENT_ROOT}/public%{REQUEST_URI} -f
+RewriteRule ^(.*)$ public/$1 [L]
+
+# Semua request lain ke front controller
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ public/index.php [L]
