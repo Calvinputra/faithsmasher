@@ -48,23 +48,22 @@ final class MatchGeneratorService
             $rotated = $this->rotatePlayers($players, $bagan - 1);
             
             $pool = $rotated;
-            $missing = (4 - (count($pool) % 4)) % 4;
-            if ($missing > 0) {
-                for ($i = 0; $i < $missing; $i++) {
-                    $pool[] = $rotated[$i % count($rotated)];
-                }
-            }
-
+            
             $pairs = $this->pairPlayers($pool, $mode);
-            $matchesCount = count($pairs) / 2;
-            $matchesPerCourt = max(1, (int) ceil($matchesCount / $courtCount));
+            $matchesCount = (int) ceil(count($pairs) / 2);
 
             $pairIndex = 0;
             foreach ($pairs as [$p1, $p2]) {
-                $status = $p2 === null ? 'bye' : 'pending';
+                // Group every 2 pairs into the same match order (Team 1 vs Team 2)
                 $matchOrderInBagan = (int) floor($pairIndex / 2) + 1;
-                $currentGlobalMatchOrder = $globalMatchOrder + $matchOrderInBagan - 1;
-                $courtNumber = (int) floor(($matchOrderInBagan - 1) / $matchesPerCourt) + 1;
+                $currentGlobalMatchOrder = (int) ($globalMatchOrder + $matchOrderInBagan - 1);
+                
+                // Distribute Matches across available courts (round-robin style)
+                $courtIndex = ($matchOrderInBagan - 1) % $courtCount;
+                $courtNumber = $courtIndex + 1;
+                
+                $hasOpponentTeam = ($pairIndex % 2 === 0 && isset($pairs[$pairIndex + 1])) || ($pairIndex % 2 === 1);
+                $status = ($p2 === null || !$hasOpponentTeam) ? 'bye' : 'pending';
 
                 $this->matches->create(
                     $sessionId,
@@ -132,24 +131,7 @@ final class MatchGeneratorService
             return $rankCompare !== 0 ? $rankCompare : strcmp($a->name, $b->name);
         });
 
-        /** @var array<string, list<Participant>> $groups */
-        $groups = [];
-
-        foreach ($players as $player) {
-            $groups[$player->rank][] = $player;
-        }
-
-        $pairs = [];
-
-        foreach (Rank::LEVELS as $rank) {
-            if (!isset($groups[$rank])) {
-                continue;
-            }
-
-            $pairs = array_merge($pairs, $this->pairSequential($groups[$rank]));
-        }
-
-        return $pairs;
+        return $this->pairSequential($players);
     }
 
     /**
@@ -164,36 +146,7 @@ final class MatchGeneratorService
             return $genderCompare !== 0 ? $genderCompare : strcmp($a->name, $b->name);
         });
 
-        /** @var array<string, list<Participant>> $groups */
-        $groups = [];
-
-        foreach ($players as $player) {
-            $key = $player->gender === null || $player->gender === ''
-                ? ParticipantFilter::UNSET
-                : $player->gender;
-            $groups[$key][] = $player;
-        }
-
-        $order = ['male', 'female', 'other', ParticipantFilter::UNSET];
-        $pairs = [];
-
-        foreach ($order as $key) {
-            if (!isset($groups[$key])) {
-                continue;
-            }
-
-            $pairs = array_merge($pairs, $this->pairSequential($groups[$key]));
-        }
-
-        foreach ($groups as $key => $group) {
-            if (in_array($key, $order, true)) {
-                continue;
-            }
-
-            $pairs = array_merge($pairs, $this->pairSequential($group));
-        }
-
-        return $pairs;
+        return $this->pairSequential($players);
     }
 
     /**

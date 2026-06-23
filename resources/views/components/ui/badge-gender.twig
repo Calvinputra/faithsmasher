@@ -1,0 +1,7 @@
+{% if gender %}
+    <span class="inline-pill {{ gender|lower == 'male' ? 'inline-pill-male' : (gender|lower == 'female' ? 'inline-pill-female' : 'inline-pill-empty') }} {{ class|default('') }}">
+        {{ genders[gender]|default(gender|capitalize) }}
+    </span>
+{% else %}
+    <span class="text-navy-400 {{ class|default('') }}">—</span>
+{% endif %}

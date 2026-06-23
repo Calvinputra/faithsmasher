@@ -62,30 +62,24 @@
                     {% for row in preview %}
                         <tr class="border-b border-border/60">
                             <td class="px-4 py-2 font-medium text-navy-900">
-                                {{ row.name }}
-                                <div class="mt-0.5 text-xs text-navy-500 sm:hidden">
-                                    {% if row.gender|default('') %}{{ genders[row.gender]|default(row.gender) }}{% endif %}
-                                    {% if row.phone|default('') %} · {{ row.phone }}{% endif %}
-                                    {% if row.gms_source|default('') %} · {{ row.gms_source }}{% endif %}
-                                </div>
+                                {% include 'components/participants/cell-name.twig' with {
+                                    name: row.name,
+                                    gender: row.gender,
+                                    phone: row.phone,
+                                    source: row.gms_source,
+                                    genders: genders,
+                                    mobileMargin: 'mt-0.5'
+                                } %}
                             </td>
-                            <td class="px-4 py-2"><span class="rounded bg-gold-100 px-2 py-0.5 text-xs font-bold">{{ row.rank }}</span></td>
+                            <td class="px-4 py-2">
+                                {% include 'components/ui/badge-rank.twig' with { rank: row.rank } %}
+                            </td>
                             <td class="col-hide-sm px-4 py-2">
-                                {% if row.gender|default('') %}
-                                    <span class="inline-pill {{ row.gender == 'male' ? 'inline-pill-male' : (row.gender == 'female' ? 'inline-pill-female' : 'inline-pill-empty') }}">
-                                        {{ genders[row.gender]|default(row.gender) }}
-                                    </span>
-                                {% else %}
-                                    <span class="text-navy-400">—</span>
-                                {% endif %}
+                                {% include 'components/ui/badge-gender.twig' with { gender: row.gender, genders: genders } %}
                             </td>
                             <td class="col-hide-md px-4 py-2 text-navy-600">{{ row.phone|default('—') }}</td>
                             <td class="col-hide-sm px-4 py-2">
-                                {% if row.gms_source|default('') %}
-                                    <span class="inline-pill inline-pill-{{ row.gms_source|lower }}">{{ row.gms_source }}</span>
-                                {% else %}
-                                    <span class="text-navy-400">—</span>
-                                {% endif %}
+                                {% include 'components/ui/badge-gms.twig' with { source: row.gms_source } %}
                             </td>
                         </tr>
                     {% endfor %}

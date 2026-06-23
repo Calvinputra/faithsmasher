@@ -1,0 +1,5 @@
+{% if rank %}
+    <span class="inline-pill-rank {{ class|default('') }}">{{ rank }}</span>
+{% else %}
+    <span class="text-navy-400 {{ class|default('') }}">—</span>
+{% endif %}

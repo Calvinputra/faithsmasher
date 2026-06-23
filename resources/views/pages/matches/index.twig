@@ -23,25 +23,95 @@
         baganSettings: baganSettings,
         pairingModes: pairingModes
     } %}
-
-    <article class="card">
-        <h2 class="font-semibold text-navy-900">Preview Bagan</h2>
-        <p class="mt-2 text-sm text-navy-600">Lihat tabel bagan: pemain, lapangan, urutan main.</p>
-        <a href="/sessions/{{ session.id }}/matches/preview" class="btn-secondary mt-4 inline-flex">Buka Preview</a>
-    </article>
-    <article class="card">
-        <h2 class="font-semibold text-navy-900">Manual Setup</h2>
-        <p class="mt-2 text-sm text-navy-600">Drag & drop peserta ke slot match setelah generate.</p>
-        <a href="/sessions/{{ session.id }}/matches/manual" class="btn-secondary mt-4 inline-flex">Manual Setup</a>
-    </article>
-    <article class="card">
-        <h2 class="font-semibold text-navy-900">Player Counter</h2>
-        <p class="mt-2 text-sm text-navy-600">Cek berapa kali setiap pemain main di semua bagan.</p>
-        <a href="/sessions/{{ session.id }}/matches/counter" class="btn-secondary mt-4 inline-flex">View Counter</a>
-    </article>
 </div>
+{% if matches is not empty %}
+    <details class="group mt-6 rounded-2xl border border-navy-100 bg-white shadow-sm" open>
+        <summary class="flex cursor-pointer items-center justify-between p-5 font-bold text-navy-900 transition-colors hover:bg-navy-50/50">
+            <div class="flex items-center gap-2">
+                <i class="ri-table-line text-navy-500"></i>
+                Preview & Manual Setup Bagan
+            </div>
+            <div class="flex items-center gap-3">
+                <button type="submit" form="manual-form" class="btn-primary flex items-center py-1.5 px-3 text-xs shadow-sm ring-1 ring-navy-200" onclick="event.stopPropagation()">
+                    <i class="ri-save-line mr-1.5"></i> Simpan Perubahan
+                </button>
+                <div class="flex h-6 w-6 items-center justify-center rounded-full bg-navy-100 text-navy-500 transition-transform group-open:rotate-180">
+                    <i class="ri-arrow-down-s-line"></i>
+                </div>
+            </div>
+        </summary>
+        <div class="border-t border-navy-50 p-5 sm:p-6 bg-navy-50/30">
+            <div class="bagan-share-actions card mb-6 border-navy-100 shadow-sm">
+                <div class="bagan-share-actions-row">
+                    <button type="button" id="bagan-download-btn" class="btn-secondary bagan-share-btn">
+                        {% include 'components/ui/icon.twig' with { name: 'ri-download-2-line', size: 'sm' } %}
+                        Unduh Gambar
+                    </button>
+                    {% if shareToken %}
+                        <div class="bagan-share-link-wrap">
+                            <label for="bagan-share-url" class="sr-only">Link share bagan</label>
+                            <input
+                                type="text"
+                                id="bagan-share-url"
+                                class="bagan-share-link-input"
+                                value="{{ app.url }}/share/bagan/{{ shareToken }}"
+                                readonly
+                            >
+                            <button type="button" id="bagan-copy-link-btn" class="btn-primary bagan-share-btn">
+                                {% include 'components/ui/icon.twig' with { name: 'ri-link', size: 'sm' } %}
+                                Salin Link Share
+                            </button>
+                            <a
+                                href="{{ app.url }}/share/bagan/{{ shareToken }}"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="btn-secondary bagan-share-btn"
+                            >
+                                {% include 'components/ui/icon.twig' with { name: 'ri-external-link-line', size: 'sm' } %}
+                                Buka Link
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+                <p class="bagan-share-hint">Link share hanya menampilkan bagan (tanpa login & sidebar).</p>
+            </div>
+
+            <form id="manual-form" method="post" action="/sessions/{{ session.id }}/matches/manual">
+                <input type="hidden" name="pairings" id="pairings-input">
+                <div
+                    id="bagan-export-root"
+                    class="bagan-export-root bg-white shadow-sm ring-1 ring-navy-100 rounded-xl overflow-hidden"
+                    data-filename="{{ exportFilename }}"
+                >
+                    {% include 'components/matches/bagan-export-header.twig' %}
+                    {% include 'components/matches/bagan-sheets.twig' %}
+                </div>
+            </form>
+        </div>
+    </details>
+{% endif %}
+
+<article class="card mt-6 shadow-sm border border-navy-100">
+    <div class="flex items-start gap-3">
+        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-navy-50 text-navy-600">
+            <i class="ri-bar-chart-grouped-line text-lg"></i>
+        </div>
+        <div>
+            <h2 class="font-bold text-navy-900">Player Counter</h2>
+            <p class="mt-1 text-sm text-navy-600">Cek berapa kali setiap pemain main di semua bagan secara keseluruhan.</p>
+            <a href="/sessions/{{ session.id }}/matches/counter" class="btn-secondary mt-4 inline-flex shadow-sm">
+                <i class="ri-eye-line mr-1.5"></i> View Counter
+            </a>
+        </div>
+    </div>
+</article>
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
 <script src="{{ asset('assets/js/bagan-setup.js') }}" defer></script>
+<script src="{{ asset('assets/js/bagan-share.js') }}" defer></script>
+<script src="{{ asset('assets/js/bracket-manual.js') }}" defer></script>
+<script src="{{ asset('assets/js/bagan-checklist.js') }}" defer></script>
 {% endblock %}

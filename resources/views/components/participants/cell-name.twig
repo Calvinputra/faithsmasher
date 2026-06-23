@@ -1,0 +1,6 @@
+{{ name }}
+<div class="{{ mobileMargin|default('mt-1') }} text-xs text-navy-500 sm:hidden">
+    {% if gender %}{{ genders[gender]|default(gender|capitalize) }}{% endif %}
+    {% if phone %} {% if gender %}·{% endif %} {{ phone }}{% endif %}
+    {% if source %} {% if gender or phone %}·{% endif %} {{ source|upper }}{% endif %}
+</div>

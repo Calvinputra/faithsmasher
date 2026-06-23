@@ -120,8 +120,19 @@
                     <p class="text-xs text-navy-500 mt-0.5">Tiap bagan akan memainkan ≈ {{ (participantCount / 2)|round(0, 'ceil') }} match</p>
                 </div>
             </div>
-            <button type="submit" class="btn-primary w-full shadow-md sm:w-auto sm:px-8" {% if participantCount < 2 %}disabled{% endif %}>
-                <i class="ri-flashlight-fill mr-1.5"></i> Generate Bagan
+            <button 
+                type="submit" 
+                class="btn-primary w-full shadow-md sm:w-auto sm:px-8" 
+                {% if participantCount < 2 %}disabled{% endif %}
+                {% if matchCount|default(0) > 0 %}
+                    onclick="return confirm('Apakah Anda yakin ingin melakukan generate ulang?\n\nSemua data bagan dan susunan Manual Setup sebelumnya akan ditimpa secara permanen!')"
+                {% endif %}
+            >
+                {% if matchCount|default(0) > 0 %}
+                    <i class="ri-refresh-line mr-1.5"></i> Generate Ulang
+                {% else %}
+                    <i class="ri-flashlight-fill mr-1.5"></i> Generate Bagan
+                {% endif %}
             </button>
         </div>
     </form>

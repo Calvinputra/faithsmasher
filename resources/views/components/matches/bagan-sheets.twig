@@ -11,9 +11,10 @@
                 <span class="bagan-preview-mode">{{ pairingModes[baganMode]|default(baganMode) }}</span>
             </header>
             <div class="overflow-x-auto">
-                <table class="bagan-preview-table w-full text-sm">
+                <table class="bagan-preview-table bagan-manual-table w-full text-sm">
                     <thead>
                         <tr>
+                            <th class="w-10 text-center"><i class="ri-check-line text-navy-400"></i></th>
                             <th>Group</th>
                             <th>Pemain 1</th>
                             <th>Pemain 2</th>
@@ -22,42 +23,44 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% set pCounts = {} %}
-                        {% for row in baganMatches %}
-                            {% set m = row.match %}
-                            {% if m.participant1Id %}
-                                {% set k = m.participant1Id ~ '' %}
-                                {% set pCounts = pCounts|merge({ (k): (pCounts[k]|default(0)) + 1 }) %}
-                            {% endif %}
-                            {% if m.participant2Id %}
-                                {% set k = m.participant2Id ~ '' %}
-                                {% set pCounts = pCounts|merge({ (k): (pCounts[k]|default(0)) + 1 }) %}
-                            {% endif %}
-                        {% endfor %}
-
                         {% for row in baganMatches %}
                             {% set m = row.match %}
                             {% set matchIndex = loop.index0 // 2 %}
                             {% set bgClass = matchIndex % 2 == 1 ? 'bg-navy-50/40' : 'bg-white' %}
                             
-                            <tr class="{{ bgClass }}{% if m.status == 'bye' %} bagan-row-bye{% endif %}">
-                                <td>Group {{ loop.index }}</td>
-                                <td class="font-medium text-navy-900">
-                                    {{ row.p1 ? row.p1.name : '—' }}
-                                    {% if row.p1 %}<span class="bagan-meta">({{ row.p1.rank }})</span>{% endif %}
-                                    {% if m.participant1Id and pCounts[m.participant1Id ~ '']|default(1) > 1 %}
-                                        <span class="inline-block ml-1 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-800">Double Main</span>
-                                    {% endif %}
+                            <tr data-match-id="{{ m.id }}" class="{{ bgClass }} transition-opacity duration-200{% if m.status == 'bye' %} bagan-row-bye{% endif %}">
+                                <td class="text-center">
+                                    <input type="checkbox" class="match-checklist-cb h-4 w-4 rounded border-navy-300 text-gold-600 focus:ring-gold-500 cursor-pointer" data-match-id="{{ m.id }}">
                                 </td>
-                                <td class="font-medium text-navy-900">
-                                    {{ row.p2 ? row.p2.name : (m.status == 'bye' ? 'BYE' : '—') }}
-                                    {% if row.p2 %}<span class="bagan-meta">({{ row.p2.rank }})</span>{% endif %}
-                                    {% if m.participant2Id and pCounts[m.participant2Id ~ '']|default(1) > 1 %}
-                                        <span class="inline-block ml-1 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-800">Double Main</span>
-                                    {% endif %}
+                                <td class="bagan-manual-group">Group {{ loop.index }}</td>
+                                <td>
+                                    <div class="drop-slot" data-slot="p1" data-match="{{ m.id }}">
+                                        {% if row.p1 %}
+                                            <div class="player-chip" data-id="{{ m.participant1Id }}">
+                                                <span class="player-chip-label">{{ row.p1.name }} <span class="bagan-meta">({{ row.p1.rank }})</span></span>
+                                                <span class="match-count hidden" aria-hidden="true"></span>
+                                            </div>
+                                        {% else %}
+                                            <div class="text-navy-400 font-medium">—</div>
+                                        {% endif %}
+                                    </div>
                                 </td>
-                                <td>Lapangan {{ m.courtNumber|default('—') }}</td>
-                                <td><span class="bagan-order-badge">{{ m.matchOrder }}</span></td>
+                                <td>
+                                    <div class="drop-slot" data-slot="p2" data-match="{{ m.id }}">
+                                        {% if row.p2 %}
+                                            <div class="player-chip" data-id="{{ m.participant2Id }}">
+                                                <span class="player-chip-label">{{ row.p2.name }} <span class="bagan-meta">({{ row.p2.rank }})</span></span>
+                                                <span class="match-count hidden" aria-hidden="true"></span>
+                                            </div>
+                                        {% elseif m.status == 'bye' %}
+                                            <span class="drop-slot-bye font-bold text-navy-400">BYE</span>
+                                        {% else %}
+                                            <div class="text-navy-400 font-medium">—</div>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td class="bagan-manual-static">Lapangan {{ m.courtNumber|default('—') }}</td>
+                                <td class="bagan-manual-static"><span class="bagan-order-badge">{{ m.matchOrder }}</span></td>
                             </tr>
                         {% endfor %}
                     </tbody>

@@ -49,13 +49,14 @@
         <tbody>
             {% for p in participants %}
                 <tr class="border-b border-border/60" data-participant-row="{{ p.id }}">
-                    <td class="py-3 pr-4">
-                        <div class="font-medium text-navy-900">{{ p.name }}</div>
-                        <div class="mt-1 text-xs text-navy-500 sm:hidden">
-                            {% if p.gender %}{{ genders[p.gender]|default(p.gender) }}{% endif %}
-                            {% if p.phone %} · {{ p.phone }}{% endif %}
-                            {% if p.gmsSource %} · {{ p.gmsSource }}{% endif %}
-                        </div>
+                    <td class="py-3 pr-4 font-medium text-navy-900">
+                        {% include 'components/participants/cell-name.twig' with {
+                            name: p.name,
+                            gender: p.gender,
+                            phone: p.phone,
+                            source: p.gmsSource,
+                            genders: genders
+                        } %}
                         <div class="mt-1 md:hidden">
                             {{ audit.render(p.createdByName, p.createdAt, p.updatedByName, p.updatedAt, true) }}
                         </div>

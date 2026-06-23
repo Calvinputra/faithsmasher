@@ -1,9 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const pool = document.getElementById('player-pool');
     const form = document.getElementById('manual-form');
     const pairingsInput = document.getElementById('pairings-input');
 
-    if (!pool || !form || typeof Sortable === 'undefined') {
+    if (!form || typeof Sortable === 'undefined') {
         return;
     }
 
@@ -15,79 +14,52 @@ document.addEventListener('DOMContentLoaded', () => {
             animation: 150,
             draggable: '.player-chip',
             onAdd: (evt) => {
-                removePlaceholder(slot);
-                enforceSingleChip(evt);
+                swapChips(evt);
             },
-            onRemove: () => {
-                ensurePlaceholder(slot);
-            },
-            onUpdate: enforceSingleChip,
         });
     });
 
-    new Sortable(pool, {
-        group: 'players',
-        animation: 150,
-        sort: true,
-        draggable: '.player-chip',
-    });
+    function swapChips(evt) {
+        const newSlot = evt.to;
+        const oldSlot = evt.from;
+        const draggedChip = evt.item;
 
-    function removePlaceholder(slot) {
-        slot.querySelector('.drop-slot-placeholder')?.remove();
-    }
+        // Find existing chip in the new slot that isn't the one we just dropped
+        const chips = Array.from(newSlot.querySelectorAll('.player-chip'));
+        const existingChip = chips.find(c => c !== draggedChip);
 
-    function ensurePlaceholder(slot) {
-        if (slot.querySelector('.player-chip') || slot.querySelector('.drop-slot-bye')) {
-            return;
+        if (existingChip && oldSlot) {
+            oldSlot.appendChild(existingChip);
         }
 
-        if (!slot.querySelector('.drop-slot-placeholder')) {
-            const placeholder = document.createElement('span');
-            placeholder.className = 'drop-slot-placeholder';
-            placeholder.textContent = 'Geser pemain…';
-            slot.appendChild(placeholder);
-        }
-    }
-
-    function enforceSingleChip(evt) {
-        const slot = evt.to;
-        const chips = slot.querySelectorAll('.player-chip');
-
-        if (chips.length > 1) {
-            const extra = chips[0];
-            pool.appendChild(extra);
-        }
-
-        slots.forEach((dropSlot) => ensurePlaceholder(dropSlot));
         updateWarnings();
     }
 
     function updateWarnings() {
-        const counts = {};
+        document.querySelectorAll('.bagan-preview-section').forEach((section) => {
+            const counts = {};
 
-        document.querySelectorAll('.drop-slot .player-chip').forEach((chip) => {
-            const id = chip.dataset.id;
-            counts[id] = (counts[id] || 0) + 1;
-        });
+            section.querySelectorAll('.drop-slot .player-chip').forEach((chip) => {
+                const id = chip.dataset.id;
+                counts[id] = (counts[id] || 0) + 1;
+            });
 
-        document.querySelectorAll('.player-chip').forEach((chip) => {
-            const badge = chip.querySelector('.match-count');
+            section.querySelectorAll('.player-chip').forEach((chip) => {
+                const badge = chip.querySelector('.match-count');
+                if (!badge) return;
 
-            if (!badge) {
-                return;
-            }
+                const count = counts[chip.dataset.id] || 0;
 
-            const count = counts[chip.dataset.id] || 0;
-
-            if (count > 2) {
-                badge.textContent = `${count}x`;
-                badge.classList.remove('hidden');
-                chip.classList.add('player-chip-warn');
-            } else {
-                badge.textContent = '';
-                badge.classList.add('hidden');
-                chip.classList.remove('player-chip-warn');
-            }
+                if (count > 1) {
+                    badge.textContent = `Double (${count}x)`;
+                    badge.classList.remove('hidden');
+                    chip.classList.add('player-chip-warn');
+                } else {
+                    badge.textContent = '';
+                    badge.classList.add('hidden');
+                    chip.classList.remove('player-chip-warn');
+                }
+            });
         });
     }
 
@@ -108,6 +80,5 @@ document.addEventListener('DOMContentLoaded', () => {
         pairingsInput.value = JSON.stringify(pairings);
     });
 
-    slots.forEach((slot) => ensurePlaceholder(slot));
     updateWarnings();
 });

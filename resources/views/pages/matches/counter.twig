@@ -48,7 +48,9 @@
                 {% set count = matchCounts[p.id]|default(0) %}
                 <tr class="border-b border-border/60">
                     <td class="py-3 pr-4 font-medium text-navy-900">{{ p.name }}</td>
-                    <td class="py-3 pr-4"><span class="rounded bg-gold-100 px-2 py-0.5 text-xs font-bold text-navy-800">{{ p.rank }}</span></td>
+                    <td class="py-3 pr-4">
+                        {% include 'components/ui/badge-rank.twig' with { rank: p.rank } %}
+                    </td>
                     <td class="py-3 pr-4 font-semibold text-navy-800">{{ count }}</td>
                     <td class="py-3">
                         {% if count > 2 %}

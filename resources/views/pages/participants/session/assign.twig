@@ -76,30 +76,24 @@
                                 <input type="checkbox" name="participant_ids[]" value="{{ p.id }}" class="h-4 w-4 rounded border-navy-200 text-gold-500 focus:ring-gold-400">
                             </td>
                             <td class="px-3 py-2 font-medium text-navy-900">
-                                {{ p.name }}
-                                <div class="mt-0.5 text-xs text-navy-500 sm:hidden">
-                                    {% if p.gender %}{{ genders[p.gender]|default(p.gender) }}{% endif %}
-                                    {% if p.phone %} · {{ p.phone }}{% endif %}
-                                    {% if p.gmsSource %} · {{ p.gmsSource }}{% endif %}
-                                </div>
+                                {% include 'components/participants/cell-name.twig' with {
+                                    name: p.name,
+                                    gender: p.gender,
+                                    phone: p.phone,
+                                    source: p.gmsSource,
+                                    genders: genders,
+                                    mobileMargin: 'mt-0.5'
+                                } %}
                             </td>
-                            <td class="px-3 py-2"><span class="rounded bg-gold-100 px-2 py-0.5 text-xs font-bold">{{ p.rank }}</span></td>
+                            <td class="px-3 py-2">
+                                {% include 'components/ui/badge-rank.twig' with { rank: p.rank } %}
+                            </td>
                             <td class="col-hide-sm px-3 py-2">
-                                {% if p.gender %}
-                                    <span class="inline-pill {{ p.gender == 'male' ? 'inline-pill-male' : (p.gender == 'female' ? 'inline-pill-female' : 'inline-pill-empty') }}">
-                                        {{ genders[p.gender]|default(p.gender) }}
-                                    </span>
-                                {% else %}
-                                    <span class="text-navy-400">—</span>
-                                {% endif %}
+                                {% include 'components/ui/badge-gender.twig' with { gender: p.gender, genders: genders } %}
                             </td>
                             <td class="col-hide-md px-3 py-2 text-navy-600">{{ p.phone|default('—') }}</td>
                             <td class="col-hide-sm px-3 py-2">
-                                {% if p.gmsSource %}
-                                    <span class="inline-pill inline-pill-{{ p.gmsSource|lower }}">{{ p.gmsSource }}</span>
-                                {% else %}
-                                    <span class="text-navy-400">—</span>
-                                {% endif %}
+                                {% include 'components/ui/badge-gms.twig' with { source: p.gmsSource } %}
                             </td>
                         </tr>
                     {% endfor %}

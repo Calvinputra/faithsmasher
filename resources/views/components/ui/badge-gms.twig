@@ -1,0 +1,5 @@
+{% if source %}
+    <span class="inline-pill inline-pill-{{ source|lower }} {{ class|default('') }}">{{ source|upper }}</span>
+{% else %}
+    <span class="text-navy-400 {{ class|default('') }}">—</span>
+{% endif %}

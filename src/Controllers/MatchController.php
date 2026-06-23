@@ -35,12 +35,25 @@ final class MatchController extends BaseController
         /** @var Twig $view */
         $view = $request->getAttribute('view');
 
+        $matchRows = $this->matches->allWithParticipants($session->id);
+        $matchesByBagan = BaganMatchGrouper::byRound($matchRows);
+        $shareToken = null;
+        $exportFilename = BaganShareController::exportFilename($session->name);
+
+        if ($matchRows !== []) {
+            $shareToken = $this->sessions->ensureShareToken($session->id);
+        }
+
         return $view->render($response, 'pages/matches/index.twig', [
             'session' => $session,
             'participantCount' => $this->participants->countBySession($session->id),
-            'matchCount' => count($this->matches->allBySession($session->id)),
+            'matchCount' => count($matchRows),
+            'matches' => $matchRows,
+            'matchesByBagan' => $matchesByBagan,
             'baganSettings' => BaganSettings::fromSession($session),
             'pairingModes' => MatchPairingMode::options(),
+            'shareToken' => $shareToken,
+            'exportFilename' => $exportFilename,
         ]);
     }
 
@@ -70,7 +83,7 @@ final class MatchController extends BaseController
 
         return $this->flashRedirect(
             $response,
-            '/sessions/' . $sessionId . '/matches/preview',
+            '/sessions/' . $sessionId . '/matches',
             "{$count} match · {$settings->baganCount} bagan · {$modeLabel}",
             FlashType::CREATE,
             'Bagan digenerate',
@@ -114,7 +127,7 @@ final class MatchController extends BaseController
         if (!is_array($pairings)) {
             return $this->flashRedirect(
                 $response,
-                '/sessions/' . $sessionId . '/matches/manual',
+                '/sessions/' . $sessionId . '/matches',
                 'Data pairing tidak valid. Coba susun ulang.',
                 FlashType::ERROR,
             );
@@ -156,7 +169,7 @@ final class MatchController extends BaseController
         if ($updated === 0 && $pairings !== []) {
             return $this->flashRedirect(
                 $response,
-                '/sessions/' . $sessionId . '/matches/manual',
+                '/sessions/' . $sessionId . '/matches',
                 'Tidak ada pairing valid yang disimpan. Periksa peserta dan slot match.',
                 FlashType::WARNING,
             );
@@ -164,8 +177,8 @@ final class MatchController extends BaseController
 
         return $this->flashRedirect(
             $response,
-            '/sessions/' . $sessionId . '/matches/preview',
-            'Bracket manual berhasil disimpan.',
+            '/sessions/' . $sessionId . '/matches',
+            'Bagan berhasil disimpan.',
             FlashType::UPDATE,
         );
     }
