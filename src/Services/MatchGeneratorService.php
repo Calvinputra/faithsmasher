@@ -50,6 +50,18 @@ final class MatchGeneratorService
             $pool = $rotated;
             
             $pairs = $this->pairPlayers($pool, $mode);
+            
+            // Ensure the number of pairs is even to avoid byes (team vs team)
+            if (count($pairs) % 2 !== 0) {
+                $extraPlayers = $pool;
+                shuffle($extraPlayers);
+                
+                $pairs[] = [
+                    $extraPlayers[0] ?? null,
+                    $extraPlayers[1] ?? null,
+                ];
+            }
+
             $matchesCount = (int) ceil(count($pairs) / 2);
 
             $pairIndex = 0;
