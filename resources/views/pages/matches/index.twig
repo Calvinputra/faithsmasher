@@ -32,8 +32,11 @@
                 Preview & Manual Setup Bagan
             </div>
             <div class="flex items-center gap-3">
-                <button type="submit" form="manual-form" class="btn-primary flex items-center py-1.5 px-3 text-xs shadow-sm ring-1 ring-navy-200" onclick="event.stopPropagation()">
-                    <i class="ri-save-line mr-1.5"></i> Simpan Perubahan
+                <button type="button" id="enable-edit-bagan-btn" class="btn-secondary flex items-center py-1.5 px-3 text-xs shadow-sm ring-1 ring-navy-200" onclick="event.stopPropagation()">
+                    <i class="ri-edit-2-line mr-1.5"></i> Edit Bagan
+                </button>
+                <button type="submit" id="save-bagan-btn" form="manual-form" class="btn-primary hidden items-center py-1.5 px-3 text-xs shadow-sm ring-1 ring-navy-200" onclick="event.stopPropagation()">
+                    <i class="ri-save-line mr-1.5"></i> Simpan
                 </button>
                 <div class="flex h-6 w-6 items-center justify-center rounded-full bg-navy-100 text-navy-500 transition-transform group-open:rotate-180">
                     <i class="ri-arrow-down-s-line"></i>

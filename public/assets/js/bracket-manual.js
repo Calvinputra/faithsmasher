@@ -7,17 +7,35 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const slots = document.querySelectorAll('.drop-slot');
+    const sortables = [];
 
     slots.forEach((slot) => {
-        new Sortable(slot, {
+        sortables.push(new Sortable(slot, {
             group: 'players',
             animation: 150,
+            disabled: true,
             draggable: '.player-chip',
             onAdd: (evt) => {
                 swapChips(evt);
             },
-        });
+        }));
     });
+
+    const editBtn = document.getElementById('enable-edit-bagan-btn');
+    const saveBtn = document.getElementById('save-bagan-btn');
+    
+    if (editBtn && saveBtn) {
+        editBtn.addEventListener('click', () => {
+            sortables.forEach(s => s.option('disabled', false));
+            editBtn.classList.add('hidden');
+            saveBtn.classList.remove('hidden');
+            
+            // Add a visual cue that it's editable
+            document.querySelectorAll('.bagan-manual-table').forEach(table => {
+                table.classList.add('is-editable');
+            });
+        });
+    }
 
     function swapChips(evt) {
         const newSlot = evt.to;
