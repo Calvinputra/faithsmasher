@@ -66,8 +66,10 @@ final class MatchController extends BaseController
 
         $this->sessions->updateBaganSettings($sessionId, $settings, $this->userId());
 
+        $targetBagan = isset($data['target_bagan']) && is_numeric($data['target_bagan']) ? (int) $data['target_bagan'] : null;
+
         try {
-            $count = $this->generator->autoGenerate($sessionId, $settings);
+            $count = $this->generator->autoGenerate($sessionId, $settings, $targetBagan);
         } catch (\InvalidArgumentException $exception) {
             return $this->flashRedirect(
                 $response,
@@ -81,12 +83,16 @@ final class MatchController extends BaseController
             ? MatchPairingMode::options()[$settings->globalMode]
             : 'campuran per bagan';
 
+        $flashMessage = $targetBagan !== null 
+            ? "Bagan {$targetBagan} berhasil digenerate ulang."
+            : "{$count} match · {$settings->baganCount} bagan · {$modeLabel}";
+
         return $this->flashRedirect(
             $response,
             '/sessions/' . $sessionId . '/matches',
-            "{$count} match · {$settings->baganCount} bagan · {$modeLabel}",
+            $flashMessage,
             FlashType::CREATE,
-            'Bagan digenerate',
+            $targetBagan !== null ? 'Bagan diupdate' : 'Bagan digenerate',
         );
     }
 

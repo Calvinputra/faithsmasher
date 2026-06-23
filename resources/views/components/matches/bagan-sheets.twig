@@ -6,8 +6,21 @@
             {% set baganMode = baganSettings.perBaganModes[baganNum - 1]|default(baganSettings.globalMode) %}
         {% endif %}
         <section class="bagan-preview-section card overflow-hidden p-0">
-            <header class="bagan-preview-section-header">
+            <header class="bagan-preview-section-header flex justify-between items-center">
                 <h2 class="bagan-preview-title">Bagan {{ baganNum }}</h2>
+                {% if not isShareView|default(false) %}
+                    <button 
+                        type="submit" 
+                        form="bagan-setup-form" 
+                        name="target_bagan" 
+                        value="{{ baganNum }}" 
+                        data-html2canvas-ignore="true" 
+                        class="btn-secondary py-1 px-2.5 text-[11px] shadow-sm ring-1 ring-navy-200 hover:bg-navy-50" 
+                        onclick="if(!confirm('Generate ulang khusus Bagan {{ baganNum }}?\n\nSusunan manual pada bagan ini akan tertimpa.')) { event.preventDefault(); event.stopPropagation(); return false; } event.stopPropagation();"
+                    >
+                        <i class="ri-refresh-line mr-1"></i> Generate Ulang Bagan Ini
+                    </button>
+                {% endif %}
             </header>
             <div class="overflow-x-auto">
                 <table class="bagan-preview-table bagan-manual-table w-full text-xs sm:text-sm">
@@ -35,7 +48,10 @@
                                             <div class="player-chip" data-id="{{ m.participant1Id }}">
                                                 <span class="player-chip-label flex items-center gap-1">
                                                     {{ row.p1.name }}
-                                                    <span class="bagan-meta">
+                                                    <span class="bagan-meta flex items-center gap-0.5">
+                                                        {% if not isShareView|default(false) and row.p1.rank %}
+                                                            <span class="text-[10px] font-bold text-navy-400 bg-navy-50 px-1 rounded uppercase tracking-widest border border-navy-100">{{ row.p1.rank }}</span>
+                                                        {% endif %}
                                                         {% if row.p1.gender == 'male' %}
                                                             <i class="ri-men-line text-blue-500 text-base leading-none" title="Laki-laki"></i>
                                                         {% elseif row.p1.gender == 'female' %}
@@ -58,7 +74,10 @@
                                             <div class="player-chip" data-id="{{ m.participant2Id }}">
                                                 <span class="player-chip-label flex items-center gap-1">
                                                     {{ row.p2.name }}
-                                                    <span class="bagan-meta">
+                                                    <span class="bagan-meta flex items-center gap-0.5">
+                                                        {% if not isShareView|default(false) and row.p2.rank %}
+                                                            <span class="text-[10px] font-bold text-navy-400 bg-navy-50 px-1 rounded uppercase tracking-widest border border-navy-100">{{ row.p2.rank }}</span>
+                                                        {% endif %}
                                                         {% if row.p2.gender == 'male' %}
                                                             <i class="ri-men-line text-blue-500 text-base leading-none" title="Laki-laki"></i>
                                                         {% elseif row.p2.gender == 'female' %}

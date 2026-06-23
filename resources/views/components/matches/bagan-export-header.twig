@@ -1,10 +1,27 @@
-<header class="bagan-export-header">
-    <h1 class="bagan-export-title">{{ session.name }}</h1>
-    <p class="bagan-export-meta">
-        {{ session.sessionDate|date('d M Y') }}
-        {% if session.location %}
-            · {{ session.location }}
-        {% endif %}
-        · {{ baganSettings.baganCount }} bagan
-    </p>
+<header class="bagan-export-header flex justify-between items-start">
+    <div>
+        <h1 class="bagan-export-title">{{ session.name }}</h1>
+        <p class="bagan-export-meta">
+            {{ session.sessionDate|date('d M Y') }}
+            {% if session.location %}
+                · {{ session.location }}
+            {% endif %}
+            · {{ baganSettings.baganCount }} bagan
+        </p>
+    </div>
+    {% if not isShareView|default(false) %}
+        <div data-html2canvas-ignore="true" class="flex items-center gap-2 mt-1 sm:mt-0">
+            <button type="button" class="btn-secondary py-1.5 px-3 text-xs shadow-sm ring-1 ring-navy-200" onclick="document.getElementById('enable-edit-bagan-btn')?.click()">
+                <i class="ri-edit-2-line mr-1.5"></i> Manual Setup
+            </button>
+            <button 
+                type="submit" 
+                form="bagan-setup-form" 
+                class="btn-primary py-1.5 px-3 text-xs shadow-sm ring-1 ring-gold-500 bg-gold-500 text-navy-900 hover:bg-gold-600"
+                onclick="return confirm('Apakah Anda yakin ingin melakukan generate ulang semua bagan?\n\nSemua data bagan dan susunan Manual Setup sebelumnya akan ditimpa secara permanen!')"
+            >
+                <i class="ri-refresh-line mr-1.5"></i> Generate Semua
+            </button>
+        </div>
+    {% endif %}
 </header>

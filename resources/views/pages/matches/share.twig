@@ -23,8 +23,9 @@
         class="bagan-export-root"
         data-filename="{{ exportFilename }}"
     >
+        {% set isShareView = true %}
         {% include 'components/matches/bagan-export-header.twig' %}
-        {% include 'components/matches/bagan-sheets.twig' %}
+        {% include 'components/matches/bagan-sheets.twig' with { isShareView: true } %}
     </div>
 </div>
 {% endblock %}

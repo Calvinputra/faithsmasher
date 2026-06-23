@@ -34,10 +34,15 @@ final class MatchRepository
         );
     }
 
-    public function deleteBySession(int $sessionId): void
+    public function deleteBySession(int $sessionId, ?int $roundNumber = null): void
     {
-        $statement = $this->db->prepare('DELETE FROM matches WHERE session_id = :session_id');
-        $statement->execute(['session_id' => $sessionId]);
+        if ($roundNumber !== null) {
+            $statement = $this->db->prepare('DELETE FROM matches WHERE session_id = :session_id AND round_number = :round_number');
+            $statement->execute(['session_id' => $sessionId, 'round_number' => $roundNumber]);
+        } else {
+            $statement = $this->db->prepare('DELETE FROM matches WHERE session_id = :session_id');
+            $statement->execute(['session_id' => $sessionId]);
+        }
     }
 
     public function create(
