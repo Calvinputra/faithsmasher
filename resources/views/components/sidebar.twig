@@ -15,18 +15,7 @@
     label: 'Peserta Session',
     active: active|default('') == 'participants'
 } %}
-{% include 'components/ui/sidebar-link.twig' with {
-    href: '/sessions/' ~ session.id ~ '/rules',
-    icon: 'ri-file-list-3-line',
-    label: 'Game Rules',
-    active: active|default('') == 'rules'
-} %}
-{% include 'components/ui/sidebar-link.twig' with {
-    href: '/dashboard/' ~ session.id ~ '?modal=session-form-modal&edit=' ~ session.id,
-    icon: 'ri-edit-line',
-    label: 'Edit Session',
-    active: active|default('') == 'edit'
-} %}
+
 
 <p class="sidebar-section-label">Match</p>
 {% include 'components/ui/sidebar-link.twig' with {

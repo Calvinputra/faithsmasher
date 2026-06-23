@@ -543,6 +543,25 @@
     @apply text-gold-600;
   }
 
+  /* ── Sidebar Collapse ── */
+  .sidebar-collapse-content {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .sidebar-collapse-group.is-open .sidebar-collapse-content {
+    grid-template-rows: 1fr;
+  }
+  .sidebar-collapse-icon {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .sidebar-collapse-group.is-open .sidebar-collapse-icon {
+    transform: rotate(180deg);
+  }
+  .sidebar-collapse-inner {
+    overflow: hidden;
+  }
+
   .sidebar-footer {
     @apply mt-auto shrink-0;
   }
