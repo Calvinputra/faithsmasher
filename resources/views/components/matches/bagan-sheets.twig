@@ -14,12 +14,12 @@
                 <table class="bagan-preview-table bagan-manual-table w-full text-sm">
                     <thead>
                         <tr>
-                            <th class="w-10 text-center"><i class="ri-check-line text-navy-400"></i></th>
                             <th>Group</th>
                             <th>Pemain 1</th>
                             <th>Pemain 2</th>
                             <th>Lapangan</th>
                             <th>Urutan Main</th>
+                            <th class="w-32 text-center">Status</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -28,16 +28,24 @@
                             {% set matchIndex = loop.index0 // 2 %}
                             {% set bgClass = matchIndex % 2 == 1 ? 'bg-navy-50/40' : 'bg-white' %}
                             
-                            <tr data-match-id="{{ m.id }}" class="{{ bgClass }} transition-opacity duration-200{% if m.status == 'bye' %} bagan-row-bye{% endif %}">
-                                <td class="text-center">
-                                    <input type="checkbox" class="match-checklist-cb h-4 w-4 rounded border-navy-300 text-gold-600 focus:ring-gold-500 cursor-pointer" data-match-id="{{ m.id }}">
-                                </td>
+                            <tr data-match-order="{{ m.matchOrder }}" class="bagan-row {{ bgClass }} transition-colors duration-200{% if m.status == 'bye' %} bagan-row-bye{% endif %}">
                                 <td class="bagan-manual-group">Group {{ loop.index }}</td>
                                 <td>
                                     <div class="drop-slot" data-slot="p1" data-match="{{ m.id }}">
                                         {% if row.p1 %}
                                             <div class="player-chip" data-id="{{ m.participant1Id }}">
-                                                <span class="player-chip-label">{{ row.p1.name }} <span class="bagan-meta">({{ row.p1.rank }})</span></span>
+                                                <span class="player-chip-label flex items-center gap-1">
+                                                    {{ row.p1.name }}
+                                                    <span class="bagan-meta">
+                                                        {% if row.p1.gender == 'male' %}
+                                                            <i class="ri-men-line text-blue-500 text-base leading-none" title="Laki-laki"></i>
+                                                        {% elseif row.p1.gender == 'female' %}
+                                                            <i class="ri-women-line text-red-500 text-base leading-none" title="Perempuan"></i>
+                                                        {% else %}
+                                                            <i class="ri-genderless-line text-navy-300 text-base leading-none" title="Tidak diketahui"></i>
+                                                        {% endif %}
+                                                    </span>
+                                                </span>
                                                 <span class="match-count hidden" aria-hidden="true"></span>
                                             </div>
                                         {% else %}
@@ -49,7 +57,18 @@
                                     <div class="drop-slot" data-slot="p2" data-match="{{ m.id }}">
                                         {% if row.p2 %}
                                             <div class="player-chip" data-id="{{ m.participant2Id }}">
-                                                <span class="player-chip-label">{{ row.p2.name }} <span class="bagan-meta">({{ row.p2.rank }})</span></span>
+                                                <span class="player-chip-label flex items-center gap-1">
+                                                    {{ row.p2.name }}
+                                                    <span class="bagan-meta">
+                                                        {% if row.p2.gender == 'male' %}
+                                                            <i class="ri-men-line text-blue-500 text-base leading-none" title="Laki-laki"></i>
+                                                        {% elseif row.p2.gender == 'female' %}
+                                                            <i class="ri-women-line text-red-500 text-base leading-none" title="Perempuan"></i>
+                                                        {% else %}
+                                                            <i class="ri-genderless-line text-navy-300 text-base leading-none" title="Tidak diketahui"></i>
+                                                        {% endif %}
+                                                    </span>
+                                                </span>
                                                 <span class="match-count hidden" aria-hidden="true"></span>
                                             </div>
                                         {% elseif m.status == 'bye' %}
@@ -61,6 +80,12 @@
                                 </td>
                                 <td class="bagan-manual-static">Lapangan {{ m.courtNumber|default('—') }}</td>
                                 <td class="bagan-manual-static"><span class="bagan-order-badge">{{ m.matchOrder }}</span></td>
+                                <td class="text-center align-middle">
+                                    <label class="inline-flex cursor-pointer items-center gap-2 rounded-md p-1 hover:bg-navy-50 transition-colors">
+                                        <input type="checkbox" class="match-checklist-cb h-4 w-4 rounded border-navy-300 text-gold-600 focus:ring-gold-500" data-match-order="{{ m.matchOrder }}">
+                                        <span class="text-[11px] font-medium text-navy-500 uppercase tracking-wider select-none">Selesai</span>
+                                    </label>
+                                </td>
                             </tr>
                         {% endfor %}
                     </tbody>

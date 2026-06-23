@@ -102,21 +102,11 @@ final class MatchGeneratorService
         return array_merge(array_slice($players, $shift), array_slice($players, 0, $shift));
     }
 
-    /**
-     * @param list<Participant> $players
-     * @return list{array{0: Participant, 1: ?Participant}}
-     */
     private function pairPlayers(array $players, string $mode): array
     {
-        $sorted = $players;
-
-        usort($sorted, static function (Participant $a, Participant $b): int {
-            return strcmp($a->name, $b->name);
-        });
-
         return $mode === MatchPairingMode::GENDER
-            ? $this->pairByGender($sorted)
-            : $this->pairBySimilarRank($sorted);
+            ? $this->pairByGender($players)
+            : $this->pairBySimilarRank($players);
     }
 
     /**
@@ -125,13 +115,20 @@ final class MatchGeneratorService
      */
     private function pairBySimilarRank(array $players): array
     {
-        usort($players, static function (Participant $a, Participant $b): int {
-            $rankCompare = Rank::index($a->rank) <=> Rank::index($b->rank);
+        $groups = [];
+        foreach ($players as $p) {
+            $groups[Rank::index($p->rank)][] = $p;
+        }
 
-            return $rankCompare !== 0 ? $rankCompare : strcmp($a->name, $b->name);
-        });
+        ksort($groups);
 
-        return $this->pairSequential($players);
+        $shuffled = [];
+        foreach ($groups as $group) {
+            shuffle($group);
+            $shuffled = array_merge($shuffled, $group);
+        }
+
+        return $this->pairSequential($shuffled);
     }
 
     /**
@@ -140,13 +137,21 @@ final class MatchGeneratorService
      */
     private function pairByGender(array $players): array
     {
-        usort($players, static function (Participant $a, Participant $b): int {
-            $genderCompare = strcmp($a->gender ?? '', $b->gender ?? '');
+        $groups = [];
+        foreach ($players as $p) {
+            $gender = strtolower($p->gender ?? 'unknown');
+            $groups[$gender][] = $p;
+        }
 
-            return $genderCompare !== 0 ? $genderCompare : strcmp($a->name, $b->name);
-        });
+        ksort($groups);
 
-        return $this->pairSequential($players);
+        $shuffled = [];
+        foreach ($groups as $group) {
+            shuffle($group);
+            $shuffled = array_merge($shuffled, $group);
+        }
+
+        return $this->pairSequential($shuffled);
     }
 
     /**

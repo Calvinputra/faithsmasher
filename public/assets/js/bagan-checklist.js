@@ -6,39 +6,44 @@ document.addEventListener('DOMContentLoaded', () => {
     const savedState = JSON.parse(localStorage.getItem('faithsmasher_match_checklist') || '{}');
 
     function toggleRowStyle(checkbox) {
-        const row = checkbox.closest('tr');
-        if (!row) return;
+        const matchOrder = checkbox.dataset.matchOrder;
+        const isChecked = checkbox.checked;
+        
+        // Sync all checkboxes and rows that share the same match order
+        const relatedCheckboxes = document.querySelectorAll(`.match-checklist-cb[data-match-order="${matchOrder}"]`);
+        
+        relatedCheckboxes.forEach(cb => {
+            cb.checked = isChecked;
+            const row = cb.closest('tr');
+            if (!row) return;
 
-        if (checkbox.checked) {
-            row.classList.add('opacity-40');
-            row.classList.remove('bg-white', 'bg-navy-50/40');
-            row.classList.add('bg-navy-50/50');
-        } else {
-            row.classList.remove('opacity-40', 'bg-navy-50/50');
-            
-            // Restore original background class based on the row's template bgClass
-            // Since we don't know the exact original bgClass easily here, we let the existing classes handle it
-            // Actually, we can just remove opacity-40 and let the underlying classes show through.
-        }
+            if (isChecked) {
+                row.classList.add('opacity-50');
+                row.classList.remove('bg-white', 'bg-navy-50/40');
+                row.classList.add('bg-green-50/60');
+            } else {
+                row.classList.remove('opacity-50', 'bg-green-50/60');
+                // The underlying CSS classes will take over again
+            }
+        });
     }
 
     checkboxes.forEach(cb => {
-        const matchId = cb.dataset.matchId;
+        const matchOrder = cb.dataset.matchOrder;
         
-        if (savedState[matchId]) {
+        if (savedState[matchOrder]) {
             cb.checked = true;
             toggleRowStyle(cb);
         }
 
         cb.addEventListener('change', (e) => {
             const isChecked = e.target.checked;
-            savedState[matchId] = isChecked;
+            savedState[matchOrder] = isChecked;
             
             if (isChecked) {
-                // Keep only true values to save space
-                savedState[matchId] = true;
+                savedState[matchOrder] = true;
             } else {
-                delete savedState[matchId];
+                delete savedState[matchOrder];
             }
             
             localStorage.setItem('faithsmasher_match_checklist', JSON.stringify(savedState));

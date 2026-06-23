@@ -3164,17 +3164,14 @@ button.is-loading::after {
   gap: 0.35rem;
   cursor: grab;
   border-radius: 0.5rem;
-  border: 1px solid var(--color-navy-100);
-  background: var(--color-gold-50);
+  border: 1px solid var(--color-navy-200);
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   padding: 0.35rem 0.5rem;
   font-size: 0.8125rem;
   font-weight: 600;
   color: var(--color-navy-900);
   touch-action: none;
-}
-
-.bagan-manual-pool-list .player-chip {
-  background: white;
 }
 
 .player-chip:active {
