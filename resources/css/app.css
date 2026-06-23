@@ -921,6 +921,15 @@
     .filter-bar-row--session {
       grid-template-columns: minmax(0, 1fr) minmax(9rem, 12rem) auto;
     }
+
+    .filter-bar-row--participants,
+    .participant-filter-row {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+    .filter-bar-search,
+    .participant-filter-search {
+      grid-column: 1 / -1;
+    }
   }
 
   @media (min-width: 1280px) {
@@ -928,6 +937,10 @@
     .participant-filter-row {
       grid-template-columns: minmax(10rem, 1.35fr) minmax(0, 1.65fr) auto;
       gap: 0.625rem;
+    }
+    .filter-bar-search,
+    .participant-filter-search {
+      grid-column: auto;
     }
 
     .filter-bar-row--simple {
