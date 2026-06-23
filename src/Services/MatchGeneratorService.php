@@ -39,26 +39,37 @@ final class MatchGeneratorService
 
         $this->matches->deleteBySession($sessionId);
 
-        $globalOrder = 1;
-        $totalMatches = 0;
+        $globalMatchOrder = 1;
+        $totalPairs = 0;
         $courtCount = max(1, $session->courtCount);
 
         for ($bagan = 1; $bagan <= $settings->baganCount; $bagan++) {
             $mode = $settings->modeForBagan($bagan);
             $rotated = $this->rotatePlayers($players, $bagan - 1);
-            $pairs = $this->pairPlayers($rotated, $mode);
-            $orderInBagan = 1;
-            $pairsCount = count($pairs);
-            $matchesPerCourt = max(1, (int) ceil($pairsCount / $courtCount));
+            
+            $pool = $rotated;
+            $missing = (4 - (count($pool) % 4)) % 4;
+            if ($missing > 0) {
+                for ($i = 0; $i < $missing; $i++) {
+                    $pool[] = $rotated[$i % count($rotated)];
+                }
+            }
 
+            $pairs = $this->pairPlayers($pool, $mode);
+            $matchesCount = count($pairs) / 2;
+            $matchesPerCourt = max(1, (int) ceil($matchesCount / $courtCount));
+
+            $pairIndex = 0;
             foreach ($pairs as [$p1, $p2]) {
                 $status = $p2 === null ? 'bye' : 'pending';
-                $courtNumber = (int) floor(($orderInBagan - 1) / $matchesPerCourt) + 1;
+                $matchOrderInBagan = (int) floor($pairIndex / 2) + 1;
+                $currentGlobalMatchOrder = $globalMatchOrder + $matchOrderInBagan - 1;
+                $courtNumber = (int) floor(($matchOrderInBagan - 1) / $matchesPerCourt) + 1;
 
                 $this->matches->create(
                     $sessionId,
                     $bagan,
-                    $globalOrder++,
+                    $currentGlobalMatchOrder,
                     $p1?->id,
                     $p2?->id,
                     false,
@@ -66,12 +77,14 @@ final class MatchGeneratorService
                     $courtNumber,
                 );
 
-                $orderInBagan++;
-                $totalMatches++;
+                $pairIndex++;
+                $totalPairs++;
             }
+            
+            $globalMatchOrder += $matchesCount;
         }
 
-        return $totalMatches;
+        return $totalPairs;
     }
 
     /**

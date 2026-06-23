@@ -30,9 +30,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const syncScopePanels = () => {
         const isPerBagan = currentScope() === 'per_bagan';
+        const hint = form.querySelector('[data-bagan-scope-hint]');
 
         globalPanel?.classList.toggle('hidden', isPerBagan);
         perPanel?.classList.toggle('hidden', !isPerBagan);
+
+        if (hint) {
+            hint.textContent = isPerBagan
+                ? 'Anda dapat mengatur aturan yang berbeda untuk setiap bagan.'
+                : 'Semua bagan akan menggunakan aturan yang sama.';
+        }
     };
 
     const buildPerBaganRows = () => {

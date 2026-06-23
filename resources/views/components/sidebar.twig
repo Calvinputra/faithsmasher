@@ -24,21 +24,4 @@
     label: 'Match Hub',
     active: active|default('') == 'matches'
 } %}
-{% include 'components/ui/sidebar-link.twig' with {
-    href: '/sessions/' ~ session.id ~ '/matches/manual',
-    icon: 'ri-drag-move-2-line',
-    label: 'Manual Setup',
-    active: active|default('') == 'manual'
-} %}
-{% include 'components/ui/sidebar-link.twig' with {
-    href: '/sessions/' ~ session.id ~ '/matches/preview',
-    icon: 'ri-eye-line',
-    label: 'Preview Bracket',
-    active: active|default('') == 'preview'
-} %}
-{% include 'components/ui/sidebar-link.twig' with {
-    href: '/sessions/' ~ session.id ~ '/matches/counter',
-    icon: 'ri-bar-chart-grouped-line',
-    label: 'Player Counter',
-    active: active|default('') == 'counter'
-} %}
+
