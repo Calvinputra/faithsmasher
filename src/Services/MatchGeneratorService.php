@@ -48,10 +48,12 @@ final class MatchGeneratorService
             $rotated = $this->rotatePlayers($players, $bagan - 1);
             $pairs = $this->pairPlayers($rotated, $mode);
             $orderInBagan = 1;
+            $pairsCount = count($pairs);
+            $matchesPerCourt = max(1, (int) ceil($pairsCount / $courtCount));
 
             foreach ($pairs as [$p1, $p2]) {
                 $status = $p2 === null ? 'bye' : 'pending';
-                $courtNumber = (($orderInBagan - 1) % $courtCount) + 1;
+                $courtNumber = (int) floor(($orderInBagan - 1) / $matchesPerCourt) + 1;
 
                 $this->matches->create(
                     $sessionId,

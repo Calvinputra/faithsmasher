@@ -264,5 +264,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     window.addEventListener('resize', closeMenu);
-    window.addEventListener('scroll', closeMenu, true);
+    window.addEventListener('scroll', (event) => {
+        if (menu.contains(event.target)) {
+            return;
+        }
+        closeMenu();
+    }, true);
 });

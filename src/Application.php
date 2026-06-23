@@ -35,6 +35,8 @@ final class Application
     private function createApp(): App
     {
         $config = require $this->basePath . '/config/app.php';
+        
+        date_default_timezone_set($config['timezone'] ?? 'Asia/Jakarta');
 
         $logger = new Logger('app');
         $logger->pushHandler(new StreamHandler(
