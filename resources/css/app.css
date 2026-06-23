@@ -3040,6 +3040,13 @@ button.is-loading::after {
   vertical-align: middle;
 }
 
+@media (max-width: 639px) {
+  .bagan-preview-table th,
+  .bagan-preview-table td {
+    padding: 0.35rem 0.4rem;
+  }
+}
+
 .bagan-preview-table tbody tr:hover {
   background: color-mix(in srgb, var(--color-gold-50) 50%, white);
 }

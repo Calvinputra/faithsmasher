@@ -21,6 +21,8 @@ final class AuthMiddleware implements MiddlewareInterface
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         if (!$this->auth->check()) {
+            $_SESSION['intended_url'] = (string) $request->getUri();
+
             $response = new Response();
 
             return $response

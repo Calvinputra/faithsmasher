@@ -21,7 +21,9 @@ final class AuthController
     public function showLogin(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         if ($this->auth->check()) {
-            return $response->withHeader('Location', '/dashboard')->withStatus(302);
+            $redirectUrl = $_SESSION['intended_url'] ?? '/dashboard';
+            unset($_SESSION['intended_url']);
+            return $response->withHeader('Location', $redirectUrl)->withStatus(302);
         }
 
         /** @var Twig $view */
@@ -46,7 +48,10 @@ final class AuthController
         if ($result['ok']) {
             FlashBag::set('Selamat datang kembali!', FlashType::SUCCESS, 'Login berhasil');
 
-            return $response->withHeader('Location', '/dashboard')->withStatus(302);
+            $redirectUrl = $_SESSION['intended_url'] ?? '/dashboard';
+            unset($_SESSION['intended_url']);
+
+            return $response->withHeader('Location', $redirectUrl)->withStatus(302);
         }
 
         FlashBag::set($result['error'] ?? 'Email atau password salah.', FlashType::ERROR, 'Login gagal');
