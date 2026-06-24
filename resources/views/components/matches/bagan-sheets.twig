@@ -40,7 +40,7 @@
                             {% set matchIndex = loop.index0 // 2 %}
                             {% set bgClass = matchIndex % 2 == 1 ? 'bg-navy-50/40' : 'bg-white' %}
                             
-                            <tr data-match-order="{{ m.matchOrder }}" class="bagan-row {{ bgClass }} transition-colors duration-200{% if m.status == 'bye' %} bagan-row-bye{% endif %}">
+                            <tr data-match-order="{{ m.matchOrder }}" data-match-id="{{ m.id }}" class="bagan-row {{ bgClass }} transition-colors duration-200{% if m.status == 'bye' %} bagan-row-bye{% endif %}">
                                 <td class="bagan-manual-group">Group {{ loop.index }}</td>
                                 <td>
                                     <div class="drop-slot" data-slot="p1" data-match="{{ m.id }}">
