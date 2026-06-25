@@ -23,39 +23,47 @@ async function downloadBaganImage(exportRoot, button) {
     button.disabled = true;
     if (button) button.innerHTML = 'Memproses…';
 
-    // --- Temporarily rearrange the ACTUAL DOM (already painted = renderable) ---
-    const toolbar = document.querySelector('.bagan-share-toolbar');
-    const stack = exportRoot.querySelector('.bagan-preview-stack');
-    const sections = exportRoot.querySelectorAll('.bagan-preview-section');
-    const cols = sections.length >= 5 ? 3 : 2;
+    // Overlay so user doesn't see the brief layout change
+    const overlay = document.createElement('div');
+    overlay.style.cssText = [
+        'position:fixed', 'inset:0', 'background:rgba(255,255,255,0.92)',
+        'z-index:99999', 'display:flex', 'align-items:center', 'justify-content:center',
+    ].join(';');
+    overlay.innerHTML = '<p style="font:600 15px Inter,sans-serif;color:#374151">Membuat gambar…</p>';
+    document.body.appendChild(overlay);
 
-    // Save originals
-    const origToolbarDisplay = toolbar ? toolbar.style.display : null;
-    const origStackStyle = stack ? {
+    const toolbar   = document.querySelector('.bagan-share-toolbar');
+    const stack     = exportRoot.querySelector('.bagan-preview-stack');
+    const sections  = Array.from(exportRoot.querySelectorAll('.bagan-preview-section'));
+    const cols      = sections.length >= 5 ? 3 : 2;
+
+    // Save & apply grid layout on the live (already-painted) elements
+    const savedToolbar  = toolbar?.style.display ?? null;
+    const savedStack    = stack ? {
         display: stack.style.display,
         gridTemplateColumns: stack.style.gridTemplateColumns,
         gap: stack.style.gap,
         alignItems: stack.style.alignItems,
     } : null;
 
-    // Apply compact grid on the live element
+    // Save & fix overflow on every scrollable table wrapper so nothing is clipped
+    const overflowEls    = Array.from(exportRoot.querySelectorAll('.overflow-x-auto'));
+    const savedOverflows = overflowEls.map(el => el.style.overflow);
+
     if (toolbar) toolbar.style.display = 'none';
     if (stack) {
         stack.style.display = 'grid';
         stack.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-        stack.style.gap = '12px';
+        stack.style.gap = '16px';
         stack.style.alignItems = 'start';
     }
+    overflowEls.forEach(el => (el.style.overflow = 'visible'));
 
-    // Give browser one frame to repaint
+    // Let browser repaint with the new layout
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 
     try {
-        const opts = {
-            pixelRatio: 2,
-            backgroundColor: '#ffffff',
-            skipFonts: false,
-        };
+        const opts = { pixelRatio: 2, backgroundColor: '#ffffff', skipFonts: false };
 
         // First render warms up font/icon cache; second is the clean output
         await htmlToImage.toPng(exportRoot, opts);
@@ -71,14 +79,17 @@ async function downloadBaganImage(exportRoot, button) {
         console.error('[bagan-share] download error:', err);
         window.FSToast?.error('Gagal membuat gambar. Coba lagi.', 'Unduh gagal');
     } finally {
-        // Restore original layout
-        if (toolbar && origToolbarDisplay !== null) toolbar.style.display = origToolbarDisplay;
-        if (stack && origStackStyle) {
-            stack.style.display = origStackStyle.display;
-            stack.style.gridTemplateColumns = origStackStyle.gridTemplateColumns;
-            stack.style.gap = origStackStyle.gap;
-            stack.style.alignItems = origStackStyle.alignItems;
+        // Restore everything
+        if (toolbar && savedToolbar !== null) toolbar.style.display = savedToolbar;
+        if (stack && savedStack) {
+            stack.style.display              = savedStack.display;
+            stack.style.gridTemplateColumns  = savedStack.gridTemplateColumns;
+            stack.style.gap                  = savedStack.gap;
+            stack.style.alignItems           = savedStack.alignItems;
         }
+        overflowEls.forEach((el, i) => (el.style.overflow = savedOverflows[i]));
+
+        document.body.removeChild(overlay);
         button.disabled = false;
         if (button && originalText) button.innerHTML = originalText;
     }
