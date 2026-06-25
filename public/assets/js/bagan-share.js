@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function downloadBaganImage(exportRoot, button) {
-    if (!exportRoot || typeof html2canvas === 'undefined') {
+    if (!exportRoot || typeof htmlToImage === 'undefined') {
         window.FSToast?.error('Fitur unduh belum siap. Muat ulang halaman.', 'Unduh gagal');
         return;
     }
@@ -27,20 +27,31 @@ async function downloadBaganImage(exportRoot, button) {
     }
 
     try {
-        const canvas = await html2canvas(exportRoot, {
-            scale: 2,
+        // Render twice: first call "warms up" font/icon embedding, second call produces the clean result
+        const opts = {
+            pixelRatio: 2,
             backgroundColor: '#ffffff',
-            useCORS: true,
-            logging: false,
-        });
+            skipFonts: false,
+            filter: (node) => {
+                // Exclude the toolbar from the exported image
+                if (node.classList && node.classList.contains('bagan-share-toolbar')) return false;
+                return true;
+            },
+        };
+
+        // First render (needed so fonts are cached by html-to-image)
+        await htmlToImage.toPng(exportRoot, opts);
+        // Second render (actual clean output)
+        const dataUrl = await htmlToImage.toPng(exportRoot, opts);
 
         const link = document.createElement('a');
         link.download = exportRoot.dataset.filename || 'bagan.png';
-        link.href = canvas.toDataURL('image/png');
+        link.href = dataUrl;
         link.click();
 
         window.FSToast?.success('Gambar bagan berhasil diunduh.', 'Unduh selesai');
-    } catch {
+    } catch (err) {
+        console.error('[bagan-share] download error:', err);
         window.FSToast?.error('Gagal membuat gambar. Coba lagi.', 'Unduh gagal');
     } finally {
         button.disabled = false;
