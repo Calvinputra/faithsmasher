@@ -26,23 +26,20 @@ async function downloadBaganImage(exportRoot, button) {
         button.innerHTML = 'Memproses…';
     }
 
+    // Build a temporary grid-layout clone so the exported image is compact (2–3 cols)
+    const clone = buildGridClone(exportRoot);
+    document.body.appendChild(clone);
+
     try {
-        // Render twice: first call "warms up" font/icon embedding, second call produces the clean result
         const opts = {
             pixelRatio: 2,
             backgroundColor: '#ffffff',
             skipFonts: false,
-            filter: (node) => {
-                // Exclude the toolbar from the exported image
-                if (node.classList && node.classList.contains('bagan-share-toolbar')) return false;
-                return true;
-            },
         };
 
-        // First render (needed so fonts are cached by html-to-image)
-        await htmlToImage.toPng(exportRoot, opts);
-        // Second render (actual clean output)
-        const dataUrl = await htmlToImage.toPng(exportRoot, opts);
+        // First render warms up font/icon cache; second render is the clean output
+        await htmlToImage.toPng(clone, opts);
+        const dataUrl = await htmlToImage.toPng(clone, opts);
 
         const link = document.createElement('a');
         link.download = exportRoot.dataset.filename || 'bagan.png';
@@ -54,12 +51,68 @@ async function downloadBaganImage(exportRoot, button) {
         console.error('[bagan-share] download error:', err);
         window.FSToast?.error('Gagal membuat gambar. Coba lagi.', 'Unduh gagal');
     } finally {
+        document.body.removeChild(clone);
         button.disabled = false;
 
         if (button && originalText) {
             button.innerHTML = originalText;
         }
     }
+}
+
+/**
+ * Clones the export root and re-arranges the bagan sections into a grid
+ * of 2 columns (≤4 bagans) or 3 columns (≥5 bagans) so the image is not
+ * excessively tall.
+ */
+function buildGridClone(exportRoot) {
+    const sections = exportRoot.querySelectorAll('.bagan-preview-section');
+    const cols = sections.length >= 5 ? 3 : 2;
+
+    // Wrapper positioned off-screen so it doesn't affect the visible page
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = [
+        'position:fixed',
+        'top:0',
+        'left:-99999px',
+        'width:1400px',
+        'background:#ffffff',
+        'padding:24px',
+        'box-sizing:border-box',
+        'font-family:Inter,sans-serif',
+    ].join(';');
+
+    // Copy the export header (title + meta)
+    const header = exportRoot.querySelector('.bagan-export-header');
+    if (header) {
+        const headerClone = header.cloneNode(true);
+        headerClone.style.marginBottom = '16px';
+        // Remove edit buttons that are hidden in share view anyway
+        headerClone.querySelectorAll('[data-html2canvas-ignore]').forEach(el => el.remove());
+        wrapper.appendChild(headerClone);
+    }
+
+    // Grid container for the bagan cards
+    const grid = document.createElement('div');
+    grid.style.cssText = [
+        `display:grid`,
+        `grid-template-columns:repeat(${cols},1fr)`,
+        `gap:12px`,
+        `align-items:start`,
+    ].join(';');
+
+    sections.forEach(sec => {
+        const card = sec.cloneNode(true);
+        // Make sure the card doesn't overflow its column
+        card.style.width = '100%';
+        card.style.boxSizing = 'border-box';
+        // Remove "Generate Ulang" buttons (irrelevant on share view)
+        card.querySelectorAll('[data-html2canvas-ignore]').forEach(el => el.remove());
+        grid.appendChild(card);
+    });
+
+    wrapper.appendChild(grid);
+    return wrapper;
 }
 
 async function copyShareLink(shareInput, button) {
