@@ -66,14 +66,9 @@ final class MatchGeneratorService
             
             $pairs = $this->pairPlayers($pool, $mode);
             
-            // Ensure the number of pairs is even to avoid byes (team vs team)
-            if (count($pairs) % 2 !== 0) {
-                $extraPlayers = $pool;
-                shuffle($extraPlayers);
-                $pairs[] = [
-                    $extraPlayers[0] ?? null,
-                    $extraPlayers[1] ?? null,
-                ];
+            // Ensure the number of pairs is even — duplicate a pair instead of leaving a bye
+            if (count($pairs) % 2 !== 0 && count($pairs) > 0) {
+                $pairs[] = $pairs[0];
             }
 
             $matchesCount = (int) ceil(count($pairs) / 2);
@@ -119,7 +114,7 @@ final class MatchGeneratorService
                 
                 $p1 = $team1[0] ?? null;
                 $p2 = $team1[1] ?? null;
-                $status1 = ($p2 === null || $team2 === null) ? 'bye' : 'pending';
+                $status1 = 'pending';
                 
                 $this->matches->create(
                     $sessionId,
@@ -137,7 +132,7 @@ final class MatchGeneratorService
                 if ($team2 !== null) {
                     $p3 = $team2[0] ?? null;
                     $p4 = $team2[1] ?? null;
-                    $status2 = ($p4 === null || $team1 === null) ? 'bye' : 'pending'; // In practice team1 is never null here
+                    $status2 = 'pending';
                     
                     $this->matches->create(
                         $sessionId,
@@ -316,8 +311,13 @@ final class MatchGeneratorService
             $pairs[] = [array_shift($group), array_shift($group)];
         }
 
-        if (count($group) === 1) {
-            $pairs[] = [$group[0], null];
+        // If odd number of players, duplicate the first player as partner
+        // instead of creating a BYE
+        if (count($group) === 1 && count($pairs) > 0) {
+            $pairs[] = [$group[0], $pairs[0][0]];
+        } elseif (count($group) === 1) {
+            // Edge case: only 1 player total (shouldn't happen, minimum is 2)
+            $pairs[] = [$group[0], $group[0]];
         }
 
         return $pairs;
