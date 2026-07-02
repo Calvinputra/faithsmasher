@@ -3260,8 +3260,24 @@ button.is-loading::after {
   }
 }
 
-.bagan-preview-table tbody tr:hover {
-  background: color-mix(in srgb, var(--color-gold-50) 50%, white);
+.bagan-preview-table tbody tr.bagan-row {
+  background: #ffffff;
+}
+
+.bagan-preview-table tbody tr.bagan-row--stripe {
+  background: color-mix(in srgb, var(--color-navy-100) 72%, var(--color-navy-200));
+}
+
+.bagan-preview-table tbody tr.bagan-row:hover {
+  background: color-mix(in srgb, var(--color-gold-50) 55%, white);
+}
+
+.bagan-preview-table tbody tr.bagan-row--stripe:hover {
+  background: color-mix(in srgb, var(--color-gold-50) 40%, var(--color-navy-100));
+}
+
+.bagan-preview-table tbody tr.bagan-row.opacity-50.bagan-row--stripe {
+  background: color-mix(in srgb, var(--color-navy-100) 55%, #ecfdf5);
 }
 
 .bagan-meta {
@@ -3280,6 +3296,14 @@ button.is-loading::after {
   font-weight: 700;
   color: var(--color-navy-800);
   background: var(--color-gold-100);
+}
+
+.bagan-preview-table tbody tr.bagan-row--done {
+  background: color-mix(in srgb, #ecfdf5 75%, white) !important;
+}
+
+.bagan-preview-table tbody tr.bagan-row--done.bagan-row--stripe {
+  background: color-mix(in srgb, #ecfdf5 55%, var(--color-navy-100)) !important;
 }
 
 .bagan-row-bye {

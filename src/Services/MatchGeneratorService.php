@@ -70,44 +70,14 @@ final class MatchGeneratorService
 
             $scheduleStart = $this->sessionGlobalOrder($bagan, 1, $targetMatchCount);
             $scheduledMatchups = $this->scheduleMatchups($matchups, $lastPlayedMatch, $scheduleStart);
-
-            foreach ($scheduledMatchups as $index => $matchup) {
-                [$team1, $team2] = $matchup;
-                $localOrder = $index + 1;
-                $courtNumber = ($index % $courtCount) + 1;
-
-                $this->matches->create(
-                    $sessionId,
-                    $bagan,
-                    $localOrder,
-                    $team1[0]->id,
-                    $team1[1]->id,
-                    false,
-                    'pending',
-                    $courtNumber,
-                );
-                $totalPairs++;
-
-                if ($team2 !== null) {
-                    $this->matches->create(
-                        $sessionId,
-                        $bagan,
-                        $localOrder,
-                        $team2[0]->id,
-                        $team2[1]->id,
-                        false,
-                        'pending',
-                        $courtNumber,
-                    );
-                    $totalPairs++;
-                }
-
-                $this->updateLastPlayed(
-                    $matchup,
-                    $lastPlayedMatch,
-                    $this->sessionGlobalOrder($bagan, $localOrder, $targetMatchCount),
-                );
-            }
+            $totalPairs += $this->persistScheduledMatchups(
+                $sessionId,
+                $bagan,
+                $scheduledMatchups,
+                $targetMatchCount,
+                $courtCount,
+                $lastPlayedMatch,
+            );
         }
 
         return $totalPairs;
@@ -196,7 +166,14 @@ final class MatchGeneratorService
                 $allPlayerIds,
             )
             : [];
-        $allMatchups = array_merge($fixedMatchups, $generated);
+        $allMatchups = $this->filterValidMatchups(array_merge($fixedMatchups, $generated));
+
+        if (count($allMatchups) < $targetMatchCount) {
+            throw new \InvalidArgumentException(
+                'Tidak cukup match valid untuk bagan ini (' . count($allMatchups) . " dari {$targetMatchCount}). "
+                . 'Kurangi jumlah request atau generate ulang semua bagan.',
+            );
+        }
 
         if ($allMatchups === []) {
             throw new \InvalidArgumentException('Tidak ada match yang bisa dibuat untuk bagan ini.');
@@ -208,47 +185,15 @@ final class MatchGeneratorService
         $lastPlayedMatch = $this->buildLastPlayedMap($existingRows, $targetMatchCount);
         $scheduleStart = $this->sessionGlobalOrder($baganNum, 1, $targetMatchCount);
         $scheduledMatchups = $this->scheduleMatchups($allMatchups, $lastPlayedMatch, $scheduleStart);
-        $totalPairs = 0;
 
-        foreach ($scheduledMatchups as $index => $matchup) {
-            [$team1, $team2] = $matchup;
-            $localOrder = $index + 1;
-            $courtNumber = ($index % $courtCount) + 1;
-
-            $this->matches->create(
-                $sessionId,
-                $baganNum,
-                $localOrder,
-                $team1[0]->id,
-                $team1[1]->id,
-                false,
-                'pending',
-                $courtNumber,
-            );
-            $totalPairs++;
-
-            if ($team2 !== null) {
-                $this->matches->create(
-                    $sessionId,
-                    $baganNum,
-                    $localOrder,
-                    $team2[0]->id,
-                    $team2[1]->id,
-                    false,
-                    'pending',
-                    $courtNumber,
-                );
-                $totalPairs++;
-            }
-
-            $this->updateLastPlayed(
-                $matchup,
-                $lastPlayedMatch,
-                $this->sessionGlobalOrder($baganNum, $localOrder, $targetMatchCount),
-            );
-        }
-
-        return $totalPairs;
+        return $this->persistScheduledMatchups(
+            $sessionId,
+            $baganNum,
+            $scheduledMatchups,
+            $targetMatchCount,
+            $courtCount,
+            $lastPlayedMatch,
+        );
     }
 
     /**
@@ -477,7 +422,88 @@ final class MatchGeneratorService
             }
         }
 
+        if (count($matchups) < $targetMatchCount && count($idPool) >= 4) {
+            throw new \InvalidArgumentException(
+                'Generator hanya menghasilkan ' . count($matchups) . " dari {$targetMatchCount} match. "
+                . 'Coba generate ulang bagan atau sesuaikan request match.',
+            );
+        }
+
         return $matchups;
+    }
+
+    /**
+     * @param list<mixed> $matchups
+     * @return list{array{0: array{0: Participant, 1: Participant}, 1: ?array{0: Participant, 1: Participant}}}
+     */
+    private function filterValidMatchups(array $matchups): array
+    {
+        return array_values(array_filter(
+            $matchups,
+            static function (mixed $matchup): bool {
+                if (!is_array($matchup) || !isset($matchup[0]) || !is_array($matchup[0])) {
+                    return false;
+                }
+
+                return isset($matchup[0][0], $matchup[0][1]);
+            },
+        ));
+    }
+
+    /**
+     * @param list{array{0: array{0: Participant, 1: Participant}, 1: ?array{0: Participant, 1: Participant}>} $scheduledMatchups
+     */
+    private function persistScheduledMatchups(
+        int $sessionId,
+        int $baganNum,
+        array $scheduledMatchups,
+        int $targetMatchCount,
+        int $courtCount,
+        array &$lastPlayedMatch,
+    ): int {
+        $validMatchups = $this->filterValidMatchups($scheduledMatchups);
+        $totalPairs = 0;
+
+        foreach ($validMatchups as $index => $matchup) {
+            $team1 = $matchup[0];
+            $team2 = is_array($matchup[1] ?? null) ? $matchup[1] : null;
+            $localOrder = $index + 1;
+            $courtNumber = ($index % $courtCount) + 1;
+
+            $this->matches->create(
+                $sessionId,
+                $baganNum,
+                $localOrder,
+                $team1[0]->id,
+                $team1[1]->id,
+                false,
+                'pending',
+                $courtNumber,
+            );
+            $totalPairs++;
+
+            if ($team2 !== null && isset($team2[0], $team2[1])) {
+                $this->matches->create(
+                    $sessionId,
+                    $baganNum,
+                    $localOrder,
+                    $team2[0]->id,
+                    $team2[1]->id,
+                    false,
+                    'pending',
+                    $courtNumber,
+                );
+                $totalPairs++;
+            }
+
+            $this->updateLastPlayed(
+                $matchup,
+                $lastPlayedMatch,
+                $this->sessionGlobalOrder($baganNum, $localOrder, $targetMatchCount),
+            );
+        }
+
+        return $totalPairs;
     }
 
     /**
@@ -527,8 +553,49 @@ final class MatchGeneratorService
      */
     private function forceDoublesMatchFromPool(array $idPool, array $playerById): ?array
     {
-        $participants = array_map(static fn (int $id): Participant => $playerById[$id], array_slice($idPool, 0, 4));
+        if (count($idPool) < 4) {
+            return null;
+        }
 
+        $uniqueIds = array_values(array_unique($idPool));
+
+        if (count($uniqueIds) >= 4) {
+            $participants = array_map(static fn (int $id): Participant => $playerById[$id], $uniqueIds);
+            $quads = $this->combinations($participants, 4);
+
+            if (count($quads) > 120) {
+                shuffle($quads);
+                $quads = array_slice($quads, 0, 120);
+            }
+
+            foreach ($quads as $four) {
+                $forced = $this->forceDoublesMatchFromParticipants($four);
+
+                if ($forced !== null) {
+                    return $forced;
+                }
+            }
+        }
+
+        for ($offset = 0, $limit = count($idPool) - 3; $offset < $limit; $offset++) {
+            $slice = array_slice($idPool, $offset, 4);
+            $participants = array_map(static fn (int $id): Participant => $playerById[$id], $slice);
+            $forced = $this->forceDoublesMatchFromParticipants($participants);
+
+            if ($forced !== null) {
+                return $forced;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param list<Participant> $participants
+     * @return ?array{teams: array{0: array{0: Participant, 1: Participant}, 1: array{0: Participant, 1: Participant}}, players: list<Participant>, score: float}
+     */
+    private function forceDoublesMatchFromParticipants(array $participants): ?array
+    {
         if (count($participants) < 4) {
             return null;
         }
@@ -870,12 +937,17 @@ final class MatchGeneratorService
      */
     private function scheduleMatchups(array $matchups, array $lastPlayedMatch, int $startOrder): array
     {
+        $matchups = $this->filterValidMatchups($matchups);
         $scheduled = [];
         $unassigned = $matchups;
 
-        for ($i = 0; $i < count($matchups); $i++) {
+        for ($i = 0, $total = count($matchups); $i < $total; $i++) {
+            if ($unassigned === []) {
+                break;
+            }
+
             $bestScore = -1;
-            $bestIndex = -1;
+            $bestIndex = null;
 
             foreach ($unassigned as $index => $matchup) {
                 $score = $this->calculateMatchupRestScore($matchup, $lastPlayedMatch, $startOrder + $i);
@@ -886,8 +958,11 @@ final class MatchGeneratorService
                 }
             }
 
-            $picked = $unassigned[$bestIndex];
-            $scheduled[] = $picked;
+            if ($bestIndex === null || !isset($unassigned[$bestIndex]) || !is_array($unassigned[$bestIndex])) {
+                break;
+            }
+
+            $scheduled[] = $unassigned[$bestIndex];
             unset($unassigned[$bestIndex]);
         }
 

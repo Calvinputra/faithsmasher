@@ -27,10 +27,10 @@
 
             if (isChecked) {
                 row.classList.add('opacity-50');
-                row.classList.remove('bg-white', 'bg-navy-50/40');
-                row.classList.add('bg-green-50/60');
+                row.classList.remove('bg-green-50/60');
+                row.classList.add('bagan-row--done');
             } else {
-                row.classList.remove('opacity-50', 'bg-green-50/60');
+                row.classList.remove('opacity-50', 'bagan-row--done', 'bg-green-50/60');
             }
         });
 
