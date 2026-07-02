@@ -1,0 +1,154 @@
+{% set canEditChecklist = not (isShareView|default(false)) or currentUser %}
+{% if baganSettings.scope == constant('App\\Support\\BaganSettings::SCOPE_GLOBAL') %}
+    {% set baganMode = baganSettings.globalMode %}
+{% else %}
+    {% set baganMode = baganSettings.perBaganModes[baganNum - 1]|default(baganSettings.globalMode) %}
+{% endif %}
+<section class="bagan-preview-section card overflow-hidden p-0" data-bagan-num="{{ baganNum }}">
+    <header class="bagan-preview-section-header">
+        <div class="bagan-preview-section-heading">
+            <h2 class="bagan-preview-title">Bagan {{ baganNum }}</h2>
+            {% if not isShareView|default(false) %}
+                <span class="bagan-editing-badge hidden" data-bagan-editing-badge>
+                    {% include 'components/ui/icon.twig' with { name: 'ri-drag-move-2-line', size: 'sm' } %}
+                    Mode edit · drag & drop aktif
+                </span>
+            {% endif %}
+        </div>
+        {% if not isShareView|default(false) %}
+            <div class="bagan-section-toolbar" data-html2canvas-ignore="true">
+                <button
+                    type="button"
+                    class="btn-secondary btn-bagan-manual-toggle py-1 px-2.5 text-[11px] shadow-sm ring-1 ring-navy-200"
+                    data-bagan="{{ baganNum }}"
+                >
+                    <i class="ri-drag-move-2-line mr-1"></i> Manual Setup
+                </button>
+                <button
+                    type="button"
+                    class="btn-secondary btn-bagan-request py-1 px-2.5 text-[11px] shadow-sm ring-1 ring-navy-200"
+                    data-bagan="{{ baganNum }}"
+                    data-request-url="/sessions/{{ session.id }}/matches/bagan/{{ baganNum }}/request"
+                >
+                    <i class="ri-user-add-line mr-1"></i> Request Match
+                </button>
+                <button
+                    type="submit"
+                    form="manual-form"
+                    class="btn-primary btn-bagan-save hidden py-1 px-2.5 text-[11px] shadow-sm"
+                    data-bagan="{{ baganNum }}"
+                >
+                    <i class="ri-save-line mr-1"></i> Simpan
+                </button>
+                <form
+                    method="post"
+                    action="/sessions/{{ session.id }}/matches/bagan/{{ baganNum }}/regenerate"
+                    class="inline"
+                    data-bagan-regenerate-form
+                    data-bagan="{{ baganNum }}"
+                    data-no-nav
+                    onclick="event.stopPropagation()"
+                >
+                    <button
+                        type="submit"
+                        class="btn-secondary py-1 px-2.5 text-[11px] shadow-sm ring-1 ring-navy-200 hover:bg-navy-50"
+                        data-confirm="Generate ulang khusus Bagan {{ baganNum }}?\n\nHanya bagan ini yang di-randomize ulang. Bagan lain tetap."
+                    >
+                        <i class="ri-refresh-line mr-1"></i> Generate Ulang
+                    </button>
+                </form>
+            </div>
+        {% endif %}
+    </header>
+    <div class="overflow-x-auto">
+        <table class="bagan-preview-table bagan-manual-table w-full text-xs sm:text-sm">
+            <thead>
+                <tr>
+                    <th>Group</th>
+                    <th>Pemain 1</th>
+                    <th>Pemain 2</th>
+                    <th>Lapangan</th>
+                    <th>Urutan Main</th>
+                    <th class="w-32 text-center">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in baganMatches %}
+                    {% set m = row.match %}
+                    {% set matchIndex = loop.index0 // 2 %}
+                    {% set bgClass = matchIndex % 2 == 1 ? 'bg-navy-50/40' : 'bg-white' %}
+
+                    <tr data-match-order="{{ m.matchOrder }}" data-match-id="{{ m.id }}" data-doubles-index="{{ matchIndex }}" data-bagan="{{ baganNum }}" class="bagan-row {{ bgClass }} transition-colors duration-200{% if m.status == 'bye' %} bagan-row-bye{% endif %}">
+                        <td class="bagan-manual-group">Group {{ loop.index }}</td>
+                        <td>
+                            <div class="drop-slot" data-slot="p1" data-match="{{ m.id }}" data-bagan="{{ baganNum }}">
+                                {% if row.p1 %}
+                                    <div class="player-chip" data-id="{{ m.participant1Id }}">
+                                        <span class="player-chip-label flex items-center gap-1">
+                                            {{ row.p1.name }}
+                                            <span class="bagan-meta flex items-center gap-0.5">
+                                                {% if not isShareView|default(false) and row.p1.rank %}
+                                                    <span class="text-[10px] font-bold text-navy-400 bg-navy-50 px-1 rounded uppercase tracking-widest border border-navy-100">{{ row.p1.rank }}</span>
+                                                {% endif %}
+                                                {% if row.p1.gender == 'male' %}
+                                                    <i class="ri-men-line text-blue-500 text-base leading-none" title="Laki-laki"></i>
+                                                {% elseif row.p1.gender == 'female' %}
+                                                    <i class="ri-women-line text-red-500 text-base leading-none" title="Perempuan"></i>
+                                                {% else %}
+                                                    <i class="ri-genderless-line text-navy-300 text-base leading-none" title="Tidak diketahui"></i>
+                                                {% endif %}
+                                            </span>
+                                        </span>
+                                        <span class="match-count hidden" aria-hidden="true"></span>
+                                    </div>
+                                {% else %}
+                                    <div class="text-navy-400 font-medium">—</div>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="drop-slot" data-slot="p2" data-match="{{ m.id }}" data-bagan="{{ baganNum }}">
+                                {% if row.p2 %}
+                                    <div class="player-chip" data-id="{{ m.participant2Id }}">
+                                        <span class="player-chip-label flex items-center gap-1">
+                                            {{ row.p2.name }}
+                                            <span class="bagan-meta flex items-center gap-0.5">
+                                                {% if not isShareView|default(false) and row.p2.rank %}
+                                                    <span class="text-[10px] font-bold text-navy-400 bg-navy-50 px-1 rounded uppercase tracking-widest border border-navy-100">{{ row.p2.rank }}</span>
+                                                {% endif %}
+                                                {% if row.p2.gender == 'male' %}
+                                                    <i class="ri-men-line text-blue-500 text-base leading-none" title="Laki-laki"></i>
+                                                {% elseif row.p2.gender == 'female' %}
+                                                    <i class="ri-women-line text-red-500 text-base leading-none" title="Perempuan"></i>
+                                                {% else %}
+                                                    <i class="ri-genderless-line text-navy-300 text-base leading-none" title="Tidak diketahui"></i>
+                                                {% endif %}
+                                            </span>
+                                        </span>
+                                        <span class="match-count hidden" aria-hidden="true"></span>
+                                    </div>
+                                {% elseif m.status == 'bye' %}
+                                    <span class="drop-slot-bye font-bold text-navy-400">BYE</span>
+                                {% else %}
+                                    <div class="text-navy-400 font-medium">—</div>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="bagan-manual-static">Lapangan {{ m.courtNumber|default('—') }}</td>
+                        <td class="bagan-manual-static"><span class="bagan-order-badge">{{ m.matchOrder }}</span></td>
+                        <td class="text-center align-middle">
+                            {% if canEditChecklist %}
+                                <label class="inline-flex cursor-pointer items-center gap-2 rounded-md p-1 hover:bg-navy-50 transition-colors">
+                                    <input type="checkbox" class="match-checklist-cb h-4 w-4 rounded border-navy-300 text-gold-600 focus:ring-gold-500" data-checklist-key="{{ baganNum }}-{{ m.matchOrder }}" data-match-order="{{ m.matchOrder }}" data-bagan="{{ baganNum }}">
+                                    <span class="text-[11px] font-medium text-navy-500 uppercase tracking-wider select-none">Selesai</span>
+                                </label>
+                            {% else %}
+                                <span class="text-[11px] font-medium uppercase tracking-wider text-navy-400">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>

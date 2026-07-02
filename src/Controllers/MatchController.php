@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Controllers\BaganShareController;
+use App\Models\Session;
 use App\Repositories\MatchRepository;
 use App\Repositories\ParticipantRepository;
 use App\Services\AuthService;
@@ -99,30 +100,39 @@ final class MatchController extends BaseController
         $settings = BaganSettings::fromSession($session);
 
         if ($baganNum < 1 || $baganNum > $settings->baganCount) {
-            return $this->flashRedirect(
+            return $this->respondBaganAction(
+                $request,
                 $response,
-                '/sessions/' . $sessionId . '/matches',
+                $sessionId,
+                $baganNum,
                 'Nomor bagan tidak valid.',
                 FlashType::ERROR,
+                false,
             );
         }
 
         try {
             $this->generator->autoGenerate($sessionId, $settings, $baganNum);
         } catch (\InvalidArgumentException $exception) {
-            return $this->flashRedirect(
+            return $this->respondBaganAction(
+                $request,
                 $response,
-                '/sessions/' . $sessionId . '/matches',
+                $sessionId,
+                $baganNum,
                 $exception->getMessage(),
                 FlashType::WARNING,
+                false,
             );
         }
 
-        return $this->flashRedirect(
+        return $this->respondBaganAction(
+            $request,
             $response,
-            '/sessions/' . $sessionId . '/matches',
-            "Bagan {$baganNum} berhasil digenerate ulang. Bagan lain tidak berubah.",
+            $sessionId,
+            $baganNum,
+            "Bagan {$baganNum} berhasil digenerate ulang.",
             FlashType::UPDATE,
+            true,
             'Generate bagan',
         );
     }
@@ -213,23 +223,30 @@ final class MatchController extends BaseController
         }
 
         if ($updated === 0 && $pairings !== []) {
-            return $this->flashRedirect(
+            return $this->respondBaganAction(
+                $request,
                 $response,
-                '/sessions/' . $sessionId . '/matches',
+                $sessionId,
+                $baganNum ?? 0,
                 'Tidak ada pairing valid yang disimpan. Periksa peserta dan slot match.',
                 FlashType::WARNING,
+                false,
             );
         }
 
         $flashMessage = $baganNum !== null
-            ? "Manual setup Bagan {$baganNum} berhasil disimpan. Bagan lain tidak berubah."
+            ? "Manual setup Bagan {$baganNum} berhasil disimpan."
             : 'Bagan berhasil disimpan.';
 
-        return $this->flashRedirect(
+        return $this->respondBaganAction(
+            $request,
             $response,
-            '/sessions/' . $sessionId . '/matches',
+            $sessionId,
+            $baganNum ?? 0,
             $flashMessage,
             FlashType::UPDATE,
+            $baganNum !== null,
+            'Manual setup',
         );
     }
 
@@ -241,11 +258,14 @@ final class MatchController extends BaseController
         $settings = BaganSettings::fromSession($session);
 
         if ($baganNum < 1 || $baganNum > $settings->baganCount) {
-            return $this->flashRedirect(
+            return $this->respondBaganAction(
+                $request,
                 $response,
-                '/sessions/' . $sessionId . '/matches',
+                $sessionId,
+                $baganNum,
                 'Nomor bagan tidak valid.',
                 FlashType::ERROR,
+                false,
             );
         }
 
@@ -254,11 +274,14 @@ final class MatchController extends BaseController
         $requests = is_string($requestsRaw) ? json_decode($requestsRaw, true) : $requestsRaw;
 
         if (!is_array($requests)) {
-            return $this->flashRedirect(
+            return $this->respondBaganAction(
+                $request,
                 $response,
-                '/sessions/' . $sessionId . '/matches',
+                $sessionId,
+                $baganNum,
                 'Format request tidak valid.',
                 FlashType::ERROR,
+                false,
             );
         }
 
@@ -269,19 +292,25 @@ final class MatchController extends BaseController
                 $this->generator->regenerateBaganWithRequests($sessionId, $baganNum, $requests);
             }
         } catch (\InvalidArgumentException $exception) {
-            return $this->flashRedirect(
+            return $this->respondBaganAction(
+                $request,
                 $response,
-                '/sessions/' . $sessionId . '/matches',
+                $sessionId,
+                $baganNum,
                 $exception->getMessage(),
                 FlashType::ERROR,
+                false,
             );
         }
 
-        return $this->flashRedirect(
+        return $this->respondBaganAction(
+            $request,
             $response,
-            '/sessions/' . $sessionId . '/matches',
-            "Bagan {$baganNum} diupdate. Request diterapkan, sisanya di-randomize. Bagan lain tidak berubah.",
+            $sessionId,
+            $baganNum,
+            "Bagan {$baganNum} diupdate. Request diterapkan, sisanya di-randomize.",
             FlashType::UPDATE,
+            true,
             'Request match',
         );
     }
@@ -329,5 +358,71 @@ final class MatchController extends BaseController
             'matchCounts' => $matchCounts,
             'rankCounts' => $this->participants->countByRank($session->id),
         ]);
+    }
+
+    private function wantsBaganPartial(ServerRequestInterface $request): bool
+    {
+        if ($request->getHeaderLine('X-Bagan-Partial') === '1') {
+            return true;
+        }
+
+        return $this->wantsJson($request);
+    }
+
+    private function renderBaganSectionHtml(Twig $view, Session $session, int $baganNum): string
+    {
+        $matchesByBagan = BaganMatchGrouper::byRound($this->matches->allWithParticipants($session->id));
+
+        return $view->getEnvironment()->render('components/matches/bagan-section.twig', [
+            'session' => $session,
+            'baganNum' => $baganNum,
+            'baganMatches' => $matchesByBagan[$baganNum] ?? [],
+            'baganSettings' => BaganSettings::fromSession($session),
+            'isShareView' => false,
+        ]);
+    }
+
+    private function respondBaganAction(
+        ServerRequestInterface $request,
+        ResponseInterface $response,
+        int $sessionId,
+        int $baganNum,
+        string $message,
+        string $type,
+        bool $ok,
+        ?string $title = null,
+    ): ResponseInterface {
+        if ($this->wantsBaganPartial($request) && $baganNum > 0 && $ok) {
+            /** @var Twig $view */
+            $view = $request->getAttribute('view');
+            $session = $this->requireSession($sessionId);
+
+            return $this->json($response, [
+                'ok' => true,
+                'message' => $message,
+                'title' => $title,
+                'type' => $type,
+                'baganNum' => $baganNum,
+                'html' => $this->renderBaganSectionHtml($view, $session, $baganNum),
+            ]);
+        }
+
+        if ($this->wantsBaganPartial($request)) {
+            return $this->json($response, [
+                'ok' => false,
+                'message' => $message,
+                'title' => $title,
+                'type' => $type,
+                'baganNum' => $baganNum > 0 ? $baganNum : null,
+            ], $ok ? 200 : 422);
+        }
+
+        return $this->flashRedirect(
+            $response,
+            '/sessions/' . $sessionId . '/matches',
+            $message,
+            $type,
+            $title,
+        );
     }
 }

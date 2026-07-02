@@ -52,47 +52,34 @@ final class MatchGeneratorService
 
         $this->matches->deleteBySession($sessionId, $targetBagan);
 
-        $globalMatchOrder = 1;
+        $targetMatchCount = $this->computeTargetMatchCount(count($players));
         $totalPairs = 0;
         $courtCount = max(1, $session->courtCount);
-        $lastPlayedMatch = [];
-
-        if ($targetBagan !== null) {
-            foreach ($existingRows as $row) {
-                $m = $row['match'];
-                if ($m->participant1Id) {
-                    $lastPlayedMatch[$m->participant1Id] = max($lastPlayedMatch[$m->participant1Id] ?? 0, $m->matchOrder);
-                }
-                if ($m->participant2Id) {
-                    $lastPlayedMatch[$m->participant2Id] = max($lastPlayedMatch[$m->participant2Id] ?? 0, $m->matchOrder);
-                }
-                $globalMatchOrder = max($globalMatchOrder, $m->matchOrder + 1);
-            }
-        }
+        $lastPlayedMatch = $this->buildLastPlayedMap($existingRows, $targetMatchCount);
 
         $bagansToGenerate = $targetBagan !== null ? [$targetBagan] : range(1, $settings->baganCount);
 
         foreach ($bagansToGenerate as $bagan) {
             $mode = $settings->modeForBagan($bagan);
             $rotated = $this->rotatePlayers($players, $bagan - 1);
-            $targetMatchCount = $this->computeTargetMatchCount(count($players));
             $matchups = $this->buildBaganMatchups($rotated, $history, $mode, $targetMatchCount, $bagan - 1);
 
             if ($matchups === []) {
                 continue;
             }
 
-            $scheduledMatchups = $this->scheduleMatchups($matchups, $lastPlayedMatch, $globalMatchOrder);
+            $scheduleStart = $this->sessionGlobalOrder($bagan, 1, $targetMatchCount);
+            $scheduledMatchups = $this->scheduleMatchups($matchups, $lastPlayedMatch, $scheduleStart);
 
             foreach ($scheduledMatchups as $index => $matchup) {
                 [$team1, $team2] = $matchup;
-                $currentGlobalMatchOrder = $globalMatchOrder + $index;
+                $localOrder = $index + 1;
                 $courtNumber = ($index % $courtCount) + 1;
 
                 $this->matches->create(
                     $sessionId,
                     $bagan,
-                    $currentGlobalMatchOrder,
+                    $localOrder,
                     $team1[0]->id,
                     $team1[1]->id,
                     false,
@@ -105,7 +92,7 @@ final class MatchGeneratorService
                     $this->matches->create(
                         $sessionId,
                         $bagan,
-                        $currentGlobalMatchOrder,
+                        $localOrder,
                         $team2[0]->id,
                         $team2[1]->id,
                         false,
@@ -115,10 +102,12 @@ final class MatchGeneratorService
                     $totalPairs++;
                 }
 
-                $this->updateLastPlayed($matchup, $lastPlayedMatch, $currentGlobalMatchOrder);
+                $this->updateLastPlayed(
+                    $matchup,
+                    $lastPlayedMatch,
+                    $this->sessionGlobalOrder($bagan, $localOrder, $targetMatchCount),
+                );
             }
-
-            $globalMatchOrder += count($scheduledMatchups);
         }
 
         return $totalPairs;
@@ -215,36 +204,21 @@ final class MatchGeneratorService
 
         $this->matches->deleteBySession($sessionId, $baganNum);
 
-        $globalMatchOrder = 1;
-        $lastPlayedMatch = [];
-
-        foreach ($existingRows as $row) {
-            $match = $row['match'];
-
-            if ($match->participant1Id) {
-                $lastPlayedMatch[$match->participant1Id] = max($lastPlayedMatch[$match->participant1Id] ?? 0, $match->matchOrder);
-            }
-
-            if ($match->participant2Id) {
-                $lastPlayedMatch[$match->participant2Id] = max($lastPlayedMatch[$match->participant2Id] ?? 0, $match->matchOrder);
-            }
-
-            $globalMatchOrder = max($globalMatchOrder, $match->matchOrder + 1);
-        }
-
         $courtCount = max(1, $session->courtCount);
-        $scheduledMatchups = $this->scheduleMatchups($allMatchups, $lastPlayedMatch, $globalMatchOrder);
+        $lastPlayedMatch = $this->buildLastPlayedMap($existingRows, $targetMatchCount);
+        $scheduleStart = $this->sessionGlobalOrder($baganNum, 1, $targetMatchCount);
+        $scheduledMatchups = $this->scheduleMatchups($allMatchups, $lastPlayedMatch, $scheduleStart);
         $totalPairs = 0;
 
         foreach ($scheduledMatchups as $index => $matchup) {
             [$team1, $team2] = $matchup;
-            $currentGlobalMatchOrder = $globalMatchOrder + $index;
+            $localOrder = $index + 1;
             $courtNumber = ($index % $courtCount) + 1;
 
             $this->matches->create(
                 $sessionId,
                 $baganNum,
-                $currentGlobalMatchOrder,
+                $localOrder,
                 $team1[0]->id,
                 $team1[1]->id,
                 false,
@@ -257,7 +231,7 @@ final class MatchGeneratorService
                 $this->matches->create(
                     $sessionId,
                     $baganNum,
-                    $currentGlobalMatchOrder,
+                    $localOrder,
                     $team2[0]->id,
                     $team2[1]->id,
                     false,
@@ -267,7 +241,11 @@ final class MatchGeneratorService
                 $totalPairs++;
             }
 
-            $this->updateLastPlayed($matchup, $lastPlayedMatch, $currentGlobalMatchOrder);
+            $this->updateLastPlayed(
+                $matchup,
+                $lastPlayedMatch,
+                $this->sessionGlobalOrder($baganNum, $localOrder, $targetMatchCount),
+            );
         }
 
         return $totalPairs;
@@ -329,6 +307,41 @@ final class MatchGeneratorService
         }
 
         return max(1, (int) ceil($playerCount / 4));
+    }
+
+    private function sessionGlobalOrder(int $baganNum, int $localOrder, int $matchesPerBagan): int
+    {
+        return ($baganNum - 1) * $matchesPerBagan + $localOrder;
+    }
+
+    /**
+     * @param list<array{match: \App\Models\TournamentMatch, p1: ?\App\Models\Participant, p2: ?\App\Models\Participant}> $rows
+     * @return array<int, int>
+     */
+    private function buildLastPlayedMap(array $rows, int $matchesPerBagan): array
+    {
+        $lastPlayedMatch = [];
+
+        foreach ($rows as $row) {
+            $match = $row['match'];
+            $effectiveOrder = $this->sessionGlobalOrder($match->roundNumber, $match->matchOrder, $matchesPerBagan);
+
+            if ($match->participant1Id) {
+                $lastPlayedMatch[$match->participant1Id] = max(
+                    $lastPlayedMatch[$match->participant1Id] ?? 0,
+                    $effectiveOrder,
+                );
+            }
+
+            if ($match->participant2Id) {
+                $lastPlayedMatch[$match->participant2Id] = max(
+                    $lastPlayedMatch[$match->participant2Id] ?? 0,
+                    $effectiveOrder,
+                );
+            }
+        }
+
+        return $lastPlayedMatch;
     }
 
     /**

@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', () => {
+(() => {
     const modal = document.getElementById('bagan-request-modal');
     const form = document.getElementById('bagan-request-form');
     const rowsContainer = document.getElementById('bagan-request-rows');
@@ -17,21 +17,6 @@ document.addEventListener('DOMContentLoaded', () => {
         participants = JSON.parse(document.getElementById('bagan-participants-data')?.textContent || '[]');
     } catch (_error) {
         participants = [];
-    }
-
-    function openModal(baganNum, actionUrl) {
-        form.action = actionUrl;
-        baganNumLabel.textContent = String(baganNum);
-        rowsContainer.innerHTML = '';
-        addRequestRow();
-
-        if (window.AppModal?.open) {
-            window.AppModal.open('bagan-request-modal');
-        } else {
-            modal.classList.add('modal-open');
-            document.body.classList.add('modal-scroll-lock');
-            document.dispatchEvent(new CustomEvent('modal:open', { detail: { modalId: 'bagan-request-modal', modal } }));
-        }
     }
 
     function participantOptions(selectedId = '') {
@@ -66,7 +51,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function addRequestRow() {
         const fragment = rowTemplate.content.cloneNode(true);
-        const row = fragment.querySelector('.bagan-request-row');
 
         rowsContainer.appendChild(fragment);
         const appended = rowsContainer.lastElementChild;
@@ -90,21 +74,26 @@ document.addEventListener('DOMContentLoaded', () => {
         renumberRows();
     }
 
-    addRowBtn?.addEventListener('click', () => addRequestRow());
+    function openModal(baganNum, actionUrl) {
+        form.action = actionUrl;
+        baganNumLabel.textContent = String(baganNum);
+        rowsContainer.innerHTML = '';
+        addRequestRow();
 
-    document.querySelectorAll('.btn-bagan-request').forEach((button) => {
-        button.addEventListener('click', (event) => {
-            event.stopPropagation();
-            openModal(button.dataset.bagan, button.dataset.requestUrl);
-        });
-    });
+        if (window.AppModal?.open) {
+            window.AppModal.open('bagan-request-modal');
+        } else {
+            modal.classList.add('modal-open');
+            document.body.classList.add('modal-scroll-lock');
+            document.dispatchEvent(new CustomEvent('modal:open', { detail: { modalId: 'bagan-request-modal', modal } }));
+        }
+    }
 
-    form.addEventListener('submit', (event) => {
+    function validateAndSerialize() {
         const requests = [];
         const used = new Set();
-        let hasError = false;
 
-        rowsContainer.querySelectorAll('.bagan-request-row').forEach((row, index) => {
+        for (const [index, row] of rowsContainer.querySelectorAll('.bagan-request-row').entries()) {
             const entry = {};
             const line = index + 1;
 
@@ -119,25 +108,22 @@ document.addEventListener('DOMContentLoaded', () => {
             const ids = [entry.p1, entry.p2, entry.p3, entry.p4];
 
             if (ids.some((id) => !id)) {
-                hasError = true;
                 window.FSToast?.error(`Match request #${line}: lengkapi ke-4 pemain.`, 'Request match');
-                return;
+                return false;
             }
 
             for (const id of ids) {
                 if (used.has(id)) {
-                    hasError = true;
                     window.FSToast?.error(`Match request #${line}: pemain dobel antar request.`, 'Request match');
-                    return;
+                    return false;
                 }
 
                 used.add(id);
             }
 
             if (entry.p1 === entry.p2 || entry.p3 === entry.p4) {
-                hasError = true;
                 window.FSToast?.error(`Match request #${line}: partner dalam satu tim harus berbeda.`, 'Request match');
-                return;
+                return false;
             }
 
             requests.push({
@@ -146,14 +132,39 @@ document.addEventListener('DOMContentLoaded', () => {
                 p3: Number(entry.p3),
                 p4: Number(entry.p4),
             });
-        });
-
-        if (hasError) {
-            event.preventDefault();
-            return;
         }
 
         hiddenInput.value = JSON.stringify(requests);
+
+        return true;
+    }
+
+    window.FsBaganRequest = {
+        validateAndSerialize,
+        openModal,
+    };
+
+    addRowBtn?.addEventListener('click', () => addRequestRow());
+
+    document.addEventListener('click', (event) => {
+        const button = event.target instanceof Element ? event.target.closest('.btn-bagan-request') : null;
+
+        if (!button) {
+            return;
+        }
+
+        event.stopPropagation();
+        openModal(button.dataset.bagan, button.dataset.requestUrl);
+    });
+
+    form.addEventListener('submit', (event) => {
+        if (document.getElementById('bagan-export-root')) {
+            return;
+        }
+
+        if (!validateAndSerialize()) {
+            event.preventDefault();
+        }
     });
 
     document.addEventListener('modal:open', (event) => {
@@ -167,4 +178,4 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
-});
+})();

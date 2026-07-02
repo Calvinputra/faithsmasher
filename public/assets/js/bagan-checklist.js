@@ -1,27 +1,29 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const exportRoot = document.getElementById('bagan-export-root');
+(() => {
+    const STORAGE_KEY = 'faithsmasher_match_checklist';
 
-    if (exportRoot?.dataset.canEdit === '0') {
-        return;
+    function loadSavedState() {
+        try {
+            return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+        } catch (_error) {
+            return {};
+        }
     }
 
-    const checkboxes = document.querySelectorAll('.match-checklist-cb');
-    if (checkboxes.length === 0) return;
-
-    // Load saved state from localStorage
-    const savedState = JSON.parse(localStorage.getItem('faithsmasher_match_checklist') || '{}');
-
-    function toggleRowStyle(checkbox) {
-        const matchOrder = checkbox.dataset.matchOrder;
+    function toggleRowStyle(checkbox, savedState) {
+        const checklistKey = checkbox.dataset.checklistKey || checkbox.dataset.matchOrder;
         const isChecked = checkbox.checked;
-        
-        // Sync all checkboxes and rows that share the same match order
-        const relatedCheckboxes = document.querySelectorAll(`.match-checklist-cb[data-match-order="${matchOrder}"]`);
-        
-        relatedCheckboxes.forEach(cb => {
+        const bagan = checkbox.dataset.bagan;
+        const selector = bagan
+            ? `.match-checklist-cb[data-checklist-key="${checklistKey}"][data-bagan="${bagan}"]`
+            : `.match-checklist-cb[data-checklist-key="${checklistKey}"]`;
+
+        document.querySelectorAll(selector).forEach((cb) => {
             cb.checked = isChecked;
             const row = cb.closest('tr');
-            if (!row) return;
+
+            if (!row) {
+                return;
+            }
 
             if (isChecked) {
                 row.classList.add('opacity-50');
@@ -29,31 +31,59 @@ document.addEventListener('DOMContentLoaded', () => {
                 row.classList.add('bg-green-50/60');
             } else {
                 row.classList.remove('opacity-50', 'bg-green-50/60');
-                // The underlying CSS classes will take over again
             }
+        });
+
+        if (isChecked) {
+            savedState[checklistKey] = true;
+        } else {
+            delete savedState[checklistKey];
+        }
+
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(savedState));
+    }
+
+    function initChecklistSection(section) {
+        const exportRoot = document.getElementById('bagan-export-root');
+
+        if (exportRoot?.dataset.canEdit === '0') {
+            return;
+        }
+
+        const scope = section instanceof HTMLElement ? section : document;
+        const checkboxes = scope.querySelectorAll('.match-checklist-cb');
+
+        if (checkboxes.length === 0) {
+            return;
+        }
+
+        const savedState = loadSavedState();
+
+        checkboxes.forEach((cb) => {
+            if (cb.dataset.checklistBound === '1') {
+                return;
+            }
+
+            cb.dataset.checklistBound = '1';
+            const checklistKey = cb.dataset.checklistKey || cb.dataset.matchOrder;
+
+            if (savedState[checklistKey]) {
+                cb.checked = true;
+                toggleRowStyle(cb, savedState);
+            }
+
+            cb.addEventListener('change', (event) => {
+                toggleRowStyle(event.target, savedState);
+            });
         });
     }
 
-    checkboxes.forEach(cb => {
-        const matchOrder = cb.dataset.matchOrder;
-        
-        if (savedState[matchOrder]) {
-            cb.checked = true;
-            toggleRowStyle(cb);
-        }
+    window.FsBaganChecklist = {
+        initSection: initChecklistSection,
+        initAll: () => initChecklistSection(document),
+    };
 
-        cb.addEventListener('change', (e) => {
-            const isChecked = e.target.checked;
-            savedState[matchOrder] = isChecked;
-            
-            if (isChecked) {
-                savedState[matchOrder] = true;
-            } else {
-                delete savedState[matchOrder];
-            }
-            
-            localStorage.setItem('faithsmasher_match_checklist', JSON.stringify(savedState));
-            toggleRowStyle(e.target);
-        });
+    document.addEventListener('DOMContentLoaded', () => {
+        window.FsBaganChecklist.initAll();
     });
-});
+})();
