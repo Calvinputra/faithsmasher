@@ -63,7 +63,18 @@
     }
 
     async function handlePartialResponse(response) {
-        const payload = await response.json();
+        const rawBody = await response.text();
+        let payload = null;
+
+        try {
+            payload = JSON.parse(rawBody);
+        } catch (_error) {
+            const fallbackMessage = response.ok
+                ? 'Server mengirim response yang tidak valid.'
+                : 'Server error saat memperbarui bagan. Cek log / debug detail.';
+
+            throw new Error(fallbackMessage);
+        }
 
         if (!response.ok || !payload.ok) {
             throw new Error(payload.message || 'Gagal memperbarui bagan.');

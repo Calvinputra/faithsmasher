@@ -70,11 +70,11 @@ final class MatchController extends BaseController
 
         try {
             $count = $this->generator->autoGenerate($sessionId, $settings);
-        } catch (\InvalidArgumentException $exception) {
+        } catch (\Throwable $exception) {
             return $this->flashRedirect(
                 $response,
                 '/sessions/' . $sessionId . '/matches',
-                $exception->getMessage(),
+                'Generate gagal: ' . $exception->getMessage(),
                 FlashType::WARNING,
             );
         }
@@ -113,13 +113,13 @@ final class MatchController extends BaseController
 
         try {
             $this->generator->autoGenerate($sessionId, $settings, $baganNum);
-        } catch (\InvalidArgumentException $exception) {
+        } catch (\Throwable $exception) {
             return $this->respondBaganAction(
                 $request,
                 $response,
                 $sessionId,
                 $baganNum,
-                $exception->getMessage(),
+                'Generate gagal: ' . $exception->getMessage(),
                 FlashType::WARNING,
                 false,
             );
@@ -291,13 +291,13 @@ final class MatchController extends BaseController
             } else {
                 $this->generator->regenerateBaganWithRequests($sessionId, $baganNum, $requests);
             }
-        } catch (\InvalidArgumentException $exception) {
+        } catch (\Throwable $exception) {
             return $this->respondBaganAction(
                 $request,
                 $response,
                 $sessionId,
                 $baganNum,
-                $exception->getMessage(),
+                'Request match gagal: ' . $exception->getMessage(),
                 FlashType::ERROR,
                 false,
             );
