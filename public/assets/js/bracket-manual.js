@@ -1,10 +1,19 @@
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('manual-form');
     const pairingsInput = document.getElementById('pairings-input');
+    const baganInput = document.getElementById('manual-bagan-input');
 
     if (!form || typeof Sortable === 'undefined') {
         return;
     }
+
+    let savingBagan = null;
+
+    document.querySelectorAll('.btn-bagan-save').forEach((button) => {
+        button.addEventListener('click', () => {
+            savingBagan = button.dataset.bagan || null;
+        });
+    });
 
     const sortablesByBagan = new Map();
 
@@ -116,8 +125,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     form.addEventListener('submit', () => {
         const pairings = {};
+        const baganScope = savingBagan
+            ? `.bagan-preview-section[data-bagan-num="${savingBagan}"] tr[data-match-id]`
+            : 'tr[data-match-id]';
 
-        document.querySelectorAll('tr[data-match-id]').forEach((row) => {
+        document.querySelectorAll(baganScope).forEach((row) => {
             const matchId = row.dataset.matchId;
             const p1Slot = row.querySelector('[data-slot="p1"] .player-chip');
             const p2Slot = row.querySelector('[data-slot="p2"] .player-chip');
@@ -129,6 +141,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         pairingsInput.value = JSON.stringify(pairings);
+
+        if (baganInput) {
+            baganInput.value = savingBagan || '';
+        }
     });
 
     updateWarnings();

@@ -42,16 +42,22 @@
                         >
                             <i class="ri-save-line mr-1"></i> Simpan
                         </button>
-                        <button
-                            type="submit"
-                            form="bagan-setup-form"
-                            name="target_bagan"
-                            value="{{ baganNum }}"
-                            class="btn-secondary py-1 px-2.5 text-[11px] shadow-sm ring-1 ring-navy-200 hover:bg-navy-50"
-                            onclick="if(!confirm('Generate ulang khusus Bagan {{ baganNum }}?\n\nSusunan manual pada bagan ini akan tertimpa.')) { event.preventDefault(); event.stopPropagation(); return false; } event.stopPropagation();"
+                        <form
+                            method="post"
+                            action="/sessions/{{ session.id }}/matches/bagan/{{ baganNum }}/regenerate"
+                            class="inline"
+                            data-bagan-regenerate-form
+                            data-no-nav
+                            onclick="event.stopPropagation()"
                         >
-                            <i class="ri-refresh-line mr-1"></i> Generate Ulang
-                        </button>
+                            <button
+                                type="submit"
+                                class="btn-secondary py-1 px-2.5 text-[11px] shadow-sm ring-1 ring-navy-200 hover:bg-navy-50"
+                                onclick="if(!confirm('Generate ulang khusus Bagan {{ baganNum }}?\n\nHanya bagan ini yang di-randomize ulang. Bagan lain tetap.')) { event.preventDefault(); event.stopPropagation(); return false; } event.stopPropagation();"
+                            >
+                                <i class="ri-refresh-line mr-1"></i> Generate Ulang
+                            </button>
+                        </form>
                     </div>
                 {% endif %}
             </header>

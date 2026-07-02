@@ -67,10 +67,8 @@ final class MatchController extends BaseController
 
         $this->sessions->updateBaganSettings($sessionId, $settings, $this->userId());
 
-        $targetBagan = isset($data['target_bagan']) && is_numeric($data['target_bagan']) ? (int) $data['target_bagan'] : null;
-
         try {
-            $count = $this->generator->autoGenerate($sessionId, $settings, $targetBagan);
+            $count = $this->generator->autoGenerate($sessionId, $settings);
         } catch (\InvalidArgumentException $exception) {
             return $this->flashRedirect(
                 $response,
@@ -84,16 +82,48 @@ final class MatchController extends BaseController
             ? MatchPairingMode::options()[$settings->globalMode]
             : 'campuran per bagan';
 
-        $flashMessage = $targetBagan !== null 
-            ? "Bagan {$targetBagan} berhasil digenerate ulang."
-            : "{$count} match · {$settings->baganCount} bagan · {$modeLabel}";
+        return $this->flashRedirect(
+            $response,
+            '/sessions/' . $sessionId . '/matches',
+            "{$count} match · {$settings->baganCount} bagan · {$modeLabel}",
+            FlashType::CREATE,
+            'Bagan digenerate',
+        );
+    }
+
+    public function regenerateBagan(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $sessionId = (int) $args['sessionId'];
+        $baganNum = (int) ($args['baganNum'] ?? 0);
+        $session = $this->requireSession($sessionId);
+        $settings = BaganSettings::fromSession($session);
+
+        if ($baganNum < 1 || $baganNum > $settings->baganCount) {
+            return $this->flashRedirect(
+                $response,
+                '/sessions/' . $sessionId . '/matches',
+                'Nomor bagan tidak valid.',
+                FlashType::ERROR,
+            );
+        }
+
+        try {
+            $this->generator->autoGenerate($sessionId, $settings, $baganNum);
+        } catch (\InvalidArgumentException $exception) {
+            return $this->flashRedirect(
+                $response,
+                '/sessions/' . $sessionId . '/matches',
+                $exception->getMessage(),
+                FlashType::WARNING,
+            );
+        }
 
         return $this->flashRedirect(
             $response,
             '/sessions/' . $sessionId . '/matches',
-            $flashMessage,
-            FlashType::CREATE,
-            $targetBagan !== null ? 'Bagan diupdate' : 'Bagan digenerate',
+            "Bagan {$baganNum} berhasil digenerate ulang. Bagan lain tidak berubah.",
+            FlashType::UPDATE,
+            'Generate bagan',
         );
     }
 
@@ -145,15 +175,24 @@ final class MatchController extends BaseController
             $this->participants->allBySession($sessionId),
         );
         $sessionParticipantSet = array_flip($sessionParticipantIds);
-        $sessionMatchIds = array_map(
-            static fn (array $row) => $row['match']->id,
-            $this->matches->allWithParticipants($sessionId),
-        );
-        $sessionMatchSet = array_flip($sessionMatchIds);
+        $matchRows = $this->matches->allWithParticipants($sessionId);
+        $sessionMatchSet = [];
+
+        foreach ($matchRows as $row) {
+            $sessionMatchSet[$row['match']->id] = $row['match']->roundNumber;
+        }
+
+        $baganNum = isset($data['bagan_num']) && is_numeric($data['bagan_num']) ? (int) $data['bagan_num'] : null;
         $updated = 0;
 
         foreach ($pairings as $matchId => $slots) {
-            if (!is_array($slots) || !isset($sessionMatchSet[(int) $matchId])) {
+            $matchIdInt = (int) $matchId;
+
+            if (!is_array($slots) || !isset($sessionMatchSet[$matchIdInt])) {
+                continue;
+            }
+
+            if ($baganNum !== null && $sessionMatchSet[$matchIdInt] !== $baganNum) {
                 continue;
             }
 
@@ -182,10 +221,14 @@ final class MatchController extends BaseController
             );
         }
 
+        $flashMessage = $baganNum !== null
+            ? "Manual setup Bagan {$baganNum} berhasil disimpan. Bagan lain tidak berubah."
+            : 'Bagan berhasil disimpan.';
+
         return $this->flashRedirect(
             $response,
             '/sessions/' . $sessionId . '/matches',
-            'Bagan berhasil disimpan.',
+            $flashMessage,
             FlashType::UPDATE,
         );
     }
@@ -194,7 +237,17 @@ final class MatchController extends BaseController
     {
         $sessionId = (int) $args['sessionId'];
         $baganNum = (int) ($args['baganNum'] ?? 0);
-        $this->requireSession($sessionId);
+        $session = $this->requireSession($sessionId);
+        $settings = BaganSettings::fromSession($session);
+
+        if ($baganNum < 1 || $baganNum > $settings->baganCount) {
+            return $this->flashRedirect(
+                $response,
+                '/sessions/' . $sessionId . '/matches',
+                'Nomor bagan tidak valid.',
+                FlashType::ERROR,
+            );
+        }
 
         $data = (array) $request->getParsedBody();
         $requestsRaw = $data['requests'] ?? '[]';
@@ -211,7 +264,6 @@ final class MatchController extends BaseController
 
         try {
             if ($requests === []) {
-                $settings = BaganSettings::fromSession($this->requireSession($sessionId));
                 $this->generator->autoGenerate($sessionId, $settings, $baganNum);
             } else {
                 $this->generator->regenerateBaganWithRequests($sessionId, $baganNum, $requests);
@@ -228,7 +280,7 @@ final class MatchController extends BaseController
         return $this->flashRedirect(
             $response,
             '/sessions/' . $sessionId . '/matches',
-            "Bagan {$baganNum} diupdate. Request diterapkan, sisanya di-randomize.",
+            "Bagan {$baganNum} diupdate. Request diterapkan, sisanya di-randomize. Bagan lain tidak berubah.",
             FlashType::UPDATE,
             'Request match',
         );
