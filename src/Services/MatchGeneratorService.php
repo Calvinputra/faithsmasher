@@ -75,7 +75,8 @@ final class MatchGeneratorService
         foreach ($bagansToGenerate as $bagan) {
             $mode = $settings->modeForBagan($bagan);
             $rotated = $this->rotatePlayers($players, $bagan - 1);
-            $matchups = $this->buildBaganMatchups($rotated, $history, $mode);
+            $targetMatchCount = $this->computeTargetMatchCount(count($players));
+            $matchups = $this->buildBaganMatchups($rotated, $history, $mode, $targetMatchCount, $bagan - 1);
 
             if ($matchups === []) {
                 continue;
@@ -184,7 +185,28 @@ final class MatchGeneratorService
         ));
 
         $mode = $settings->modeForBagan($baganNum);
-        $generated = $remaining !== [] ? $this->buildBaganMatchups($remaining, $history, $mode) : [];
+        $targetMatchCount = $this->computeTargetMatchCount(count($players));
+        $remainingMatchCount = $targetMatchCount - count($fixedMatchups);
+
+        if ($remainingMatchCount < 0) {
+            throw new \InvalidArgumentException(
+                "Request melebihi kapasitas bagan (max {$targetMatchCount} match untuk " . count($players) . ' peserta).',
+            );
+        }
+
+        $remainingIds = array_map(static fn (Participant $player): int => $player->id, $remaining);
+        $allPlayerIds = array_map(static fn (Participant $player): int => $player->id, $players);
+        $generated = $remainingMatchCount > 0
+            ? $this->buildBaganMatchups(
+                $players,
+                $history,
+                $mode,
+                $remainingMatchCount,
+                $baganNum - 1,
+                $remainingIds,
+                $allPlayerIds,
+            )
+            : [];
         $allMatchups = array_merge($fixedMatchups, $generated);
 
         if ($allMatchups === []) {
@@ -300,11 +322,158 @@ final class MatchGeneratorService
         return $fixed;
     }
 
+    private function computeTargetMatchCount(int $playerCount): int
+    {
+        if ($playerCount < 1) {
+            return 0;
+        }
+
+        return max(1, (int) ceil($playerCount / 4));
+    }
+
     /**
+     * Pool slot pemain per bagan: semua main min 1×, sisanya diisi double jika n mod 4 ≠ 0.
+     *
+     * @param list<int> $playerIds
+     * @param list<int>|null $duplicateSourceIds
+     * @return list<int>
+     */
+    private function buildPlayerIdPool(
+        array $playerIds,
+        int $targetMatchCount,
+        int $baganShift,
+        ?array $duplicateSourceIds = null,
+    ): array {
+        $playerIds = array_values($playerIds);
+
+        if ($playerIds === []) {
+            return [];
+        }
+
+        $duplicateSourceIds = array_values($duplicateSourceIds ?? $playerIds);
+        $totalSlots = $targetMatchCount * 4;
+        $pool = $playerIds;
+        $extraNeeded = $totalSlots - count($pool);
+
+        for ($i = 0; $i < $extraNeeded; $i++) {
+            $pick = $this->pickDuplicatePlayerId($pool, $duplicateSourceIds, $i + $baganShift);
+            $pool[] = $pick;
+        }
+
+        return $pool;
+    }
+
+    /**
+     * @param list<int> $pool
+     * @param list<int> $duplicateSourceIds
+     */
+    private function pickDuplicatePlayerId(array $pool, array $duplicateSourceIds, int $shift): int
+    {
+        $counts = array_count_values($pool);
+        $bestId = $duplicateSourceIds[$shift % count($duplicateSourceIds)];
+        $bestCount = $counts[$bestId] ?? 0;
+
+        foreach ($duplicateSourceIds as $offset => $candidateId) {
+            $index = ($shift + $offset) % count($duplicateSourceIds);
+            $id = $duplicateSourceIds[$index];
+            $count = $counts[$id] ?? 0;
+
+            if ($count < $bestCount) {
+                $bestCount = $count;
+                $bestId = $id;
+            }
+        }
+
+        return $bestId;
+    }
+
+    /**
+     * @param list<Participant> $players
+     * @param list<int>|null $playerIdsOverride
+     * @param list<int>|null $duplicateSourceIds
+     * @return list{array{0: array{0: Participant, 1: Participant}, 1: ?array{0: Participant, 1: Participant}}}
+     */
+    private function buildBaganMatchups(
+        array $players,
+        PairingHistory $history,
+        string $mode,
+        ?int $targetMatchCount = null,
+        int $baganShift = 0,
+        ?array $playerIdsOverride = null,
+        ?array $duplicateSourceIds = null,
+    ): array {
+        $playerCount = count($players);
+
+        if ($playerCount < 2) {
+            return $this->buildLegacyRemainderOnly($players, $history, $mode);
+        }
+
+        $playerById = [];
+
+        foreach ($players as $player) {
+            $playerById[$player->id] = $player;
+        }
+
+        $targetMatchCount ??= $this->computeTargetMatchCount($playerCount);
+        $baseIds = $playerIdsOverride ?? array_map(static fn (Participant $player): int => $player->id, $players);
+        $idPool = $this->buildPlayerIdPool($baseIds, $targetMatchCount, $baganShift, $duplicateSourceIds);
+        $matchups = [];
+
+        while (count($matchups) < $targetMatchCount && count($idPool) >= 4) {
+            $poolParticipants = array_map(static fn (int $id): Participant => $playerById[$id], $idPool);
+            $match = $this->findBestDoublesMatch($poolParticipants, $history, $mode, strict: true);
+
+            if ($match === null) {
+                shuffle($idPool);
+                $poolParticipants = array_map(static fn (int $id): Participant => $playerById[$id], $idPool);
+                $match = $this->findBestDoublesMatch($poolParticipants, $history, $mode, strict: true);
+            }
+
+            if ($match === null) {
+                $poolParticipants = array_map(static fn (int $id): Participant => $playerById[$id], $idPool);
+                $match = $this->findBestDoublesMatch($poolParticipants, $history, $mode, strict: false);
+            }
+
+            if ($match === null) {
+                $match = $this->forceDoublesMatchFromPool($idPool, $playerById);
+            }
+
+            if ($match === null) {
+                break;
+            }
+
+            [$team1, $team2] = $match['teams'];
+            $history->recordDoublesMatch($team1, $team2);
+            $matchups[] = [$team1, $team2];
+            $idPool = $this->consumePlayersFromIdPool($idPool, $match['players']);
+        }
+
+        if (count($matchups) < $targetMatchCount) {
+            $legacy = $this->buildLegacyRemainderOnly(
+                array_map(static fn (int $id): Participant => $playerById[$id], $idPool),
+                $history,
+                $mode,
+            );
+
+            foreach ($legacy as $extra) {
+                if (count($matchups) >= $targetMatchCount) {
+                    break;
+                }
+
+                $matchups[] = $extra;
+            }
+        }
+
+        return $matchups;
+    }
+
+    /**
+     * Fallback lama untuk sisa pemain (BYE / match tidak penuh) — tetap dipakai jika pool tidak bisa dipenuhi.
+     *
      * @param list<Participant> $players
      * @return list{array{0: array{0: Participant, 1: Participant}, 1: ?array{0: Participant, 1: Participant}}}
      */
-    private function buildBaganMatchups(array $players, PairingHistory $history, string $mode): array
+    private function buildLegacyRemainderOnly(array $players, PairingHistory $history, string $mode): array
     {
         $remaining = array_values($players);
         $matchups = [];
@@ -324,7 +493,7 @@ final class MatchGeneratorService
             [$team1, $team2] = $match['teams'];
             $history->recordDoublesMatch($team1, $team2);
             $matchups[] = [$team1, $team2];
-            $remaining = $this->removePlayers($remaining, $match['players']);
+            $remaining = $this->removePlayerInstances($remaining, $match['players']);
         }
 
         if (count($remaining) >= 2) {
@@ -339,17 +508,70 @@ final class MatchGeneratorService
     }
 
     /**
+     * @param list<int> $idPool
+     * @param array<int, Participant> $playerById
+     * @return ?array{teams: array{0: array{0: Participant, 1: Participant}, 1: array{0: Participant, 1: Participant}}, players: list<Participant>, score: float}
+     */
+    private function forceDoublesMatchFromPool(array $idPool, array $playerById): ?array
+    {
+        $participants = array_map(static fn (int $id): Participant => $playerById[$id], array_slice($idPool, 0, 4));
+
+        if (count($participants) < 4) {
+            return null;
+        }
+
+        foreach ($this->splitQuadsIntoTeams($participants) as [$team1, $team2]) {
+            if ($team1[0]->id === $team1[1]->id || $team2[0]->id === $team2[1]->id) {
+                continue;
+            }
+
+            return [
+                'teams' => [$team1, $team2],
+                'players' => $participants,
+                'score' => 0.0,
+            ];
+        }
+
+        return null;
+    }
+
+    /**
+     * @param list<int> $idPool
+     * @param list<Participant> $players
+     * @return list<int>
+     */
+    private function consumePlayersFromIdPool(array $idPool, array $players): array
+    {
+        foreach ($players as $player) {
+            $index = array_search($player->id, $idPool, true);
+
+            if ($index !== false) {
+                unset($idPool[$index]);
+            }
+        }
+
+        return array_values($idPool);
+    }
+
+    /**
      * @param list<Participant> $remaining
+     * @param list<Participant> $toRemove
      * @return list<Participant>
      */
-    private function removePlayers(array $remaining, array $toRemove): array
+    private function removePlayerInstances(array $remaining, array $toRemove): array
     {
-        $removeIds = array_map(static fn (Participant $p): int => $p->id, $toRemove);
+        $pool = $remaining;
 
-        return array_values(array_filter(
-            $remaining,
-            static fn (Participant $p): bool => !in_array($p->id, $removeIds, true),
-        ));
+        foreach ($toRemove as $player) {
+            foreach ($pool as $index => $candidate) {
+                if ($candidate->id === $player->id) {
+                    unset($pool[$index]);
+                    break;
+                }
+            }
+        }
+
+        return array_values($pool);
     }
 
     /**
@@ -416,6 +638,10 @@ final class MatchGeneratorService
 
         foreach ($quads as $four) {
             foreach ($this->splitQuadsIntoTeams($four) as [$team1, $team2]) {
+                if ($team1[0]->id === $team1[1]->id || $team2[0]->id === $team2[1]->id) {
+                    continue;
+                }
+
                 if ($strict && !$history->isValidDoublesMatch($team1, $team2)) {
                     continue;
                 }
