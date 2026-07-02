@@ -3298,6 +3298,19 @@ button.is-loading::after {
   background: var(--color-gold-100);
 }
 
+.match-status-cell {
+  border-left: 1px solid color-mix(in srgb, var(--color-navy-100) 70%, transparent);
+}
+
+.match-status-toggle {
+  min-height: 2.25rem;
+  background: color-mix(in srgb, white 72%, transparent);
+}
+
+.match-status-toggle:hover {
+  background: color-mix(in srgb, var(--color-gold-50) 70%, white);
+}
+
 .bagan-preview-table tbody tr.bagan-row--done {
   background: color-mix(in srgb, #ecfdf5 75%, white) !important;
 }

@@ -75,10 +75,15 @@
             <tbody>
                 {% for row in baganMatches %}
                     {% set m = row.match %}
+                    {% set previousRow = loop.index0 > 0 ? baganMatches[loop.index0 - 1] : null %}
+                    {% set nextRow = not loop.last ? baganMatches[loop.index0 + 1] : null %}
                     {% set matchIndex = loop.index0 // 2 %}
                     {% set stripeClass = matchIndex % 2 == 1 ? ' bagan-row--stripe' : '' %}
+                    {% set checklistKey = baganNum ~ '-' ~ m.matchOrder %}
+                    {% set isFirstMatchRow = previousRow is null or previousRow.match.matchOrder != m.matchOrder %}
+                    {% set statusRowspan = nextRow is not null and nextRow.match.matchOrder == m.matchOrder ? 2 : 1 %}
 
-                    <tr data-match-order="{{ m.matchOrder }}" data-match-id="{{ m.id }}" data-doubles-index="{{ matchIndex }}" data-bagan="{{ baganNum }}" class="bagan-row{{ stripeClass }} transition-colors duration-200{% if m.status == 'bye' %} bagan-row-bye{% endif %}">
+                    <tr data-match-order="{{ m.matchOrder }}" data-match-id="{{ m.id }}" data-doubles-index="{{ matchIndex }}" data-bagan="{{ baganNum }}" data-checklist-key="{{ checklistKey }}" class="bagan-row{{ stripeClass }} transition-colors duration-200{% if m.status == 'bye' %} bagan-row-bye{% endif %}">
                         <td class="bagan-manual-group">Group {{ loop.index }}</td>
                         <td>
                             <div class="drop-slot" data-slot="p1" data-match="{{ m.id }}" data-bagan="{{ baganNum }}">
@@ -136,16 +141,18 @@
                         </td>
                         <td class="bagan-manual-static">Lapangan {{ m.courtNumber|default('—') }}</td>
                         <td class="bagan-manual-static"><span class="bagan-order-badge">{{ m.matchOrder }}</span></td>
-                        <td class="text-center align-middle">
-                            {% if canEditChecklist %}
-                                <label class="inline-flex cursor-pointer items-center gap-2 rounded-md p-1 hover:bg-navy-50 transition-colors">
-                                    <input type="checkbox" class="match-checklist-cb h-4 w-4 rounded border-navy-300 text-gold-600 focus:ring-gold-500" data-checklist-key="{{ baganNum }}-{{ m.matchOrder }}" data-match-order="{{ m.matchOrder }}" data-bagan="{{ baganNum }}">
-                                    <span class="text-[11px] font-medium text-navy-500 uppercase tracking-wider select-none">Selesai</span>
-                                </label>
-                            {% else %}
-                                <span class="text-[11px] font-medium uppercase tracking-wider text-navy-400">—</span>
-                            {% endif %}
-                        </td>
+                        {% if isFirstMatchRow %}
+                            <td class="match-status-cell text-center align-middle" rowspan="{{ statusRowspan }}">
+                                {% if canEditChecklist %}
+                                    <label class="match-status-toggle inline-flex cursor-pointer items-center gap-2 rounded-md p-2 transition-colors">
+                                        <input type="checkbox" class="match-checklist-cb h-4 w-4 rounded border-navy-300 text-gold-600 focus:ring-gold-500" data-checklist-key="{{ checklistKey }}" data-match-order="{{ m.matchOrder }}" data-bagan="{{ baganNum }}">
+                                        <span class="text-[11px] font-medium text-navy-500 uppercase tracking-wider select-none">Selesai</span>
+                                    </label>
+                                {% else %}
+                                    <span class="text-[11px] font-medium uppercase tracking-wider text-navy-400">—</span>
+                                {% endif %}
+                            </td>
+                        {% endif %}
                     </tr>
                 {% endfor %}
             </tbody>

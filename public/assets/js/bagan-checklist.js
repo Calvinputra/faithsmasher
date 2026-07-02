@@ -13,18 +13,18 @@
         const checklistKey = checkbox.dataset.checklistKey || checkbox.dataset.matchOrder;
         const isChecked = checkbox.checked;
         const bagan = checkbox.dataset.bagan;
-        const selector = bagan
+        const checkboxSelector = bagan
             ? `.match-checklist-cb[data-checklist-key="${checklistKey}"][data-bagan="${bagan}"]`
             : `.match-checklist-cb[data-checklist-key="${checklistKey}"]`;
+        const rowSelector = bagan
+            ? `.bagan-row[data-checklist-key="${checklistKey}"][data-bagan="${bagan}"]`
+            : `.bagan-row[data-checklist-key="${checklistKey}"]`;
 
-        document.querySelectorAll(selector).forEach((cb) => {
+        document.querySelectorAll(checkboxSelector).forEach((cb) => {
             cb.checked = isChecked;
-            const row = cb.closest('tr');
+        });
 
-            if (!row) {
-                return;
-            }
-
+        document.querySelectorAll(rowSelector).forEach((row) => {
             if (isChecked) {
                 row.classList.add('opacity-50');
                 row.classList.remove('bg-green-50/60');
