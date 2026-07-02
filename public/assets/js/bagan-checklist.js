@@ -1,4 +1,10 @@
 document.addEventListener('DOMContentLoaded', () => {
+    const exportRoot = document.getElementById('bagan-export-root');
+
+    if (exportRoot?.dataset.canEdit === '0') {
+        return;
+    }
+
     const checkboxes = document.querySelectorAll('.match-checklist-cb');
     if (checkboxes.length === 0) return;
 

@@ -1,10 +1,14 @@
 {% set s = summary.session %}
+{% set sessionDay = s.sessionDate|date('Y-m-d') %}
+{% set isPastSession = sessionDay < ('now'|date('Y-m-d')) %}
 {% import 'components/ui/audit-trail.twig' as audit %}
-<article class="session-card">
+<article class="session-card{% if isPastSession %} session-card--past{% endif %}">
     <div class="session-card-top">
         <span class="session-date-badge">{{ s.sessionDate|date('d M Y') }}</span>
         <div class="session-card-top-actions">
-            {% if summary.participantCount > 0 %}
+            {% if isPastSession %}
+                <span class="session-past-badge">Selesai</span>
+            {% elseif summary.participantCount > 0 %}
                 <span class="session-active-badge">Aktif</span>
             {% else %}
                 <span class="session-draft-badge">Baru</span>

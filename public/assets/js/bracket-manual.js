@@ -6,45 +6,75 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    const slots = document.querySelectorAll('.drop-slot');
-    const sortables = [];
+    const sortablesByBagan = new Map();
 
-    slots.forEach((slot) => {
-        sortables.push(new Sortable(slot, {
-            group: 'players',
-            animation: 150,
-            disabled: true,
-            draggable: '.player-chip',
-            onAdd: (evt) => {
-                swapChips(evt);
-            },
-        }));
+    document.querySelectorAll('.bagan-preview-section[data-bagan-num]').forEach((section) => {
+        const bagan = section.dataset.baganNum;
+        const sortables = [];
+
+        section.querySelectorAll('.drop-slot').forEach((slot) => {
+            sortables.push(new Sortable(slot, {
+                group: `players-bagan-${bagan}`,
+                animation: 150,
+                disabled: true,
+                draggable: '.player-chip',
+                onAdd: (evt) => swapChips(evt),
+            }));
+        });
+
+        sortablesByBagan.set(bagan, sortables);
     });
 
-    const editBtn = document.getElementById('enable-edit-bagan-btn');
-    const saveBtn = document.getElementById('save-bagan-btn');
-    
-    if (editBtn && saveBtn) {
-        editBtn.addEventListener('click', () => {
-            sortables.forEach(s => s.option('disabled', false));
-            editBtn.classList.add('hidden');
-            saveBtn.classList.remove('hidden');
-            
-            // Add a visual cue that it's editable
-            document.querySelectorAll('.bagan-manual-table').forEach(table => {
-                table.classList.add('is-editable');
-            });
-        });
+    function deactivateBagan(section) {
+        const bagan = section.dataset.baganNum;
+        sortablesByBagan.get(bagan)?.forEach((sortable) => sortable.option('disabled', true));
+
+        section.classList.remove('is-editing');
+        section.querySelector('.bagan-manual-table')?.classList.remove('is-editable');
+        section.querySelector('[data-bagan-editing-badge]')?.classList.add('hidden');
+        section.querySelector('.btn-bagan-save')?.classList.add('hidden');
+        section.querySelector('.btn-bagan-manual-toggle')?.classList.remove('is-active');
     }
+
+    document.querySelectorAll('.btn-bagan-manual-toggle').forEach((button) => {
+        button.addEventListener('click', (event) => {
+            event.stopPropagation();
+
+            const bagan = button.dataset.bagan;
+            const section = document.querySelector(`.bagan-preview-section[data-bagan-num="${bagan}"]`);
+
+            if (!section) {
+                return;
+            }
+
+            const willActivate = !section.classList.contains('is-editing');
+
+            document.querySelectorAll('.bagan-preview-section.is-editing').forEach((activeSection) => {
+                if (activeSection !== section) {
+                    deactivateBagan(activeSection);
+                }
+            });
+
+            if (willActivate) {
+                sortablesByBagan.get(bagan)?.forEach((sortable) => sortable.option('disabled', false));
+                section.classList.add('is-editing');
+                section.querySelector('.bagan-manual-table')?.classList.add('is-editable');
+                section.querySelector('[data-bagan-editing-badge]')?.classList.remove('hidden');
+                section.querySelector('.btn-bagan-save')?.classList.remove('hidden');
+                button.classList.add('is-active');
+                section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            } else {
+                deactivateBagan(section);
+            }
+        });
+    });
 
     function swapChips(evt) {
         const newSlot = evt.to;
         const oldSlot = evt.from;
         const draggedChip = evt.item;
-
-        // Find existing chip in the new slot that isn't the one we just dropped
         const chips = Array.from(newSlot.querySelectorAll('.player-chip'));
-        const existingChip = chips.find(c => c !== draggedChip);
+        const existingChip = chips.find((chip) => chip !== draggedChip);
 
         if (existingChip && oldSlot) {
             oldSlot.appendChild(existingChip);
@@ -64,7 +94,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             section.querySelectorAll('.player-chip').forEach((chip) => {
                 const badge = chip.querySelector('.match-count');
-                if (!badge) return;
+
+                if (!badge) {
+                    return;
+                }
 
                 const count = counts[chip.dataset.id] || 0;
 

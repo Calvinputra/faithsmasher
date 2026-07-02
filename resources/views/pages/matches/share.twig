@@ -12,16 +12,30 @@
             <i class="ri-download-2-line" aria-hidden="true"></i>
             Unduh Gambar
         </button>
-        <a href="/sessions/{{ session.id }}/matches" class="btn-primary bagan-share-btn" style="text-decoration: none;">
-            <i class="ri-edit-2-line" aria-hidden="true"></i>
-            Edit Bagan
-        </a>
+        {% if currentUser %}
+            <a href="/sessions/{{ session.id }}/matches" class="btn-primary bagan-share-btn" style="text-decoration: none;">
+                <i class="ri-edit-2-line" aria-hidden="true"></i>
+                Edit Bagan
+            </a>
+        {% else %}
+            <a href="/sessions/{{ session.id }}/matches" class="btn-secondary bagan-share-btn" style="text-decoration: none;">
+                <i class="ri-login-box-line" aria-hidden="true"></i>
+                Login untuk Edit
+            </a>
+        {% endif %}
     </div>
+
+    {% if not currentUser %}
+        <p class="bagan-share-readonly-note">
+            Tampilan publik — hanya lihat & unduh. Centang <strong>Selesai</strong> dan edit bagan hanya untuk admin yang sudah login.
+        </p>
+    {% endif %}
 
     <div
         id="bagan-export-root"
         class="bagan-export-root"
         data-filename="{{ exportFilename }}"
+        data-can-edit="{{ currentUser ? '1' : '0' }}"
     >
         {% set isShareView = true %}
         {% include 'components/matches/bagan-export-header.twig' %}
@@ -32,5 +46,7 @@
 
 {% block scripts %}
 <script src="{{ asset('assets/js/bagan-share.js') }}" defer></script>
+{% if currentUser %}
 <script src="{{ asset('assets/js/bagan-checklist.js') }}" defer></script>
+{% endif %}
 {% endblock %}

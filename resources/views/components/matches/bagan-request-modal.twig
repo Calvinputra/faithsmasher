@@ -1,0 +1,46 @@
+<div class="modal" id="bagan-request-modal" role="dialog" aria-modal="true" aria-labelledby="bagan-request-modal-title">
+    <div class="modal-backdrop" data-modal-close></div>
+    <div class="modal-panel modal-panel-wide">
+        <h2 class="modal-title" id="bagan-request-modal-title">Request Match — Bagan <span id="bagan-request-modal-num">1</span></h2>
+        <p class="modal-message">Atur match manual <strong>A & B vs C & D</strong>. Match request diterapkan dulu, sisanya di-randomize otomatis (aturan teman/musuh & rank tetap berlaku).</p>
+
+        <form id="bagan-request-form" method="post" action="">
+            <input type="hidden" name="requests" id="bagan-request-input" value="[]">
+            <div id="bagan-request-rows" class="bagan-request-rows"></div>
+            <button type="button" id="bagan-request-add-row" class="btn-secondary mt-3 w-full justify-center text-sm">
+                <i class="ri-add-line mr-1"></i> Tambah Match Request
+            </button>
+
+            <div class="modal-actions mt-5">
+                <button type="button" class="btn-secondary" data-modal-close>Batal</button>
+                <button type="submit" class="btn-primary">Terapkan & Randomize Sisanya</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<template id="bagan-request-row-template">
+    <div class="bagan-request-row">
+        <div class="bagan-request-row-head">
+            <span class="bagan-request-row-label">Match <span data-row-num>1</span></span>
+            <button type="button" class="bagan-request-row-remove" aria-label="Hapus request">
+                <i class="ri-close-line"></i>
+            </button>
+        </div>
+        <div class="bagan-request-row-fields">
+            <select class="input-field bagan-request-select" data-field="p1" required data-search-select>
+                <option value="">Pemain A</option>
+            </select>
+            <select class="input-field bagan-request-select" data-field="p2" required data-search-select>
+                <option value="">Pemain B</option>
+            </select>
+            <span class="bagan-request-vs">vs</span>
+            <select class="input-field bagan-request-select" data-field="p3" required data-search-select>
+                <option value="">Pemain C</option>
+            </select>
+            <select class="input-field bagan-request-select" data-field="p4" required data-search-select>
+                <option value="">Pemain D</option>
+            </select>
+        </div>
+    </div>
+</template>

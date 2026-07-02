@@ -87,6 +87,7 @@ return function (App $app, AuthService $auth): void {
 
         $group->get('/sessions/{sessionId}/matches', [$matchController, 'index']);
         $group->post('/sessions/{sessionId}/matches/generate', [$matchController, 'generate']);
+        $group->post('/sessions/{sessionId}/matches/bagan/{baganNum}/request', [$matchController, 'requestBagan']);
         $group->get('/sessions/{sessionId}/matches/manual', [$matchController, 'manual']);
         $group->post('/sessions/{sessionId}/matches/manual', [$matchController, 'saveManual']);
         $group->get('/sessions/{sessionId}/matches/preview', [$matchController, 'preview']);

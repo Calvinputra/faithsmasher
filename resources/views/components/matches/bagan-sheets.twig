@@ -1,25 +1,58 @@
 <div class="bagan-preview-stack">
+    {% set canEditChecklist = not (isShareView|default(false)) or currentUser %}
     {% for baganNum, baganMatches in matchesByBagan %}
         {% if baganSettings.scope == constant('App\\Support\\BaganSettings::SCOPE_GLOBAL') %}
             {% set baganMode = baganSettings.globalMode %}
         {% else %}
             {% set baganMode = baganSettings.perBaganModes[baganNum - 1]|default(baganSettings.globalMode) %}
         {% endif %}
-        <section class="bagan-preview-section card overflow-hidden p-0">
-            <header class="bagan-preview-section-header flex justify-between items-center">
-                <h2 class="bagan-preview-title">Bagan {{ baganNum }}</h2>
+        <section class="bagan-preview-section card overflow-hidden p-0" data-bagan-num="{{ baganNum }}">
+            <header class="bagan-preview-section-header">
+                <div class="bagan-preview-section-heading">
+                    <h2 class="bagan-preview-title">Bagan {{ baganNum }}</h2>
+                    {% if not isShareView|default(false) %}
+                        <span class="bagan-editing-badge hidden" data-bagan-editing-badge>
+                            {% include 'components/ui/icon.twig' with { name: 'ri-drag-move-2-line', size: 'sm' } %}
+                            Mode edit · drag & drop aktif
+                        </span>
+                    {% endif %}
+                </div>
                 {% if not isShareView|default(false) %}
-                    <button 
-                        type="submit" 
-                        form="bagan-setup-form" 
-                        name="target_bagan" 
-                        value="{{ baganNum }}" 
-                        data-html2canvas-ignore="true" 
-                        class="btn-secondary py-1 px-2.5 text-[11px] shadow-sm ring-1 ring-navy-200 hover:bg-navy-50" 
-                        onclick="if(!confirm('Generate ulang khusus Bagan {{ baganNum }}?\n\nSusunan manual pada bagan ini akan tertimpa.')) { event.preventDefault(); event.stopPropagation(); return false; } event.stopPropagation();"
-                    >
-                        <i class="ri-refresh-line mr-1"></i> Generate Ulang Bagan Ini
-                    </button>
+                    <div class="bagan-section-toolbar" data-html2canvas-ignore="true">
+                        <button
+                            type="button"
+                            class="btn-secondary btn-bagan-manual-toggle py-1 px-2.5 text-[11px] shadow-sm ring-1 ring-navy-200"
+                            data-bagan="{{ baganNum }}"
+                        >
+                            <i class="ri-drag-move-2-line mr-1"></i> Manual Setup
+                        </button>
+                        <button
+                            type="button"
+                            class="btn-secondary btn-bagan-request py-1 px-2.5 text-[11px] shadow-sm ring-1 ring-navy-200"
+                            data-bagan="{{ baganNum }}"
+                            data-request-url="/sessions/{{ session.id }}/matches/bagan/{{ baganNum }}/request"
+                        >
+                            <i class="ri-user-add-line mr-1"></i> Request Match
+                        </button>
+                        <button
+                            type="submit"
+                            form="manual-form"
+                            class="btn-primary btn-bagan-save hidden py-1 px-2.5 text-[11px] shadow-sm"
+                            data-bagan="{{ baganNum }}"
+                        >
+                            <i class="ri-save-line mr-1"></i> Simpan
+                        </button>
+                        <button
+                            type="submit"
+                            form="bagan-setup-form"
+                            name="target_bagan"
+                            value="{{ baganNum }}"
+                            class="btn-secondary py-1 px-2.5 text-[11px] shadow-sm ring-1 ring-navy-200 hover:bg-navy-50"
+                            onclick="if(!confirm('Generate ulang khusus Bagan {{ baganNum }}?\n\nSusunan manual pada bagan ini akan tertimpa.')) { event.preventDefault(); event.stopPropagation(); return false; } event.stopPropagation();"
+                        >
+                            <i class="ri-refresh-line mr-1"></i> Generate Ulang
+                        </button>
+                    </div>
                 {% endif %}
             </header>
             <div class="overflow-x-auto">
@@ -40,10 +73,10 @@
                             {% set matchIndex = loop.index0 // 2 %}
                             {% set bgClass = matchIndex % 2 == 1 ? 'bg-navy-50/40' : 'bg-white' %}
                             
-                            <tr data-match-order="{{ m.matchOrder }}" data-match-id="{{ m.id }}" class="bagan-row {{ bgClass }} transition-colors duration-200{% if m.status == 'bye' %} bagan-row-bye{% endif %}">
+                            <tr data-match-order="{{ m.matchOrder }}" data-match-id="{{ m.id }}" data-doubles-index="{{ matchIndex }}" class="bagan-row {{ bgClass }} transition-colors duration-200{% if m.status == 'bye' %} bagan-row-bye{% endif %}">
                                 <td class="bagan-manual-group">Group {{ loop.index }}</td>
                                 <td>
-                                    <div class="drop-slot" data-slot="p1" data-match="{{ m.id }}">
+                                    <div class="drop-slot" data-slot="p1" data-match="{{ m.id }}" data-bagan="{{ baganNum }}">
                                         {% if row.p1 %}
                                             <div class="player-chip" data-id="{{ m.participant1Id }}">
                                                 <span class="player-chip-label flex items-center gap-1">
@@ -69,7 +102,7 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <div class="drop-slot" data-slot="p2" data-match="{{ m.id }}">
+                                    <div class="drop-slot" data-slot="p2" data-match="{{ m.id }}" data-bagan="{{ baganNum }}">
                                         {% if row.p2 %}
                                             <div class="player-chip" data-id="{{ m.participant2Id }}">
                                                 <span class="player-chip-label flex items-center gap-1">
@@ -99,10 +132,14 @@
                                 <td class="bagan-manual-static">Lapangan {{ m.courtNumber|default('—') }}</td>
                                 <td class="bagan-manual-static"><span class="bagan-order-badge">{{ m.matchOrder }}</span></td>
                                 <td class="text-center align-middle">
-                                    <label class="inline-flex cursor-pointer items-center gap-2 rounded-md p-1 hover:bg-navy-50 transition-colors">
-                                        <input type="checkbox" class="match-checklist-cb h-4 w-4 rounded border-navy-300 text-gold-600 focus:ring-gold-500" data-match-order="{{ m.matchOrder }}">
-                                        <span class="text-[11px] font-medium text-navy-500 uppercase tracking-wider select-none">Selesai</span>
-                                    </label>
+                                    {% if canEditChecklist %}
+                                        <label class="inline-flex cursor-pointer items-center gap-2 rounded-md p-1 hover:bg-navy-50 transition-colors">
+                                            <input type="checkbox" class="match-checklist-cb h-4 w-4 rounded border-navy-300 text-gold-600 focus:ring-gold-500" data-match-order="{{ m.matchOrder }}">
+                                            <span class="text-[11px] font-medium text-navy-500 uppercase tracking-wider select-none">Selesai</span>
+                                        </label>
+                                    {% else %}
+                                        <span class="text-[11px] font-medium uppercase tracking-wider text-navy-400">—</span>
+                                    {% endif %}
                                 </td>
                             </tr>
                         {% endfor %}

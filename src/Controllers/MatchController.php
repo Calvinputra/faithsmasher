@@ -46,6 +46,7 @@ final class MatchController extends BaseController
 
         return $view->render($response, 'pages/matches/index.twig', [
             'session' => $session,
+            'participants' => $this->participants->allBySession($session->id),
             'participantCount' => $this->participants->countBySession($session->id),
             'matchCount' => count($matchRows),
             'matches' => $matchRows,
@@ -186,6 +187,50 @@ final class MatchController extends BaseController
             '/sessions/' . $sessionId . '/matches',
             'Bagan berhasil disimpan.',
             FlashType::UPDATE,
+        );
+    }
+
+    public function requestBagan(ServerRequestInterface $request, ResponseInterface $response, array $args): ResponseInterface
+    {
+        $sessionId = (int) $args['sessionId'];
+        $baganNum = (int) ($args['baganNum'] ?? 0);
+        $this->requireSession($sessionId);
+
+        $data = (array) $request->getParsedBody();
+        $requestsRaw = $data['requests'] ?? '[]';
+        $requests = is_string($requestsRaw) ? json_decode($requestsRaw, true) : $requestsRaw;
+
+        if (!is_array($requests)) {
+            return $this->flashRedirect(
+                $response,
+                '/sessions/' . $sessionId . '/matches',
+                'Format request tidak valid.',
+                FlashType::ERROR,
+            );
+        }
+
+        try {
+            if ($requests === []) {
+                $settings = BaganSettings::fromSession($this->requireSession($sessionId));
+                $this->generator->autoGenerate($sessionId, $settings, $baganNum);
+            } else {
+                $this->generator->regenerateBaganWithRequests($sessionId, $baganNum, $requests);
+            }
+        } catch (\InvalidArgumentException $exception) {
+            return $this->flashRedirect(
+                $response,
+                '/sessions/' . $sessionId . '/matches',
+                $exception->getMessage(),
+                FlashType::ERROR,
+            );
+        }
+
+        return $this->flashRedirect(
+            $response,
+            '/sessions/' . $sessionId . '/matches',
+            "Bagan {$baganNum} diupdate. Request diterapkan, sisanya di-randomize.",
+            FlashType::UPDATE,
+            'Request match',
         );
     }
 
