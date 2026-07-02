@@ -601,7 +601,7 @@ final class MatchGeneratorService
         }
 
         foreach ($this->splitQuadsIntoTeams($participants) as [$team1, $team2]) {
-            if ($team1[0]->id === $team1[1]->id || $team2[0]->id === $team2[1]->id) {
+            if (!$this->hasFourUniquePlayers($team1, $team2)) {
                 continue;
             }
 
@@ -718,7 +718,7 @@ final class MatchGeneratorService
 
         foreach ($quads as $four) {
             foreach ($this->splitQuadsIntoTeams($four) as [$team1, $team2]) {
-                if ($team1[0]->id === $team1[1]->id || $team2[0]->id === $team2[1]->id) {
+                if (!$this->hasFourUniquePlayers($team1, $team2)) {
                     continue;
                 }
 
@@ -784,18 +784,30 @@ final class MatchGeneratorService
             return [];
         }
 
-        $all = $this->combinations($players, $size);
-
-        if (count($all) <= self::MAX_COMBINATION_SAMPLES) {
-            shuffle($all);
-
-            return $all;
+        if ($this->combinationCount($count, $size) > self::MAX_COMBINATION_SAMPLES) {
+            return $this->sampleRandomQuads($players, $size);
         }
 
+        $all = $this->combinations($players, $size);
+
+        shuffle($all);
+
+        return $all;
+    }
+
+    /**
+     * @param list<Participant> $players
+     * @return list<list<Participant>>
+     */
+    private function sampleRandomQuads(array $players, int $size): array
+    {
         $sampled = [];
         $seen = [];
+        $attempts = 0;
+        $maxAttempts = self::MAX_COMBINATION_SAMPLES * 8;
 
-        while (count($sampled) < self::MAX_COMBINATION_SAMPLES) {
+        while (count($sampled) < self::MAX_COMBINATION_SAMPLES && $attempts < $maxAttempts) {
+            $attempts++;
             $keys = array_rand($players, $size);
             if (!is_array($keys)) {
                 $keys = [$keys];
@@ -816,6 +828,37 @@ final class MatchGeneratorService
         }
 
         return $sampled;
+    }
+
+    private function combinationCount(int $total, int $choose): int
+    {
+        if ($choose < 0 || $total < $choose) {
+            return 0;
+        }
+
+        $choose = min($choose, $total - $choose);
+        $result = 1;
+
+        for ($i = 1; $i <= $choose; $i++) {
+            $result = (int) (($result * ($total - $choose + $i)) / $i);
+
+            if ($result > self::MAX_COMBINATION_SAMPLES) {
+                return $result;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param array{0: Participant, 1: Participant} $team1
+     * @param array{0: Participant, 1: Participant} $team2
+     */
+    private function hasFourUniquePlayers(array $team1, array $team2): bool
+    {
+        $ids = [$team1[0]->id, $team1[1]->id, $team2[0]->id, $team2[1]->id];
+
+        return count(array_unique($ids)) === 4;
     }
 
     /**

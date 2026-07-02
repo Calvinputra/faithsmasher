@@ -89,52 +89,47 @@
         return payload;
     }
 
-    async function submitPartialForm(form, baganNum) {
-        const submitButton = form.querySelector('[type="submit"]');
-
-        if (submitButton instanceof HTMLButtonElement) {
-            submitButton.disabled = true;
-            submitButton.classList.add('is-loading');
+    async function submitPartialAction(action, button) {
+        if (button instanceof HTMLButtonElement) {
+            button.disabled = true;
+            button.classList.add('is-loading');
         }
 
         try {
-            const response = await fetch(form.action, {
-                method: form.method || 'POST',
+            const response = await fetch(action, {
+                method: 'POST',
                 headers: partialHeaders(),
-                body: new FormData(form),
             });
 
             return await handlePartialResponse(response);
         } finally {
-            if (submitButton instanceof HTMLButtonElement) {
-                submitButton.disabled = false;
-                submitButton.classList.remove('is-loading');
+            if (button instanceof HTMLButtonElement) {
+                button.disabled = false;
+                button.classList.remove('is-loading');
             }
         }
     }
 
     function bindRegenerateForms(scope) {
-        (scope || document).querySelectorAll('[data-bagan-regenerate-form]').forEach((form) => {
-            if (!(form instanceof HTMLFormElement) || form.dataset.partialBound === '1') {
+        (scope || document).querySelectorAll('[data-bagan-regenerate-button]').forEach((button) => {
+            if (!(button instanceof HTMLButtonElement) || button.dataset.partialBound === '1') {
                 return;
             }
 
-            form.dataset.partialBound = '1';
+            button.dataset.partialBound = '1';
 
-            form.addEventListener('submit', async (event) => {
+            button.addEventListener('click', async (event) => {
                 event.preventDefault();
                 event.stopPropagation();
 
-                const confirmMessage = form.querySelector('[data-confirm]')?.dataset.confirm;
+                const confirmMessage = button.dataset.confirm;
 
                 if (confirmMessage && !window.confirm(confirmMessage)) {
                     return;
                 }
 
-                const baganNum = form.dataset.bagan || form.querySelector('[name="target_bagan"]')?.value;
-
                 try {
-                    await submitPartialForm(form, baganNum);
+                    await submitPartialAction(button.dataset.action || '', button);
                 } catch (error) {
                     window.FSToast?.error(error.message || 'Generate bagan gagal.', 'Generate bagan');
                 }
