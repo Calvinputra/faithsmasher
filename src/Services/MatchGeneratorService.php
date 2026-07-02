@@ -559,6 +559,20 @@ final class MatchGeneratorService
 
         $uniqueIds = array_values(array_unique($idPool));
 
+        if (count($uniqueIds) < 4) {
+            foreach (array_keys($playerById) as $candidateId) {
+                if (in_array($candidateId, $uniqueIds, true)) {
+                    continue;
+                }
+
+                $uniqueIds[] = $candidateId;
+
+                if (count($uniqueIds) >= 4) {
+                    break;
+                }
+            }
+        }
+
         if (count($uniqueIds) >= 4) {
             $participants = array_map(static fn (int $id): Participant => $playerById[$id], $uniqueIds);
             $quads = $this->combinations($participants, 4);
